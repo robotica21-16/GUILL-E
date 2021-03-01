@@ -3,7 +3,7 @@
 from __future__ import print_function # use python 3 syntax but make it compatible with python 2
 from __future__ import division       #                           ''
 
-#import brickpi3 # import the BrickPi3 drivers
+import brickpi3 # import the BrickPi3 drivers
 import time     # import the time library for the sleep function
 import sys
 
@@ -21,7 +21,7 @@ class Robot:
 ######## UNCOMMENT and FILL UP all you think is necessary (following the suggested scheme) ########
 
         # Robot construction parameters
-        
+
         self.R_rueda = 4
         self.eje_rueda = 1 # TODO: CAMBIAR
         self.L = 2*self.eje_rueda
@@ -69,7 +69,7 @@ class Robot:
         #print("setting speed to %.2f %.2f" % (v, w))
         if w==0:
             vI = vD = v
-        else if v == 0:
+        elif v == 0:
             vI = w*self.eje_rueda
             vD = -vI
         else:
