@@ -21,8 +21,8 @@ class Robot:
 ######## UNCOMMENT and FILL UP all you think is necessary (following the suggested scheme) ########
 
         # Robot construction parameters
-        dedo = ??
-        self.R_rueda = 1.5*dedo
+        
+        self.R_rueda = 4
         self.eje_rueda = 1 # TODO: CAMBIAR
         self.L = 2*self.eje_rueda
         #self. ...
