@@ -60,7 +60,7 @@ class Robot:
 
         self.f_log = open("logs/log.txt","a")#append
         fila = ["t", "x", "y", "th"]
-        f_log.write("\t".join([str(e) for e in fila]) + "\n")
+        self.f_log.write("\t".join([str(e) for e in fila]) + "\n")
 
 
 
