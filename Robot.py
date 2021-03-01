@@ -22,10 +22,10 @@ class Robot:
 
         # Robot construction parameters
         dedo = ??
-        self.R = 1.5*dedo
-        #self.L = ??
-        #self. ...
+        self.R_rueda = 1.5*dedo
         self.eje_rueda = 1 # TODO: CAMBIAR
+        self.L = 2*self.eje_rueda
+        #self. ...
 
         ##################################################
         # Motors and sensors setup
@@ -58,11 +58,15 @@ class Robot:
         # odometry update period --> UPDATE value!
         self.P = 1.0
 
+        self.f_log = open("logs/log.txt","a")#append
+        fila = ["t", "x", "y", "th"]
+        f_log.write("\t".join([str(e) for e in fila]) + "\n")
 
 
-    def setSpeed(self, v,w):
+
+    def setSpeed(self, v, w):
         """ To be filled - These is all dummy sample code """
-        print("setting speed to %.2f %.2f" % (v, w))
+        #print("setting speed to %.2f %.2f" % (v, w))
         if w==0:
             vI = vD = v
         else if v == 0:
@@ -72,16 +76,17 @@ class Robot:
             rGiro = v/w
             vI = v * (1-self.eje_rueda/rGiro)
             vD = v * (1+self.eje_rueda/rGiro)
-        wI = vI
-        # compute the speed that should be set in each motor ...
+        # Velocidad lineal/long de la rueda, en rad:
+        wI = vI/(R_rueda*2.0*math.pi)
+        wD = vD/(R_rueda*2.0*math.pi)
 
         #speedPower = 100
         #BP.set_motor_power(BP.PORT_B + BP.PORT_C, speedPower)
 
-        speedDPS_left = 180
-        speedDPS_right = 180
-        #self.BP.set_motor_dps(self.BP.PORT_B, speedDPS_left)
-        #self.BP.set_motor_dps(self.BP.PORT_C, speedDPS_right)
+        speedDPS_left = wI/math.pi*180
+        speedDPS_right = wD/math.pi*180
+        self.BP.set_motor_dps(self.BP.PORT_B, speedDPS_left)
+        self.BP.set_motor_dps(self.BP.PORT_C, speedDPS_right)
 
 
     def readSpeedIzqDcha(self):
@@ -92,7 +97,11 @@ class Robot:
 
     def readSpeed(self):
         """ En DPS (Degrees P S)"""
-        pass
+        izq, dcha = self.readSpeedIzqDcha()
+        wI = norm_pi_deg(izq)
+        wD = norm_pi_deg(dcha)
+        v,w = vWiFromIzqDcha(self.R_rueda, self.L, wI, wD)
+        return v,w
 
     def readOdometry(self):
         """ Returns current value of odometry estimation """
@@ -105,6 +114,9 @@ class Robot:
         self.p.start()
         print("PID: ", self.p.pid)
 
+    def deltaTH(self):
+        pass
+
     def deltaX(self, deltaSi, deltaTh):
         # readSpeed debe devolver v,w
         return deltaSi*np.cos(self.th.value + deltaTh/2.0)
@@ -112,39 +124,54 @@ class Robot:
     def deltaY(self, deltaSi, deltaTh):
         return deltaSi*np.sin(self.th.value + deltaTh/2.0)
 
+    def writeLog(self, sep="\t"):
+        fila = [self.tLast, self.x.value, self.y.value, self.th.value]
+        self.f_log.write("\t".join([str(e) for e in fila])+"\n")
+
     # You may want to pass additional shared variables besides the odometry values and stop flag
     def updateOdometry(self): #, additional_params?):
         """ To be filled ...  """
-
+        self.tLast = time.clock()
+        sleep(0.1)
         while not self.finished.value:
             # current processor time in a floating point value, in seconds
             tIni = time.clock()
+            dT = tIni-self.tLast
+            self.tLast = tIni
 
             # compute updates
-            deltaTh += deltaTH()
+            # deltaTh += self.deltaTH()
             v, w = self.readSpeed()
-            deltaSi = v/w*deltaTh
-            self.x.value += deltaX(deltaSi,deltaTh)
-            self.y.value += deltaY(deltaSi,deltaTh)
-            self.th.value += deltaTh
-            ######## UPDATE FROM HERE with your code (following the suggested scheme) ########
-            sys.stdout.write("Dummy update of odometry ...., X=  %d, \
-                Y=  %d, th=  %d \n" %(self.x.value, self.y.value, self.th.value) )
-            #print("Dummy update of odometry ...., X=  %.2f" %(self.x.value) )
-
-            # update odometry uses values that require mutex
-            # (they are declared as value, so lock is implicitly done for atomic operations, BUT =+ is NOT atomic)
-
-            # Operations like += which involve a read and write are not atomic.
-            with self.x.get_lock():
-                self.x.value+=1
-
-            # to "lock" a whole set of operations, we can use a "mutex"
+            if w != 0:
+                deltaSi = v/w*deltaTh
+            else:
+                deltaSi = v*dT
+            deltaTh = norm_pi(w*dT)
             self.lock_odometry.acquire()
-            #self.x.value+=1
-            self.y.value+=1
-            self.th.value+=1
+
+            self.x.value += self.deltaX(deltaSi,deltaTh)
+            self.y.value += self.deltaY(deltaSi,deltaTh)
+            self.th.value = norm_pi(self.th.value+deltaTh)
             self.lock_odometry.release()
+
+            # ######## UPDATE FROM HERE with your code (following the suggested scheme) ########
+            # sys.stdout.write("Dummy update of odometry ...., X=  %d, \
+            #     Y=  %d, th=  %d \n" %(self.x.value, self.y.value, self.th.value) )
+            # #print("Dummy update of odometry ...., X=  %.2f" %(self.x.value) )
+            #
+            # # update odometry uses values that require mutex
+            # # (they are declared as value, so lock is implicitly done for atomic operations, BUT =+ is NOT atomic)
+            #
+            # # Operations like += which involve a read and write are not atomic.
+            # with self.x.get_lock():
+            #     self.x.value+=1
+            #
+            # # to "lock" a whole set of operations, we can use a "mutex"
+            # self.lock_odometry.acquire()
+            # #self.x.value+=1
+            # self.y.value+=1
+            # self.th.value+=1
+            # self.lock_odometry.release()
 
             try:
                 # Each of the following BP.get_motor_encoder functions returns the encoder value
@@ -162,7 +189,7 @@ class Robot:
 
             # save LOG
             # Need to decide when to store a log with the updated odometry ...
-
+            self.writeLog()
             ######## UPDATE UNTIL HERE with your code ########
 
 

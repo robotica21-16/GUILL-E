@@ -104,3 +104,17 @@ def longArco(r, th):
     Devuelve la longitud del arco de angulo th y radio r, r*th
     """
     return r*th
+
+
+def vWiFromIzqDcha(r, L, wD, wI):
+    return np.dot(
+        np.array([r/2, r/2],
+             [r/L, -r/L]),
+        np.array([wD, wI]))
+
+
+def izqDchaFromVW(r, L, v, w):
+    return np.dot(
+        np.array([1/r, L/(2*r)],
+             [1/r, -L/(2*r)]),
+        np.array([v, w]))
