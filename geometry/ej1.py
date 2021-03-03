@@ -1,8 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from plot_robot import *
+from utilsbot import *
 from geometry import *
-from simubot import *
+# from simubot import *
 
 def printsep(s, sep="------------"):
     print(sep, s, sep)
@@ -16,21 +16,6 @@ def robotFromPuerta(rxp, wxp):
     return loc(np.dot(hom(wxp), np.linalg.inv(hom(rxp))))
     #return loc(np.dot(hom(rxp),wxp))
 
-
-def pltEscenario():
-    fig1, ax = plt.subplots()
-
-    ax.set_xlim(0, 6)
-    ax.set_ylim(0, 11)
-
-    # frecuencia de los labels:
-    ax.set_xticks(np.arange(0, 6, 1))
-    ax.set_yticks(np.arange(0, 11, 1))
-
-    ax.set_aspect('equal')
-    # ax.set_box_aspect(2)
-    # Cuadricula:
-    plt.grid(True)
 
 def dibPunto(w_x_p):
     plt.plot(w_x_p[0], w_x_p[1], 'o')
