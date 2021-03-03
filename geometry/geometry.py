@@ -107,14 +107,15 @@ def longArco(r, th):
 
 
 def vWiFromIzqDcha(r, L, wD, wI):
+    print(r, L, wD, wI)
     return np.dot(
-        np.array([r/2, r/2],
-             [r/L, -r/L]),
+        np.array([[r/2, r/2],
+             [r/L, -r/L]]),
         np.array([wD, wI]))
 
 
 def izqDchaFromVW(r, L, v, w):
     return np.dot(
-        np.array([1/r, L/(2*r)],
-             [1/r, -L/(2*r)]),
+        np.array([[1/r, L/(2*r)],
+             [1/r, -L/(2*r)]]),
         np.array([v, w]))
