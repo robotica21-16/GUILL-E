@@ -104,8 +104,11 @@ def simularTrayectoria2(rIzq, rDcha, angDcha, dist,fps=30):
     wxr,_ = animarBot(wxr, [v,w], t, fps)
 
 
-def Trayectoria2(rIzq, rDcha, angDcha, dist,fps=30):
+def Trayectoria2(rIzq, rDcha, dist,fps=30):
     wxr = np.array([1,5,norm_pi_deg(0)]) # pos inicial
+    # angulo, trigonometria (tan(th)=opuesto/adyacente)
+    # angDcha = norm_pi(np.arcsin((rDcha-rIzq)/dist))
+    angDcha = norm_pi(np.arctan((rDcha-rIzq)/dist))
     # 1) v= 0, w = -w_circ_1_1
     t2 = Trajectory(wxr=wxr)
     v = 0
@@ -118,7 +121,7 @@ def Trayectoria2(rIzq, rDcha, angDcha, dist,fps=30):
     v = w * -rIzq #(donde a es el radio de la izq)
     t2.addMove([v,w], t)
     # 3) w =0
-    t = 2
+    t = 1.5
     w=0
     v = dist / t #(donde r2 es la dist entre los dos tramos)
     t2.addMove([v,w], t)
@@ -128,7 +131,7 @@ def Trayectoria2(rIzq, rDcha, angDcha, dist,fps=30):
     v = w*-rDcha
     t2.addMove([v,w], t)
     # 5) = (3)
-    t = 2
+    t = 1.5
     w=0
     v = dist / t #(donde r2 es la dist entre los dos tramos)
     t2.addMove([v,w], t)
@@ -146,11 +149,14 @@ def main(args):
         t1 = Trayectoria1(d)
         t1.draw()
     else:
-        rI = 3
-        rD = 3
+        rI = 1.5
+        rD = 2.5
         dist = 4
-        angDcha = norm_pi_deg(10)
-        t2 = Trayectoria2(rI, rD,angDcha, dist)
+        # norm_pi_deg(10)
+        t2 = Trayectoria2(rI, rD, dist)
+
+        print(t2)
+        print("end position: ", t2.getEndPosition())
         t2.draw()
     #
     # pltEscenario(10,10)
