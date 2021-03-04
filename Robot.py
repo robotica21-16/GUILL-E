@@ -156,8 +156,6 @@ class Robot:
     # You may want to pass additional shared variables besides the odometry values and stop flag
     def updateOdometry(self): #, additional_params?):
         """ To be filled ...  """
-        self.tLast = time.clock()
-        time.sleep(0.1)
         while not self.finished.value:
             # current processor time in a floating point value, in seconds
             tIni = time.clock()
