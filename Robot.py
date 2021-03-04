@@ -12,6 +12,9 @@ from geometry.geometry import *
 # tambien se podria utilizar el paquete de threading
 from multiprocessing import Process, Value, Array, Lock
 
+
+
+
 class Robot:
     def __init__(self, init_position=[0.0, 0.0, 0.0]):
         """
@@ -24,9 +27,9 @@ class Robot:
 
         # Robot construction parameters
 
-        self.R_rueda = 4
-        self.eje_rueda = 1 # TODO: CAMBIAR
-        self.L = 2*self.eje_rueda
+        self.R_rueda = 0.027
+        self.L = 0.140
+        self.eje_rueda = self.L/2.0 # TODO: CAMBIAR
         #self. ...
 
         ##################################################
@@ -39,10 +42,12 @@ class Robot:
         #self.BP.set_sensor_type(self.BP.PORT_1, self.BP.SENSOR_TYPE.TOUCH)
 
         # reset encoder B and C (or all the motors you are using)
-        self.BP.offset_motor_encoder(self.BP.PORT_A,
-            self.BP.get_motor_encoder(self.BP.PORT_A))
-        self.BP.offset_motor_encoder(self.BP.PORT_D,
-            self.BP.get_motor_encoder(self.BP.PORT_D))
+        self.ruedaIzq = self.BP.PORT_D
+        self.ruedaDcha = self.BP.PORT_A
+        self.BP.offset_motor_encoder(self.ruedaIzq,
+            self.BP.get_motor_encoder(self.ruedaIzq))
+        self.BP.offset_motor_encoder(self.ruedaDcha,
+            self.BP.get_motor_encoder(self.ruedaDcha))
 
         ##################################################
         # odometry shared memory values
@@ -50,6 +55,9 @@ class Robot:
         self.y = Value('d',0.0)
         self.th = Value('d',0.0)
         self.finished = Value('b',1) # boolean to show if odometry updates are finished
+        
+        
+        self.tLast = time.perf_counter()
 
         # if we want to block several instructions to be run together, we may want to use an explicit Lock
         self.lock_odometry = Lock()
@@ -86,20 +94,34 @@ class Robot:
 
         speedDPS_left = wI/math.pi*180
         speedDPS_right = wD/math.pi*180
-        self.BP.set_motor_dps(self.BP.PORT_A, speedDPS_left)
-        self.BP.set_motor_dps(self.BP.PORT_D, speedDPS_right)
+        self.BP.set_motor_dps(self.ruedaIzq, speedDPS_left)
+        self.BP.set_motor_dps(self.ruedaDcha, speedDPS_right)
 
 
     def setSpeed(self, v, w):
         """ To be filled - These is all dummy sample code """
         # wID = [wI, wD]:
-        wID = izqDchaFromVW(self.R_rueda, self.L, v, w)
-        wI = wID[0]
-        wD = wID[1]
+        if v == 0 and False:
+            vI = w*self.eje_rueda
+            vD = -vI
+            wI = vI*(self.R_rueda*2.0*math.pi)
+            wD = vD*(self.R_rueda*2.0*math.pi)
+        else:
+            wID = izqDchaFromVW(self.R_rueda, self.L, v, w)
+            wI = wID[0]
+            wD = wID[1]
         speedDPS_left = wI/math.pi*180
-        speedDPS_right = wD/math.pi*180
-        self.BP.set_motor_dps(self.BP.PORT_A, speedDPS_left)
-        self.BP.set_motor_dps(self.BP.PORT_D, speedDPS_right)
+        speedDPS_right = 0.9995*wD/math.pi*180
+        self.BP.set_motor_dps(self.ruedaIzq, speedDPS_left)
+        self.BP.set_motor_dps(self.ruedaDcha, speedDPS_right)
+        
+    def setTrajectory(self,trajectory):
+        self.trajectory = trajectory
+    
+    def executeTrajectory(self):
+        for move in self.trajectory.movements:
+            self.setSpeed(move.vc[0], move.vc[1])
+            time.sleep(move.t)
 
 
     def readSpeedIzqDcha(self, dT):
@@ -111,8 +133,8 @@ class Robot:
             # Each of the following BP.get_motor_encoder functions returns the encoder value
             # (what we want to store).
             #sys.stdout.write("Reading encoder values .... \n")
-            izq = self.BP.get_motor_encoder(self.BP.PORT_A)
-            dcha = self.BP.get_motor_encoder(self.BP.PORT_D)
+            izq = self.BP.get_motor_encoder(self.ruedaIzq)
+            dcha = self.BP.get_motor_encoder(self.ruedaDcha)
             return izq/dT, dcha/dT
         except IOError as error:
             #print(error)
@@ -149,29 +171,27 @@ class Robot:
 
     def writeLog(self, sep="\t"):
         fila = [self.tLast, self.x.value, self.y.value, self.th.value]
-        print("hola", fila)
+        print(fila)
         self.f_log.write("\t".join([str(e) for e in fila])+"\n")
         self.f_log.flush()
 
     # You may want to pass additional shared variables besides the odometry values and stop flag
     def updateOdometry(self): #, additional_params?):
         """ To be filled ...  """
-        self.tLast = time.clock()
-        time.sleep(0.1)
         while not self.finished.value:
             # current processor time in a floating point value, in seconds
-            tIni = time.clock()
+            tIni = time.perf_counter()
             dT = tIni-self.tLast
             self.tLast = tIni
 
             # compute updates
             # deltaTh += self.deltaTH()
             v, w = self.readSpeed(dT)
+            deltaTh = norm_pi(w*dT)
             if w != 0:
                 deltaSi = v/w*deltaTh
             else:
                 deltaSi = v*dT
-            deltaTh = norm_pi(w*dT)
             self.lock_odometry.acquire()
 
             self.x.value += self.deltaX(deltaSi,deltaTh)
@@ -210,7 +230,7 @@ class Robot:
             ######## UPDATE UNTIL HERE with your code ########
 
 
-            tEnd = time.clock()
+            tEnd = time.perf_counter()
             time.sleep(self.P - (tEnd-tIni))
 
         #print("Stopping odometry ... X= %d" %(self.x.value))
@@ -222,4 +242,5 @@ class Robot:
     def stopOdometry(self):
         self.finished.value = True
         self.f_log.close()
+        self.setSpeed(0,0)
         #self.BP.reset_all()
