@@ -65,8 +65,7 @@ class Robot:
         self.f_log.write("\t".join([str(e) for e in fila]) + "\n")
 
 
-
-    def setSpeed(self, v, w):
+    def setSpeed_old(self, v, w):
         """ To be filled - These is all dummy sample code """
         #print("setting speed to %.2f %.2f" % (v, w))
         if w==0:
@@ -85,6 +84,18 @@ class Robot:
         #speedPower = 100
         #BP.set_motor_power(BP.PORT_B + BP.PORT_C, speedPower)
 
+        speedDPS_left = wI/math.pi*180
+        speedDPS_right = wD/math.pi*180
+        self.BP.set_motor_dps(self.BP.PORT_A, speedDPS_left)
+        self.BP.set_motor_dps(self.BP.PORT_D, speedDPS_right)
+
+
+    def setSpeed(self, v, w):
+        """ To be filled - These is all dummy sample code """
+        # wID = [wI, wD]:
+        wID = izqDchaFromVW(self.R_rueda, self.L, v, w)
+        wI = wID[0]
+        wD = wID[1]
         speedDPS_left = wI/math.pi*180
         speedDPS_right = wD/math.pi*180
         self.BP.set_motor_dps(self.BP.PORT_A, speedDPS_left)
@@ -187,7 +198,7 @@ class Robot:
             # self.th.value+=1
             # self.lock_odometry.release()
 
-            
+
 
             #sys.stdout.write("Encoder (%s) increased (in degrees) B: %6d  C: %6d " %
             #        (type(encoder1), encoder1, encoder2))

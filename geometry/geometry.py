@@ -115,6 +115,13 @@ def vWiFromIzqDcha(r, L, wD, wI):
 
 
 def izqDchaFromVW(r, L, v, w):
+    """
+    r: radio de las ruedas
+    L: dist entre ruedas
+    v: v lineal
+    w: v angular
+    devuelve [wI, wD]
+    """
     return np.dot(
         np.array([[1/r, L/(2*r)],
              [1/r, -L/(2*r)]]),
