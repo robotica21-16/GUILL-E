@@ -5,6 +5,8 @@ import numpy as np
 import time
 from Robot import Robot
 
+from p2.trayectorias import *
+
 
 def main(args):
     try:
@@ -22,6 +24,26 @@ def main(args):
         robot.startOdometry()
 
         # 2. perform trajectory
+        tray = 3
+        if args.trayectoria == 1:
+                d = 0.2
+                t1 = Trayectoria1(d)
+                robot.setTrajectory(t1)
+                robot.executeTrajectory()
+        elif args.trayectoria == 3:
+                d = 1
+                t3 = Trayectoria3(d)
+                robot.setTrajectory(t3)
+                robot.executeTrajectory()
+                
+        else:
+                r1 = 0.2
+                r2 = 0.25
+                d = 1
+                t2 = Trayectoria2(r1, r2, d)
+                robot.setTrajectory(t2)
+                robot.executeTrajectory()
+        
 
 
         # DUMMY CODE! delete when you have your own
@@ -66,6 +88,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", "--radioD", help="Radio to perform the 8-trajectory (mm)",
                         type=float, default=40.0)
+    parser.add_argument("-t", "--trayectoria", help="Elige la trayectoria a dibujar (1 o 2)",
+                                            type=int, default=1)
+    
     args = parser.parse_args()
 
     main(args)

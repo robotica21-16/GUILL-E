@@ -18,7 +18,7 @@ def simularTrayectoria1(d):
     fps = 30 # para las animaciones
     # 1) girar 90º grados dcha (-90) sobre si mismo
     v = 0
-    t = 1
+    t = 2
     w = -math.pi/(2*t)
     wxr,_ = animarBot(wxr, [v,w], t, fps)
     # 2) Trayectoria circular con R=d y th=pi
@@ -116,12 +116,12 @@ def Trayectoria2(rIzq, rDcha, dist,fps=30):
     w = math.pi/(2*t)
     t2.addMove([v,w], t)
     # 2) w = pi/2-r1 (donde r1 es el angulo ese de la dcha)
-    t = 1
+    t = 2
     w = -(math.pi/2.0-angDcha)/t
     v = w * -rIzq #(donde a es el radio de la izq)
     t2.addMove([v,w], t)
     # 3) w =0
-    t = 1.5
+    t = 4
     w=0
     v = dist / t #(donde r2 es la dist entre los dos tramos)
     t2.addMove([v,w], t)
@@ -131,7 +131,7 @@ def Trayectoria2(rIzq, rDcha, dist,fps=30):
     v = w*-rDcha
     t2.addMove([v,w], t)
     # 5) = (3)
-    t = 1.5
+    t = 4
     w=0
     v = dist / t #(donde r2 es la dist entre los dos tramos)
     t2.addMove([v,w], t)
@@ -141,11 +141,37 @@ def Trayectoria2(rIzq, rDcha, dist,fps=30):
     v = w * -rIzq #(donde a es el radio de la izq)
     t2.addMove([v,w], t)
     return t2
+    
+
+def Trayectoria3(d, fps=30):
+    wxr = np.array([1,5,norm_pi_deg(0)]) # pos inicial
+    # angulo, trigonometria (tan(th)=opuesto/adyacente)
+    # angDcha = norm_pi(np.arcsin((rDcha-rIzq)/dist))
+    t3 = Trajectory(wxr=wxr)
+    t = 5
+    w = 0
+    v = d/t
+    t3.addMove([v,w], t)
+    t = 2
+    v = 0
+    w = -math.pi/t
+    t3.addMove([v,w], t)
+    t = 5
+    w = 0
+    v = d/t
+    t3.addMove([v,w], t)
+    
+    t = 2
+    v = 0
+    w = math.pi/t
+    t3.addMove([v,w], t)
+    return t3
+    
 
 def main(args):
     pltEscenario(10,10)
     if args.trayectoria == 1:
-        d = 2
+        d = 0.2
         t1 = Trayectoria1(d)
         t1.draw()
     else:
