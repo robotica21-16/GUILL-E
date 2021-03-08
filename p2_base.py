@@ -25,54 +25,27 @@ def main(args):
 
         # 2. perform trajectory
         tray = 3
-        if args.trayectoria == 1:
+        if args.trayectoria == 1: # ocho
                 d = 0.2
                 t1 = Trayectoria1(d)
                 robot.setTrajectory(t1)
                 robot.executeTrajectory()
-        elif args.trayectoria == 3:
+        elif args.trayectoria == 3: # linea recta
                 d = 1
                 t3 = Trayectoria3(d)
                 robot.setTrajectory(t3)
                 robot.executeTrajectory()
-                
-        else:
+
+        else: # trayectoria 2, 2 radios
                 r1 = 0.2
                 r2 = 0.25
                 d = 1
                 t2 = Trayectoria2(r1, r2, d)
                 robot.setTrajectory(t2)
                 robot.executeTrajectory()
-        
 
 
-        # DUMMY CODE! delete when you have your own
         robot.setSpeed(0,0)
-        print("Start : %s" % time.ctime())
-        time.sleep(3)
-        print("X value from main tmp %d" % robot.x.value)
-        time.sleep(3)
-        print("End : %s" % time.ctime())
-
-        robot.lock_odometry.acquire()
-        print("Odom values at main at the END: %.2f, %.2f, %.2f " % (robot.x.value, robot.y.value, robot.th.value))
-        robot.lock_odometry.release()
-
-        # PART 1:
-        # robot.setSpeed()
-        # until ...
-
-        # PART 2:
-        # robot.setSpeed()
-        # until ...
-
-        # ...
-
-
-
-        # 3. wrap up and close stuff ...
-        # This currently unconfigure the sensors, disable the motors,
-        # and restore the LED to the control of the BrickPi3 firmware.
         robot.stopOdometry()
 
 
@@ -88,12 +61,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", "--radioD", help="Radio to perform the 8-trajectory (mm)",
                         type=float, default=40.0)
-    parser.add_argument("-t", "--trayectoria", help="Elige la trayectoria a dibujar (1 o 2)",
+    parser.add_argument("-t", "--trayectoria", help="Elige la trayectoria a realizar (1, 2 o 3)",
                                             type=int, default=1)
-    
+
     args = parser.parse_args()
 
     main(args)
-
-
-

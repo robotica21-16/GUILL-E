@@ -25,18 +25,11 @@ class Robot:
         Initialize Motors and Sensors according to the set up in your robot
         """
 
-######## UNCOMMENT and FILL UP all you think is necessary (following the suggested scheme) ########
-
         # Robot construction parameters
 
         self.R_rueda = 0.027
         self.L = 0.140
-        self.eje_rueda = self.L/2.0 # TODO: CAMBIAR
-        #self. ...
-
-        ##################################################
-        # Motors and sensors setup
-
+        self.eje_rueda = self.L/2.0
         # Create an instance of the BrickPi3 class. BP will be the BrickPi3 object.
         self.BP = brickpi3.BrickPi3()
 
@@ -50,7 +43,7 @@ class Robot:
             self.BP.get_motor_encoder(self.ruedaIzq))
         self.BP.offset_motor_encoder(self.ruedaDcha,
             self.BP.get_motor_encoder(self.ruedaDcha))
-            
+
         self.rotIzqDeg = 0
         self.rotDchaDeg = 0
 
@@ -60,16 +53,13 @@ class Robot:
         self.y = Value('d',0.0)
         self.th = Value('d',0.0)
         self.finished = Value('b',1) # boolean to show if odometry updates are finished
-        
-        
+
+
         self.tLast = time.perf_counter()
         self.tInitialization = self.tLast
 
         # if we want to block several instructions to be run together, we may want to use an explicit Lock
         self.lock_odometry = Lock()
-        #self.lock_odometry.acquire()
-        #print('hello world', i)
-        #self.lock_odometry.release()
 
         # odometry update period --> UPDATE value!
         self.P = 1.0
@@ -80,33 +70,11 @@ class Robot:
         self.f_log.write("\t".join([str(e) for e in fila]) + "\n")
 
 
-    def setSpeed_old(self, v, w):
-        """ To be filled - These is all dummy sample code """
-        #print("setting speed to %.2f %.2f" % (v, w))
-        if w==0:
-            vI = vD = v
-        elif v == 0:
-            vI = w*self.eje_rueda
-            vD = -vI
-        else:
-            rGiro = v/w
-            vI = v * (1-self.eje_rueda/rGiro)
-            vD = v * (1+self.eje_rueda/rGiro)
-        # Velocidad lineal/long de la rueda, en rad:
-        wI = vI/(self.R_rueda*2.0*math.pi)
-        wD = vD/(self.R_rueda*2.0*math.pi)
-
-        #speedPower = 100
-        #BP.set_motor_power(BP.PORT_B + BP.PORT_C, speedPower)
-
-        speedDPS_left = wI/math.pi*180
-        speedDPS_right = wD/math.pi*180
-        self.BP.set_motor_dps(self.ruedaIzq, speedDPS_left)
-        self.BP.set_motor_dps(self.ruedaDcha, speedDPS_right)
-
-
     def setSpeed(self, v, w):
-        """ To be filled - These is all dummy sample code """
+        """
+        Sets the speed as degrees PS to each motor according to
+        v (linear) and w (angular)
+        """
         # wID = [wI, wD]:
         if v == 0 and False:
             vI = w*self.eje_rueda
@@ -121,18 +89,26 @@ class Robot:
         speedDPS_right = 0.9995*wD/math.pi*180
         self.BP.set_motor_dps(self.ruedaIzq, speedDPS_left)
         self.BP.set_motor_dps(self.ruedaDcha, speedDPS_right)
-        
+
     def setTrajectory(self,trajectory):
+        """
+        Sets the trajectory to perform (class geometry.Trajectory)
+        """
         self.trajectory = trajectory
-    
+
     def executeTrajectory(self):
+        """
+        Executes the saved trajectory (sequence of v,w and t)
+        """
         for move in self.trajectory.movements:
             self.setSpeed(move.vc[0], move.vc[1])
             time.sleep(move.t)
 
 
     def readSpeedIzqDcha(self, dT):
-        """ En DPS (Degrees P S)"""
+        """
+        Returns vL, vD as DPS of the wheels (left, right)
+        """
         #izq = self.BP.get_motor_encoder(self.BP.PORT_B)
         #dcha = self.BP.get_motor_encoder(self.BP.PORT_C)
         #return izq, dcha
@@ -157,7 +133,10 @@ class Robot:
             sys.stdout.write(error)
 
     def readSpeed(self, dT):
-        """ En DPS (Degrees P S)"""
+        """
+        In: dT = delta of time
+        Returns v,w (in m/s and rad/s) according to the motor encoders
+        """
         #print('-----------------------------------')
         izq, dcha = self.readSpeedIzqDcha(dT)
         #print("i, d: ", izq, dcha)
@@ -179,18 +158,34 @@ class Robot:
         self.p.start()
         print("PID: ", self.p.pid)
 
-    def deltaTH(self):
-        pass
 
     def deltaX(self, deltaSi, deltaTh):
+        """
+        In:
+            deltaSi: variation in space (tangent) since last timestamp
+            deltaTh: variation in angle since last
+        Returns:
+            deltaX: variation in X coordinate (local)
+        """
         # readSpeed debe devolver v,w
         return deltaSi*np.cos(self.th.value + deltaTh/2.0)
 
     def deltaY(self, deltaSi, deltaTh):
+        """
+        In:
+            deltaSi: variation in space (tangent) since last timestamp
+            deltaTh: variation in angle since last
+        Returns:
+            deltaY: variation in Y coordinate (local)
+        """
         return deltaSi*np.sin(self.th.value + deltaTh/2.0)
 
     def writeLog(self, v,w, deltaTh, deltaSi,sep="\t"):
-        fila = [self.tLast-self.tInitialization, self.x.value, 
+        """
+        Writes a row of the log (t, x, y, th, v, w, deltaTh, deltaSi)
+        (each with 2 decimal positions, v multiplied by 100 to gain precision)
+        """
+        fila = [self.tLast-self.tInitialization, self.x.value,
         self.y.value, self.th.value, 100*v,w, deltaTh, deltaSi]
         fila = "\t".join(['{0:.2f}'.format(e) for e in fila])+"\n"
         #print(fila)
@@ -199,7 +194,10 @@ class Robot:
 
     # You may want to pass additional shared variables besides the odometry values and stop flag
     def updateOdometry(self): #, additional_params?):
-        """ To be filled ...  """
+        """
+        Updates self.x, .y and .th according to the change in the motor encoders
+        Writes a row in the log
+        """
         while not self.finished.value:
             # current processor time in a floating point value, in seconds
             tIni = time.perf_counter()
@@ -226,36 +224,7 @@ class Robot:
             self.th.value = norm_pi(self.th.value+deltaTh)
             self.lock_odometry.release()
 
-            # ######## UPDATE FROM HERE with your code (following the suggested scheme) ########
-            # sys.stdout.write("Dummy update of odometry ...., X=  %d, \
-            #     Y=  %d, th=  %d \n" %(self.x.value, self.y.value, self.th.value) )
-            # #print("Dummy update of odometry ...., X=  %.2f" %(self.x.value) )
-            #
-            # # update odometry uses values that require mutex
-            # # (they are declared as value, so lock is implicitly done for atomic operations, BUT =+ is NOT atomic)
-            #
-            # # Operations like += which involve a read and write are not atomic.
-            # with self.x.get_lock():
-            #     self.x.value+=1
-            #
-            # # to "lock" a whole set of operations, we can use a "mutex"
-            # self.lock_odometry.acquire()
-            # #self.x.value+=1
-            # self.y.value+=1
-            # self.th.value+=1
-            # self.lock_odometry.release()
-
-
-
-            #sys.stdout.write("Encoder (%s) increased (in degrees) B: %6d  C: %6d " %
-            #        (type(encoder1), encoder1, encoder2))
-
-
-            # save LOG
-            # Need to decide when to store a log with the updated odometry ...
             self.writeLog(v,w, deltaTh, deltaSi)
-            ######## UPDATE UNTIL HERE with your code ########
-
 
             tEnd = time.perf_counter()
             time.sleep(self.P - (tEnd-tIni))
@@ -267,6 +236,9 @@ class Robot:
 
     # Stop the odometry thread.
     def stopOdometry(self):
+        """
+        Stops odometry and sets the speed to 0
+        """
         self.finished.value = True
         self.f_log.close()
         self.setSpeed(0,0)
