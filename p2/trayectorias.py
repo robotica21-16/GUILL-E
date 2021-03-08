@@ -141,7 +141,7 @@ def Trayectoria2(rIzq, rDcha, dist,fps=30):
     v = w * -rIzq #(donde a es el radio de la izq)
     t2.addMove([v,w], t)
     return t2
-    
+
 
 def Trayectoria3(d, fps=30):
     wxr = np.array([1,5,norm_pi_deg(0)]) # pos inicial
@@ -160,13 +160,13 @@ def Trayectoria3(d, fps=30):
     w = 0
     v = d/t
     t3.addMove([v,w], t)
-    
+
     t = 2
     v = 0
     w = math.pi/t
     t3.addMove([v,w], t)
     return t3
-    
+
 
 def main(args):
     pltEscenario(10,10)
@@ -184,15 +184,6 @@ def main(args):
         print(t2)
         print("end position: ", t2.getEndPosition())
         t2.draw()
-    #
-    # pltEscenario(10,10)
-    # # d = 2
-    # # simularTrayectoria1(d)
-    # rI = 1.5
-    # rD = 3
-    # dist = 4
-    # angDcha = norm_pi_deg(10)
-    # simularTrayectoria2(rI, rD,angDcha, dist)
 
 if __name__ == "__main__":
 
