@@ -7,6 +7,8 @@ import brickpi3 # import the BrickPi3 drivers
 import time     # import the time library for the sleep function
 import sys
 
+import datetime
+
 from geometry.geometry import *
 
 # tambien se podria utilizar el paquete de threading
@@ -48,6 +50,9 @@ class Robot:
             self.BP.get_motor_encoder(self.ruedaIzq))
         self.BP.offset_motor_encoder(self.ruedaDcha,
             self.BP.get_motor_encoder(self.ruedaDcha))
+            
+        self.rotIzqDeg = 0
+        self.rotDchaDeg = 0
 
         ##################################################
         # odometry shared memory values
@@ -58,6 +63,7 @@ class Robot:
         
         
         self.tLast = time.perf_counter()
+        self.tInitialization = self.tLast
 
         # if we want to block several instructions to be run together, we may want to use an explicit Lock
         self.lock_odometry = Lock()
@@ -70,6 +76,7 @@ class Robot:
 
         self.f_log = open("logs/log.txt","a")#append
         fila = ["t", "x", "y", "th"]
+        self.f_log.write(str(datetime.datetime.now()))
         self.f_log.write("\t".join([str(e) for e in fila]) + "\n")
 
 
@@ -135,6 +142,15 @@ class Robot:
             #sys.stdout.write("Reading encoder values .... \n")
             izq = self.BP.get_motor_encoder(self.ruedaIzq)
             dcha = self.BP.get_motor_encoder(self.ruedaDcha)
+            izq_bk = izq
+            dcha_bk = dcha
+            izq = izq-self.rotIzqDeg
+            dcha = dcha-self.rotDchaDeg
+            #print("ideg, ddeg: ", self.rotIzqDeg, self.rotDchaDeg)
+
+            self.rotIzqDeg = izq_bk
+            self.rotDchaDeg = dcha_bk
+            #print("i, d (sin dT): ", izq, dcha, dT)
             return izq/dT, dcha/dT
         except IOError as error:
             #print(error)
@@ -142,10 +158,14 @@ class Robot:
 
     def readSpeed(self, dT):
         """ En DPS (Degrees P S)"""
+        #print('-----------------------------------')
         izq, dcha = self.readSpeedIzqDcha(dT)
-        wI = norm_pi_deg(izq)
-        wD = norm_pi_deg(dcha)
+        #print("i, d: ", izq, dcha)
+        wI = np.radians(izq)
+        wD = np.radians(dcha)
+        print("wi, wd: ", wI, wD)
         v,w = vWiFromIzqDcha(self.R_rueda, self.L, wI, wD)
+        print("v, w: ", v, w)
         return v,w
 
     def readOdometry(self):
@@ -169,10 +189,12 @@ class Robot:
     def deltaY(self, deltaSi, deltaTh):
         return deltaSi*np.sin(self.th.value + deltaTh/2.0)
 
-    def writeLog(self, sep="\t"):
-        fila = [self.tLast, self.x.value, self.y.value, self.th.value]
-        print(fila)
-        self.f_log.write("\t".join([str(e) for e in fila])+"\n")
+    def writeLog(self, v,w, deltaTh, deltaSi,sep="\t"):
+        fila = [self.tLast-self.tInitialization, self.x.value, 
+        self.y.value, self.th.value, 100*v,w, deltaTh, deltaSi]
+        fila = "\t".join(['{0:.2f}'.format(e) for e in fila])+"\n"
+        #print(fila)
+        self.f_log.write(fila)
         self.f_log.flush()
 
     # You may want to pass additional shared variables besides the odometry values and stop flag
@@ -188,10 +210,15 @@ class Robot:
             # deltaTh += self.deltaTH()
             v, w = self.readSpeed(dT)
             deltaTh = norm_pi(w*dT)
-            if w != 0:
-                deltaSi = v/w*deltaTh
-            else:
+            eps = 0.01
+            print("----------\n", deltaTh)
+            if -eps < deltaTh < eps:
+                print("a")
                 deltaSi = v*dT
+            else:
+                print("b")
+                deltaSi = v/w*deltaTh
+            print("deltaSi: ", deltaSi)
             self.lock_odometry.acquire()
 
             self.x.value += self.deltaX(deltaSi,deltaTh)
@@ -226,7 +253,7 @@ class Robot:
 
             # save LOG
             # Need to decide when to store a log with the updated odometry ...
-            self.writeLog()
+            self.writeLog(v,w, deltaTh, deltaSi)
             ######## UPDATE UNTIL HERE with your code ########
 
 

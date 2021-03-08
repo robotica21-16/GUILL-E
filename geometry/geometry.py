@@ -107,13 +107,13 @@ def longArco(r, th):
 
 
 def vWiFromIzqDcha(r, L, wI, wD):
-    #print(r, L, wD, wI)
     return np.dot(
         np.array([[r/2, r/2],
              [r/L, -r/L]]),
         np.array([wD, wI]))
 
-
+#np.array([[r/2, r/2],
+#  [r/L, -r/L]]),
 def izqDchaFromVW(r, L, v, w):
     """
     r: radio de las ruedas
@@ -124,5 +124,9 @@ def izqDchaFromVW(r, L, v, w):
     """
     return np.dot(
         np.array([[1/r, L/(2*r)],
-             [1/r, -L/(2*r)]]),
+                [1/r, -L/(2*r)]]),
         np.array([v, w]))
+        
+
+#np.array([[1/r, L/(2*r)],
+#     [1/r, -L/(2*r)]]),
