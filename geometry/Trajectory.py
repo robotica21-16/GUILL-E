@@ -27,9 +27,7 @@ class Trajectory:
     """
     def __init__(self, movements=[], wxr=[0,0,0]):
         """
-        Initialize basic robot params. \
-
-        Initialize Motors and Sensors according to the set up in your robot
+        Initialize the trajectory as a sequence of movements and an initial position
         """
         self.movements = movements
         self.wxr = wxr
@@ -37,6 +35,9 @@ class Trajectory:
 
 
     def addMove(self, vc, t):
+        """
+        Adds the move defined by vc and t
+        """
         self.movements += [Movement(vc, t)]
 
     # def addMove(self, movement: Movement):
@@ -47,11 +48,17 @@ class Trajectory:
                "\n".join([str(m) for m in self.movements]))
 
     def draw(self, fps=24):
+        """
+        Animation of the robot doing the trajectory
+        """
         wxr = self.wxr
         for move in self.movements:
             wxr,_ = animarBot(wxr, move.vc, move.t, fps)
 
     def getEndPosition(self):
+        """
+        Returns the end position resulting of performing the trajectory
+        """
         wxr = self.wxr
         for move in self.movements:
             wxr,_ = simubot(move.vc, wxr, move.t)
