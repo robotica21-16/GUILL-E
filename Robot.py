@@ -233,6 +233,24 @@ class Robot:
         sys.stdout.write("Stopping odometry ... X=  %.2f, \
                 Y=  %.2f, th=  %.2f \n" %(self.x.value, self.y.value, self.th.value))
 
+    def trackObject(self, colorRangeMin=[0,0,0], colorRangeMax=[255,255,255]):
+        # targetSize=??, target??=??, catch=??, ...)
+        # targetFound = False
+        targetPositionReached = False
+        finished = False
+        while not finished:
+            # 1. search the most promising blob ..
+            
+            while not targetPositionReached:
+                # 2. decide v and w for the robot to get closer to target position
+                if ...
+                targetPositionReached  = True
+                finished = True
+                return finished
+
+    def catch(self):
+        # decide the strategy to catch the ball once you have reached the target position
+        pass
 
     # Stop the odometry thread.
     def stopOdometry(self):

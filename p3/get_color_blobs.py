@@ -7,7 +7,7 @@ import numpy as np;
 
 # Read image
 img_BGR = cv2.imread("red_blue.jpg")
-#img_BGR = cv2.imread("many.jpg")
+# img_BGR = cv2.imread("many.jpg")
 
 # Setup default values for SimpleBlobDetector parameters.
 params = cv2.SimpleBlobDetector_Params()
@@ -80,9 +80,10 @@ cv2.imshow("Blue regions", np.hstack([img_BGR, blue]))
 keypoints_red = detector.detect(255-mask_red)
 keypoints_blue = detector.detect(255-mask_blue)
 
-# documentation of SimpleBlobDetector is not clear on what kp.size is exactly, but it looks like the diameter of the blob.
+# documentation of SimpleBlobDetector is not clear on what kp.size is exactly,
+# but it looks like the diameter of the blob.
 for kp in keypoints_red:
-	print kp.pt[0], kp.pt[1], kp.size
+	print(kp.pt[0], kp.pt[1], kp.size)
 
 # Draw detected blobs as red circles.
 # cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS ensures
@@ -96,4 +97,3 @@ im_with_keypoints2 = cv2.drawKeypoints(img_BGR, keypoints_blue, np.array([]),
 cv2.imshow("Keypoints on RED", im_with_keypoints)
 cv2.imshow("Keypoints on BLUE", im_with_keypoints2)
 cv2.waitKey(0)
-

@@ -5,13 +5,13 @@
 - Al principio estrategia 1 (sin localizacion explicita), solo centrar el objetivo en el centro:
   - Calcular d (distancia centro vista -> centro objetivo)
     w = fw(d)
-    (por ej, interpolacion lineal entre -wmax, +wmax en f. de d)
-
+      - (por ej, interpolacion lineal entre -wmax, +wmax en f. de d)
+      - mejor, si >0: +w, else: -w
   - Calcular area A (area del blob):
     v = fv(A-a)
     (Donde a es el area objetivo, obtenida a partir de un par de fotos en la pos objetivo)
 
 
-### Preparar pseudocódigo/esquemaen pythonpara estos dos métodos de la clase robot:
+### Preparar pseudocódigo/esquema en python para estos dos métodos de la clase robot:
 
 TODO
