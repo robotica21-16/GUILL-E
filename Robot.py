@@ -8,6 +8,7 @@ import time     # import the time library for the sleep function
 import sys
 
 import datetime
+import numpy as np
 
 from geometry.geometry import *
 
@@ -33,16 +34,26 @@ class Robot:
         # Create an instance of the BrickPi3 class. BP will be the BrickPi3 object.
         self.BP = brickpi3.BrickPi3()
 
+        self.wmax = math.pi/3
+        self.vmax = 1.0/8.0
+
+
+        self.targetArea = 1 # TODO: poner bien!!!!!
+
         # Configure sensors, for example a touch sensor.
         #self.BP.set_sensor_type(self.BP.PORT_1, self.BP.SENSOR_TYPE.TOUCH)
 
         # reset encoder B and C (or all the motors you are using)
         self.ruedaIzq = self.BP.PORT_D
         self.ruedaDcha = self.BP.PORT_A
+        self.motorGarras = self.BP.PORT_C
+        self.maxRotGarras = 30 # angulo de giro de las garras 30 grados, comprobar!
         self.BP.offset_motor_encoder(self.ruedaIzq,
             self.BP.get_motor_encoder(self.ruedaIzq))
         self.BP.offset_motor_encoder(self.ruedaDcha,
             self.BP.get_motor_encoder(self.ruedaDcha))
+        self.BP.offset_motor_encoder(self.motorGarras,
+            self.BP.get_motor_encoder(self.motorGarras))
 
         self.rotIzqDeg = 0
         self.rotDchaDeg = 0
@@ -68,6 +79,8 @@ class Robot:
         fila = ["t", "x", "y", "th"]
         self.f_log.write(str(datetime.datetime.now()))
         self.f_log.write("\t".join([str(e) for e in fila]) + "\n")
+
+
 
 
     def setSpeed(self, v, w):
@@ -233,6 +246,20 @@ class Robot:
         sys.stdout.write("Stopping odometry ... X=  %.2f, \
                 Y=  %.2f, th=  %.2f \n" %(self.x.value, self.y.value, self.th.value))
 
+    def horizontalDistance(kp, obj=[0,0]):
+        return math.abs(kp[0], obj[0])
+
+    def targetW(self, d, dmin=-320/2, dmax=320/2):
+        return np.interp(d, [-dmin, dmax], [-self.wmax, +self.wmax])
+
+    def targetV(self, A):
+        """
+        ...
+        """
+        # cuando A=0 (en el infinito) -> targetArea-A = targetArea -> v=vmax
+        # cuando A=a (en el objetivo) -> targetArea-A = 0 -> v = 0
+        return np.interp(self.targetArea-A, [self.targetArea, 0], [self.vmax, 0])
+
     def trackObject(self, colorRangeMin=[0,0,0], colorRangeMax=[255,255,255]):
         # targetSize=??, target??=??, catch=??, ...)
         # targetFound = False
@@ -240,17 +267,43 @@ class Robot:
         finished = False
         while not finished:
             # 1. search the most promising blob ..
-            
+
+            kp = ...
             while not targetPositionReached:
                 # 2. decide v and w for the robot to get closer to target position
-                if ...
-                targetPositionReached  = True
-                finished = True
-                return finished
+
+                d = horizontalDistance(kp, [0,0])
+                r = kp.size/2 # suponiendo que es el diametro
+                A = r**2 * math.pi
+                w = self.targetW(d)
+                v = self.targetV(A)
+                eps = 0.01
+                if self.targetArea-eps > A > self.targetArea+eps:
+                    targetPositionReached  = True
+                    finished = True
+                    return finished
 
     def catch(self):
+        self.catcher = Process(target=self.catchRoutine, args=()) #additional_params?))
+        self.catcher.start()
         # decide the strategy to catch the ball once you have reached the target position
         pass
+
+    def catchRoutine(self):
+        """
+        Rutina paralela para cerrar las garras
+        """
+        DPS = 20 # 20º por segundo
+        end = False
+        period = 0.2
+        while not self.finished.value and not end:
+            tIni = time.perf_counter()
+            end = -self.maxRotGarras < self.BP.get_motor_encoder(self.motorGarras) < self.maxRotGarras
+            if not end:
+                self.BP.set_motor_dps(self.motorGarras, DPS)
+                tEnd = time.perf_counter()
+                time.sleep(period - (tEnd-tIni))
+
 
     # Stop the odometry thread.
     def stopOdometry(self):
