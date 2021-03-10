@@ -14,6 +14,8 @@ from geometry.geometry import *
 # tambien se podria utilizar el paquete de threading
 from multiprocessing import Process, Value, Array, Lock
 
+from color_blobs import search_blobs
+
 
 
 
@@ -30,6 +32,14 @@ class Robot:
         self.R_rueda = 0.027
         self.L = 0.140
         self.eje_rueda = self.L/2.0
+	# Camera Initialization
+	self.cam = picamera.PiCamera()
+	cam.resolution = (320, 240)
+	#cam.resolution = (640, 480)
+	cam.framerate = 32
+	rawCapture = PiRGBArray(cam, size=(320, 240))
+	#rawCapture = PiRGBArray(cam, size=(640, 480))
+
         # Create an instance of the BrickPi3 class. BP will be the BrickPi3 object.
         self.BP = brickpi3.BrickPi3()
 
@@ -240,7 +250,7 @@ class Robot:
         finished = False
         while not finished:
             # 1. search the most promising blob ..
-            
+            kp = search_blobs(self.cam)
             while not targetPositionReached:
                 # 2. decide v and w for the robot to get closer to target position
                 if ...
