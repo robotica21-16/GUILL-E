@@ -80,9 +80,6 @@ class Robot:
         self.f_log.write(str(datetime.datetime.now()))
         self.f_log.write("\t".join([str(e) for e in fila]) + "\n")
 
-
-
-
     def setSpeed(self, v, w):
         """
         Sets the speed as degrees PS to each motor according to
