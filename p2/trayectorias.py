@@ -135,6 +135,8 @@ def Trayectoria2Velocidades(rIzq, rDcha, dist):
    
     x_temp = rIzq * np.sin(-math.pi/2 - angDcha)
     y_temp = rIzq * (1-np.cos(-math.pi/2 - angDcha))
+    x1 = x_temp
+    y1 = y_temp
     pos1 = np.array([None, None, angDcha])
     # 2) 
     x_temp += np.cos(angDcha)*dist
@@ -143,11 +145,12 @@ def Trayectoria2Velocidades(rIzq, rDcha, dist):
     
     x_temp -= rDcha * np.sin(-math.pi/2 - angDcha)
     y_temp -= rDcha * (1-np.cos(-math.pi/2 - angDcha))
+    
     pos3 = np.array([None, None, (-math.pi + angDcha)])
     
-    pos4 = np.array([x_temp, y_temp, None])
+    pos4 = np.array([x1, -y1, None])
     # 4) segunda semicircunferencia
-    pos5 = np.array([None, None, math.pi / 2])
+    pos5 = np.array([None, None, -math.pi / 2])
     #for i in range(len(vs)):
     #    vs[i] = vs[i]/3
     #    ws[i] = ws[i]/3
