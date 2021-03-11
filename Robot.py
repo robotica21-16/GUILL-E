@@ -7,6 +7,9 @@ import brickpi3 # import the BrickPi3 drivers
 import time     # import the time library for the sleep function
 import sys
 
+import picamera
+from picamera.array import PiRGBArray
+
 import datetime
 import numpy as np
 
@@ -15,7 +18,7 @@ from geometry.geometry import *
 # tambien se podria utilizar el paquete de threading
 from multiprocessing import Process, Value, Array, Lock
 
-from color_blobs import search_blobs
+from p3.color_blobs import search_blobs
 
 
 
@@ -36,19 +39,19 @@ class Robot:
 
         # Camera Initialization
         self.cam = picamera.PiCamera()
-        cam.resolution = (320, 240)
-        #cam.resolution = (640, 480)
-        cam.framerate = 32
-        rawCapture = PiRGBArray(cam, size=(320, 240))
-        #rawCapture = PiRGBArray(cam, size=(640, 480))
+        self.cam.resolution = (320, 240)
+        #self.cam.resolution = (640, 480)
+        self.cam.framerate = 32
+        rawCapture = PiRGBArray(self.cam, size=(320, 240))
+        #rawCapture = PiRGBArray(self.cam, size=(640, 480))
 
         # Create an instance of the BrickPi3 class. BP will be the BrickPi3 object.
         self.BP = brickpi3.BrickPi3()
 
         self.wmax = math.pi/3
         self.vmax = 1.0/8.0
-        self.vTarget = vmax/2
-        self.wTarget = wmax/2
+        self.vTarget = self.vmax/2
+        self.wTarget = self.wmax/2
 
 
         self.targetArea = 1 # TODO: poner bien!!!!!
