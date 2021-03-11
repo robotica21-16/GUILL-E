@@ -84,6 +84,8 @@ if __name__ == "__main__":
     parser.add_argument("-t", "--trayectoria", help="Elige la trayectoria a realizar (1, 2 o 3)",
                                             type=int, default=1)
 
+    parser.add_argument("-c", "--control", help="Elige el control (<tiempo> o <odometria>)",
+                    type=str, default="odometria")
     args = parser.parse_args()
 
     main(args)
