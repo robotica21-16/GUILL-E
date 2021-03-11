@@ -89,6 +89,8 @@ def radioYThTrayectoriaCirc(xFin):
     Devuelve el radio y el angulo th necesarios para llegar a xFin (local) en un arco de th grados
     """
     x, y = xFin[0], xFin[1]
+    if y == 0:
+        return math.inf,0
     return ((x**2+y**2)/(2.0*y), # Radio
     math.atan2(2.0*x*y, x**2-y**2)) # angulo
 
@@ -106,16 +108,32 @@ def longArco(r, th):
     return r*th
 
 
-def fromPosToTarget(pos, target, vTarget, wTarget, eps=0.001):
+def fromPosToTarget(pos, target, vTarget, wTarget, eps=0.00001):
     pos_target = loc(np.dot(hom(pos), hom(target))) # target en coord de pos
-    r, th = radioYThTrayectoriaCirc(pos_target)
-    if -eps<r<eps: # r close to 0
+    print("pos: ",pos_target)
+    if pos_target[0] < eps and pos_target[1] < eps:
         v = 0
         w = wTarget if (pos_target[2])>0 else -wTarget
     else:
+        r, th = radioYThTrayectoriaCirc(pos_target)
+        print("radio: ", r)
+    #if -eps<r<eps: # r close to 0
+    #    v = 0
+    #    w = wTarget if (pos_target[2])>0 else -wTarget
         v = vTarget
         w = vTarget/r
     return v, w
+
+#def fromPosToTarget(pos, target, vTarget, wTarget, eps=0.001):
+ #   pos_target = loc(np.dot(hom(pos), hom(target))) # target en coord de pos
+  #  r, th = radioYThTrayectoriaCirc(pos_target)
+   # if -eps<r<eps: # r close to 0
+    #    v = 0
+     #   w = wTarget if (pos_target[2])>0 else -wTarget
+    #else:
+    #    v = vTarget
+    #    w = vTarget/r
+    #return v, w
 
 
 def vWiFromIzqDcha(r, L, wI, wD):

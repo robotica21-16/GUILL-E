@@ -89,7 +89,7 @@ class Robot:
         self.lock_odometry = Lock()
 
         # odometry update period --> UPDATE value!
-        self.P = 1.0
+        self.P = 0.1
 
         self.f_log = open("logs/log.txt","a")#append
         fila = ["t", "x", "y", "th"]
@@ -135,7 +135,7 @@ class Robot:
         dif = target-np.array(self.readOdometry())
         close = True
         for i in range(3):
-            close = close and math.abs(dif[i])<eps[i]
+            close = close and abs(dif[i])<eps[i]
         return close
 
     def executeTrajectory(self):
@@ -146,10 +146,13 @@ class Robot:
         for target in self.trajectory.targetPositions:
             # target = [x,y,th]
             # pos = [x,y,th]
+            print("for")
             while not self.closeEnough(target):
+                print("while")
                 tIni = time.perf_counter()
-                v,w = geometry.fromPosToTarget(np.array(self.readOdometry()),
+                v,w = fromPosToTarget(np.array(self.readOdometry()),
                         target, self.vTarget, self.wTarget)
+                print(v,w)
                 self.setSpeed(v, w)
                 tFin = time.perf_counter()
                 time.sleep(period-(tFin-tIni))
@@ -163,6 +166,7 @@ class Robot:
         #dcha = self.BP.get_motor_encoder(self.BP.PORT_C)
         #return izq, dcha
         try:
+            # Each of the following BP.get_motor_encoder
             # Each of the following BP.get_motor_encoder functions returns the encoder value
             # (what we want to store).
             #sys.stdout.write("Reading encoder values .... \n")
