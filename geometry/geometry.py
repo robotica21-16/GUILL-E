@@ -86,7 +86,7 @@ def trayectoriaCircularDeg(r, deg):
 
 def radioYThTrayectoriaCirc(xFin):
     """
-    Devuelve el radio y el angulo th necesarios para llegar de xFin (local) en un arco de th grados
+    Devuelve el radio y el angulo th necesarios para llegar a xFin (local) en un arco de th grados
     """
     x, y = xFin[0], xFin[1]
     return ((x**2+y**2)/(2.0*y), # Radio
@@ -104,6 +104,18 @@ def longArco(r, th):
     Devuelve la longitud del arco de angulo th y radio r, r*th
     """
     return r*th
+
+
+def fromPosToTarget(pos, target, vTarget, wTarget, eps=0.001):
+    pos_target = loc(np.dot(hom(pos), hom(target))) # target en coord de pos
+    r, th = radioYThTrayectoriaCirc(pos_target)
+    if -eps<r<eps: # r close to 0
+        v = 0
+        w = wTarget if (pos_target[2])>0 else -wTarget
+    else:
+        v = vTarget
+        w = vTarget/r
+    return v, w
 
 
 def vWiFromIzqDcha(r, L, wI, wD):

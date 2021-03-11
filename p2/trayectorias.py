@@ -43,8 +43,8 @@ def Trayectoria1(d):
     """
     Devuelve la trayectoria 1 (secuencia de movimientos)
     """
-    wxr = np.array([5,1,norm_pi_deg(90)]) # pos inicial
-    t1 = Trajectory(wxr=wxr)
+    #wxr = np.array([5,1,norm_pi_deg(90)]) # pos inicial
+    t1 = Trajectory()#wxr=wxr)
     # 1) girar 90º grados dcha (-90) sobre si mismo
     v = 0
     t = 1
@@ -69,6 +69,28 @@ def Trayectoria1(d):
 
     t1.addMove([v, w], t)
     return t1
+
+
+def Trayectoria1Posiciones(d):
+    """
+    Devuelve la trayectoria 1 (secuencia de movimientos)
+    """
+
+    t1 = Trajectory()
+    # 1) girar 90º grados dcha (-90) sobre si mismo
+    x1 = np.array([ 0.0, 0.0,-1.57079633])
+    #t1.addPosition(x1)
+    x2 = np.array([4.00000000e-01, 0, 1.57079633e+00])
+    x3 = x2*2
+    x3[2] = -x2[2]
+    x4 = x2
+    x5 = x1
+    t1.setTargetPositions([x1,x2,x3,x4,x5])
+
+    return t1
+
+
+
 
 def simularTrayectoria2(rIzq, rDcha, angDcha, dist,fps=30):
     wxr = np.array([1,5,norm_pi_deg(0)]) # pos inicial
@@ -173,7 +195,8 @@ def main(args):
     if args.trayectoria == 1:
         d = 0.2
         t1 = Trayectoria1(d)
-        t1.draw()
+        t1.getEndPosition()
+        # t1.draw()
     else:
         rI = 1.5
         rD = 2.5

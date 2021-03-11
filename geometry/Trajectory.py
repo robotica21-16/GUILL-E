@@ -32,6 +32,19 @@ class Trajectory:
         self.movements = movements
         self.wxr = wxr
 
+    def setTargetPositions(self, targetPositions=[], wxr=[0,0,0]):
+        """
+        Initialize the trajectory as a sequence of movements and an initial position
+        """
+        self.targetPositions = targetPositions
+        self.wxr = wxr
+
+    # x is np.array[x,y,th]
+    def addPosition(self, x):
+        """
+        Adds the move defined by vc and t
+        """
+        self.targetPositions += [x]
 
 
     def addMove(self, vc, t):
@@ -62,4 +75,5 @@ class Trajectory:
         wxr = self.wxr
         for move in self.movements:
             wxr,_ = simubot(move.vc, wxr, move.t)
+            print(wxr)
         return wxr

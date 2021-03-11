@@ -25,24 +25,44 @@ def main(args):
 
         # 2. perform trajectory
         tray = 3
-        if args.trayectoria == 1: # ocho
-                d = 0.2
-                t1 = Trayectoria1(d)
-                robot.setTrajectory(t1)
-                robot.executeTrajectory()
-        elif args.trayectoria == 3: # linea recta
-                d = 1
-                t3 = Trayectoria3(d)
-                robot.setTrajectory(t3)
-                robot.executeTrajectory()
+        if args.control == "tiempo":
+            if args.trayectoria == 1: # ocho
+                    d = 0.2
+                    t1 = Trayectoria1(d)
+                    robot.setTrajectory(t1)
+                    robot.executeTrajectory_time()
+            elif args.trayectoria == 3: # linea recta
+                    d = 1
+                    t3 = Trayectoria3(d)
+                    robot.setTrajectory(t3)
+                    robot.executeTrajectory_time()
 
-        else: # trayectoria 2, 2 radios
-                r1 = 0.2
-                r2 = 0.25
-                d = 1
-                t2 = Trayectoria2(r1, r2, d)
-                robot.setTrajectory(t2)
-                robot.executeTrajectory()
+            else: # trayectoria 2, 2 radios
+                    r1 = 0.2
+                    r2 = 0.25
+                    d = 1
+                    t2 = Trayectoria2(r1, r2, d)
+                    robot.setTrajectory(t2)
+                    robot.executeTrajectory_time()
+        else:
+            if args.trayectoria == 1: # ocho
+                    d = 0.2
+                    t1 = Trayectoria1Posiciones(d)
+                    robot.setTrajectory(t1)
+                    robot.executeTrajectory()
+            elif args.trayectoria == 3: # linea recta
+                    d = 1
+                    t3 = Trayectoria3Posiciones(d)
+                    robot.setTrajectory(t3)
+                    robot.executeTrajectory()
+
+            else: # trayectoria 2, 2 radios
+                    r1 = 0.2
+                    r2 = 0.25
+                    d = 1
+                    t2 = Trayectoria2Posiciones(r1, r2, d)
+                    robot.setTrajectory(t2)
+                    robot.executeTrajectory()
 
 
         robot.setSpeed(0,0)

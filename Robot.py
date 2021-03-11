@@ -33,7 +33,7 @@ class Robot:
         self.R_rueda = 0.027
         self.L = 0.140
         self.eje_rueda = self.L/2.0
-        
+
         # Camera Initialization
         self.cam = picamera.PiCamera()
         cam.resolution = (320, 240)
@@ -47,6 +47,8 @@ class Robot:
 
         self.wmax = math.pi/3
         self.vmax = 1.0/8.0
+        self.vTarget = vmax/2
+        self.wTarget = wmax/2
 
 
         self.targetArea = 1 # TODO: poner bien!!!!!
@@ -117,13 +119,37 @@ class Robot:
         """
         self.trajectory = trajectory
 
-    def executeTrajectory(self):
+    def executeTrajectory_time(self):
         """
         Executes the saved trajectory (sequence of v,w and t)
         """
         for move in self.trajectory.movements:
             self.setSpeed(move.vc[0], move.vc[1])
             time.sleep(move.t)
+
+    def closeEnough(self, target, eps=np.array([0.01,0.01,0.01])):
+
+        dif = target-np.array(self.readOdometry())
+        close = True
+        for i in range(3):
+            close = close and math.abs(dif[i])<eps[i]
+        return close
+
+    def executeTrajectory(self):
+        """
+        Executes the saved trajectory (sequence of v,w and t)
+        """
+        period = 0.1
+        for target in self.trajectory.targetPositions:
+            # target = [x,y,th]
+            # pos = [x,y,th]
+            while not self.closeEnough(target):
+                tIni = time.perf_counter()
+                v,w = geometry.fromPosToTarget(np.array(self.readOdometry()),
+                        target, self.vTarget, self.wTarget)
+                self.setSpeed(v, w)
+                tFin = time.perf_counter()
+                time.sleep(period-(tFin-tIni))
 
 
     def readSpeedIzqDcha(self, dT):
