@@ -32,11 +32,13 @@ class Trajectory:
         self.movements = movements
         self.wxr = wxr
 
-    def setTargetPositions(self, targetPositions=[], wxr=[0,0,0]):
+    def setTargetPositionsAndSpeeds(self, targetPositions, targetV, targetW, wxr=[0,0,0]):
         """
         Initialize the trajectory as a sequence of movements and an initial position
         """
         self.targetPositions = targetPositions
+        self.targetV = targetV
+        self.targetW = targetW
         self.wxr = wxr
 
     # x is np.array[x,y,th]

@@ -130,12 +130,15 @@ class Robot:
             self.setSpeed(move.vc[0], move.vc[1])
             time.sleep(move.t)
 
-    def closeEnough(self, target, eps=np.array([0.01,0.01,0.01])):
-
-        dif = target-np.array(self.readOdometry())
-        close = True
-        for i in range(3):
-            close = close and math.abs(dif[i])<eps[i]
+    def closeEnough(self, target, eps=np.array([0.01, 0.01, 0.01])):
+        odo = self.readOdometry()
+        close = False
+        if target[0] == None and target[1] == None:
+            if eps < (target[2] - odo[2]) < eps:
+                close = True
+        elif target[2] != None:
+            if eps < (target[0] - odo[0]) < eps and eps < (target[1] - odo[1]) < eps:
+                close = True
         return close
 
     def executeTrajectory(self):
@@ -143,16 +146,22 @@ class Robot:
         Executes the saved trajectory (sequence of v,w and t)
         """
         period = 0.5
-        for target in self.trajectory.targetPositions:
+        for i in range(0, self.trajectory.targetPositions.len):
             # target = [x,y,th]
             # pos = [x,y,th]
-            while not self.closeEnough(target):
-                tIni = time.perf_counter()
-                v,w = geometry.fromPosToTarget(np.array(self.readOdometry()),
-                        target, self.vTarget, self.wTarget)
-                self.setSpeed(v, w)
-                tFin = time.perf_counter()
-                time.sleep(period-(tFin-tIni))
+            v = self.trajectory.targetV[i]
+            w = self.trajectory.targetW[i]
+            self.setSpeed(v, w)
+            while not self.closeEnough(self.trajectory.targetPositions[i]):
+                time.sleep(period)
+
+                #tIni = time.perf_counter()
+                #v,w = geometry.fromPosToTarget(np.array(self.readOdometry()),
+                #        target, self.vTarget, self.wTarget)
+                #self.setSpeed(v, w)
+                #tFin = time.perf_counter()
+                #time.sleep(period-(tFin-tIni))
+        self.setSpeed(0,0)
 
 
     def readSpeedIzqDcha(self, dT):

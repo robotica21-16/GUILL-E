@@ -71,21 +71,22 @@ def Trayectoria1(d):
     return t1
 
 
-def Trayectoria1Posiciones(d):
+def Trayectoria1Velocidades(d):
     """
     Devuelve la trayectoria 1 (secuencia de movimientos)
     """
-
+    v = [0, math.pi/4*0.2, math.pi/4*0.2, math.pi/4*0.2]
+    w = [-math.pi/2, math.pi/4, -math.pi/4, math.pi/4]
     t1 = Trajectory()
     # 1) girar 90º grados dcha (-90) sobre si mismo
-    x1 = np.array([ 0.0, 0.0,-1.57079633])
-    #t1.addPosition(x1)
-    x2 = np.array([4.00000000e-01, 0, 1.57079633e+00])
-    x3 = x2*2
-    x3[2] = -x2[2]
-    x4 = x2
-    x5 = x1
-    t1.setTargetPositions([x1,x2,x3,x4,x5])
+    pos1 = np.array([None, None, math.pi / 2])
+    # 2) primera semicircunferencia
+    pos2 = np.array([None, None, -math.pi / 2])
+    # 3) circunferencia
+    pos3 = np.array([None, None, -math.pi / 2])
+    # 4) segunda semicircunferencia
+    pos4 = np.array([None, None, math.pi / 2])
+    t1.setTargetPositionsAndSpeeds([pos1, pos2, pos3, pos4], v, w)
 
     return t1
 
