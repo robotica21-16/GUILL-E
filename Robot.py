@@ -139,7 +139,7 @@ class Robot:
         """
         Executes the saved trajectory (sequence of v,w and t)
         """
-        period = 0.1
+        period = 0.5
         for target in self.trajectory.targetPositions:
             # target = [x,y,th]
             # pos = [x,y,th]
