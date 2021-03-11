@@ -91,25 +91,70 @@ def Trayectoria1Velocidades(d):
 
     return t1
 
-def Trayectoria2Velocidades(d):
+def Trayectoria2Velocidades(rIzq, rDcha, dist):
     """
     Devuelve la trayectoria 1 (secuencia de movimientos)
     """
-    v = [0, math.pi/4*0.2,  math.pi/4*0.2, math.pi/4*0.2, math.pi/4*0.2]
-    w = [math.pi/2, -math.pi/4, math.pi/4,math.pi/4, -math.pi/4]
-    t1 = Trajectory()
-    # 1) girar 90º grados dcha (-90) sobre si mismo
-    pos1 = np.array([None, None, -math.pi / 2])
-    # 2) primera semicircunferencia
-    pos2 = np.array([None, None, math.pi / 2])
-    pos23 = np.array([None, None, -math.pi / 2])
-    # 3) circunferencia
-    pos3 = np.array([None, None, math.pi / 2])
+    
+    angDcha = norm_pi(np.arctan((rDcha-rIzq)/dist))
+    vs = []
+    ws = []
+    v = 0
+    w = math.pi/2
+    
+    vs += [v]
+    ws += [w]
+    # 2) w = pi/2-r1 (donde r1 es el angulo ese de la dcha)
+    w = -(math.pi/2.0-angDcha)/2
+    v = w * -rIzq #(donde a es el radio de la izq)
+    vs += [v]
+    ws += [w]
+    # 3) w =0
+    w=0
+    v = dist / 4 #(donde r2 es la dist entre los dos tramos)
+    vs += [v]
+    ws += [w]
+    # 4) t4 = 4s
+    w = -(math.pi+2*angDcha)/3
+    v = w*-rDcha
+    vs += [v]
+    ws += [w]
+    # 5) = (3)
+    w=0
+    v = dist / 4 #(donde r2 es la dist entre los dos tramos)
+    vs += [v]
+    ws += [w]
+    # 6) = (2)
+    w = -(math.pi/2-angDcha)
+    v = w * -rIzq #(donde a es el radio de la izq)
+    vs += [v]
+    ws += [w]
+    t2 = Trajectory()
+     # 0) girar 90º grados dcha (-90) sobre si mismo
+    pos0 = np.array([None, None, -math.pi/2])
+   
+    x_temp = rIzq * np.sin(-math.pi/2 - angDcha)
+    y_temp = rIzq * (1-np.cos(-math.pi/2 - angDcha))
+    pos1 = np.array([None, None, angDcha])
+    # 2) 
+    x_temp += np.cos(angDcha)*dist
+    y_temp += np.sin(angDcha)*dist
+    pos2 = np.array([x_temp, y_temp, None])
+    
+    x_temp -= rDcha * np.sin(-math.pi/2 - angDcha)
+    y_temp -= rDcha * (1-np.cos(-math.pi/2 - angDcha))
+    pos3 = np.array([None, None, (-math.pi + angDcha)])
+    
+    pos4 = np.array([x_temp, y_temp, None])
     # 4) segunda semicircunferencia
-    pos4 = np.array([None, None, -math.pi / 2])
-    t1.setTargetPositionsAndSpeeds([pos1, pos2, pos23, pos3, pos4], v, w)
-
-    return t1
+    pos5 = np.array([None, None, math.pi / 2])
+    #for i in range(len(vs)):
+    #    vs[i] = vs[i]/3
+    #    ws[i] = ws[i]/3
+    t2.setTargetPositionsAndSpeeds([pos0,pos1, pos2, pos3, pos4,pos5], vs, ws)
+    #print("wehe")
+    #sys.exit(1)
+    return t2
 
 
 def simularTrayectoria2(rIzq, rDcha, angDcha, dist,fps=30):

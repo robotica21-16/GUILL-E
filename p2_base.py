@@ -25,8 +25,10 @@ def main(args):
 
         # 2. perform trajectory
         tray = 3
-        robot.setSpeed(0,0)
-        #return 1
+        if args.stop == 1:
+            robot.setSpeed(0,0)
+            robot.stopOdometry()
+            return 0
         if args.control == "tiempo":
             if args.trayectoria == 1: # ocho
                     d = 0.2
@@ -62,7 +64,7 @@ def main(args):
                     r1 = 0.2
                     r2 = 0.25
                     d = 1
-                    t2 = Trayectoria2Posiciones(r1, r2, d)
+                    t2 = Trayectoria2Velocidades(r1, r2, d)
                     robot.setTrajectory(t2)
                     robot.executeTrajectory()
 
@@ -88,6 +90,9 @@ if __name__ == "__main__":
 
     parser.add_argument("-c", "--control", help="Elige el control (<tiempo> o <odometria>)",
                     type=str, default="odometria")
+    
+    parser.add_argument("-s", "--stop", help="Para",
+                    type=int, default=0)
     args = parser.parse_args()
 
     main(args)

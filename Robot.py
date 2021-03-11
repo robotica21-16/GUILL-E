@@ -22,6 +22,11 @@ from p3.color_blobs import search_blobs
 
 
 
+def reached(x, target, greater):
+    if greater:
+        return x>=target
+    else:
+        return x<=target
 
 class Robot:
     def __init__(self, init_position=[0.0, 0.0, 0.0]):
@@ -76,6 +81,7 @@ class Robot:
 
         ##################################################
         # odometry shared memory values
+        # usar parametro
         self.x = Value('d',0.0)
         self.y = Value('d',0.0)
         self.th = Value('d',0.0)
@@ -99,7 +105,7 @@ class Robot:
     def setSpeed(self, v, w):
         """
         Sets the speed as degrees PS to each motor according to
-        v (linear) and w (angular)
+        v (linear ms) and w (angular rad s)
         """
         # wID = [wI, wD]:
         if v == 0 and False:
@@ -129,17 +135,25 @@ class Robot:
         for move in self.trajectory.movements:
             self.setSpeed(move.vc[0], move.vc[1])
             time.sleep(move.t)
+    
 
-    def closeEnough(self, target, eps=np.array([0.01, 0.01, 0.2])):
+    def closeEnough(self, target, eps=np.array([0.02, 0.02, 0.2])):
         odo = self.readOdometry()
         close = False
         if target[0] == None and target[1] == None:
             print(target[2], " ---- ", odo[2])
-            if abs((((target[2])) - (norm_pi(odo[2])))) < eps[2]:
-                close = True
-        elif target[2] != None:
-                
-            if abs(norm_pi(target[0] - odo[0])) < eps and abs(norm_pi(target[1] - odo[1])) < eps:
+            if abs(norm_pi(target[2]-norm_pi(odo[2]))) < eps[2]:
+                return True
+            #if w>0:
+            #    close = odo[2] >= (target[2])
+            #else:
+            #    close = odo[2] <= (target[2])
+        elif target[2] == None:
+            sinth = np.sin(odo[2])
+            costh = np.cos(odo[2])
+            print(target[0], " --x-- ", odo[0], "\n", target[1], "-------y------", odo[1])
+            if reached(odo[0],target[0], costh>0) and reached(odo[1],target[1],sinth>0):
+            #if abs((target[0] - odo[0])) < eps[0] and abs((target[1] - odo[1])) < eps[1]:
                 close = True
         return close
 
@@ -204,9 +218,9 @@ class Robot:
         #print("i, d: ", izq, dcha)
         wI = np.radians(izq)
         wD = np.radians(dcha)
-        print("wi, wd: ", wI, wD)
+        #rint("wi, wd: ", wI, wD)
         v,w = vWiFromIzqDcha(self.R_rueda, self.L, wI, wD)
-        print("v, w: ", v, w)
+        #print("v, w: ", v, w)
         return v,w
 
     def readOdometry(self):
@@ -268,19 +282,17 @@ class Robot:
 
             # compute updates
             # deltaTh += self.deltaTH()
-            v, w = self.readSpeed(dT)
+            v, w = self.readSpeed(dT) # usar distancias de encoders directamente
             deltaTh = norm_pi(w*dT)
             eps = 0.01
-            print("----------\n", deltaTh)
+            #print("----------\n", deltaTh)
             if -eps < deltaTh < eps:
-                print("a")
                 deltaSi = v*dT
             else:
-                print("b")
                 deltaSi = v/w*deltaTh
-            print("deltaSi: ", deltaSi)
+            #print("deltaSi: ", deltaSi)
             self.lock_odometry.acquire()
-
+                # reducir SC (deltaX, etc)
             self.x.value += self.deltaX(deltaSi,deltaTh)
             self.y.value += self.deltaY(deltaSi,deltaTh)
             self.th.value = norm_pi(self.th.value+deltaTh)
