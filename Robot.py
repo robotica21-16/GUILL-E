@@ -346,4 +346,5 @@ class Robot:
         self.finished.value = True
         self.f_log.close()
         self.setSpeed(0,0)
+        self.BP.set_motor_dps(self.motorGarras, 0)
         #self.BP.reset_all()
