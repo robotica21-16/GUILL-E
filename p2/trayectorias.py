@@ -75,22 +75,41 @@ def Trayectoria1Velocidades(d):
     """
     Devuelve la trayectoria 1 (secuencia de movimientos)
     """
-    v = [0, math.pi/4*0.2, math.pi/4*0.2, math.pi/4*0.2]
-    w = [-math.pi/2, math.pi/4, -math.pi/4, math.pi/4]
+    v = [0, math.pi/4*0.2,  math.pi/4*0.2, math.pi/4*0.2, math.pi/4*0.2]
+    w = [math.pi/2, -math.pi/4, math.pi/4,math.pi/4, -math.pi/4]
     t1 = Trajectory()
     # 1) girar 90º grados dcha (-90) sobre si mismo
-    pos1 = np.array([None, None, math.pi / 2])
+    pos1 = np.array([None, None, -math.pi / 2])
     # 2) primera semicircunferencia
-    pos2 = np.array([None, None, -math.pi / 2])
+    pos2 = np.array([None, None, math.pi / 2])
+    pos23 = np.array([None, None, -math.pi / 2])
     # 3) circunferencia
-    pos3 = np.array([None, None, -math.pi / 2])
+    pos3 = np.array([None, None, math.pi / 2])
     # 4) segunda semicircunferencia
-    pos4 = np.array([None, None, math.pi / 2])
-    t1.setTargetPositionsAndSpeeds([pos1, pos2, pos3, pos4], v, w)
+    pos4 = np.array([None, None, -math.pi / 2])
+    t1.setTargetPositionsAndSpeeds([pos1, pos2, pos23, pos3, pos4], v, w)
 
     return t1
 
+def Trayectoria2Velocidades(d):
+    """
+    Devuelve la trayectoria 1 (secuencia de movimientos)
+    """
+    v = [0, math.pi/4*0.2,  math.pi/4*0.2, math.pi/4*0.2, math.pi/4*0.2]
+    w = [math.pi/2, -math.pi/4, math.pi/4,math.pi/4, -math.pi/4]
+    t1 = Trajectory()
+    # 1) girar 90º grados dcha (-90) sobre si mismo
+    pos1 = np.array([None, None, -math.pi / 2])
+    # 2) primera semicircunferencia
+    pos2 = np.array([None, None, math.pi / 2])
+    pos23 = np.array([None, None, -math.pi / 2])
+    # 3) circunferencia
+    pos3 = np.array([None, None, math.pi / 2])
+    # 4) segunda semicircunferencia
+    pos4 = np.array([None, None, -math.pi / 2])
+    t1.setTargetPositionsAndSpeeds([pos1, pos2, pos23, pos3, pos4], v, w)
 
+    return t1
 
 
 def simularTrayectoria2(rIzq, rDcha, angDcha, dist,fps=30):

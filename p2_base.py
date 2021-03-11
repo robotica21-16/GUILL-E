@@ -25,6 +25,8 @@ def main(args):
 
         # 2. perform trajectory
         tray = 3
+        robot.setSpeed(0,0)
+        #return 1
         if args.control == "tiempo":
             if args.trayectoria == 1: # ocho
                     d = 0.2
@@ -47,7 +49,7 @@ def main(args):
         else:
             if args.trayectoria == 1: # ocho
                     d = 0.2
-                    t1 = Trayectoria1Posiciones(d)
+                    t1 = Trayectoria1Velocidades(d)
                     robot.setTrajectory(t1)
                     robot.executeTrajectory()
             elif args.trayectoria == 3: # linea recta

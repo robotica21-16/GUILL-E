@@ -89,7 +89,7 @@ class Robot:
         self.lock_odometry = Lock()
 
         # odometry update period --> UPDATE value!
-        self.P = 1.0
+        self.P = 0.05
 
         self.f_log = open("logs/log.txt","a")#append
         fila = ["t", "x", "y", "th"]
@@ -130,14 +130,16 @@ class Robot:
             self.setSpeed(move.vc[0], move.vc[1])
             time.sleep(move.t)
 
-    def closeEnough(self, target, eps=np.array([0.01, 0.01, 0.01])):
+    def closeEnough(self, target, eps=np.array([0.01, 0.01, 0.2])):
         odo = self.readOdometry()
         close = False
         if target[0] == None and target[1] == None:
-            if eps < (target[2] - odo[2]) < eps:
+            print(target[2], " ---- ", odo[2])
+            if abs((((target[2])) - (norm_pi(odo[2])))) < eps[2]:
                 close = True
         elif target[2] != None:
-            if eps < (target[0] - odo[0]) < eps and eps < (target[1] - odo[1]) < eps:
+                
+            if abs(norm_pi(target[0] - odo[0])) < eps and abs(norm_pi(target[1] - odo[1])) < eps:
                 close = True
         return close
 
@@ -145,16 +147,17 @@ class Robot:
         """
         Executes the saved trajectory (sequence of v,w and t)
         """
-        period = 0.5
-        for i in range(0, self.trajectory.targetPositions.len):
+        period = 0.005
+        for i in range(0, len(self.trajectory.targetPositions)):
             # target = [x,y,th]
             # pos = [x,y,th]
             v = self.trajectory.targetV[i]
             w = self.trajectory.targetW[i]
             self.setSpeed(v, w)
             while not self.closeEnough(self.trajectory.targetPositions[i]):
-                time.sleep(period)
-
+                tIni = time.perf_counter()
+                tFin = time.perf_counter()
+                time.sleep(period-(tFin-tIni))
                 #tIni = time.perf_counter()
                 #v,w = geometry.fromPosToTarget(np.array(self.readOdometry()),
                 #        target, self.vTarget, self.wTarget)
