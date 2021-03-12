@@ -112,7 +112,7 @@ class Robot:
         self.P = 0.05
 
         now = datetime.datetime.now()
-        self.f_log = open("logs/{:d}-{:d}-{:d}-{:02d}:{:02d}".format(now.year, now.month, now.day, now.hour, now.minute)+"-log.txt","a")#append
+        self.f_log = open("logs/{:d}-{:d}-{:d}-{:02d}_{:02d}".format(now.year, now.month, now.day, now.hour, now.minute)+"-log.txt","a")#append
         fila = ["t", "x", "y", "th", "v*100", "w", "dTh", "dSi"]
         self.f_log.write("\t".join([str(e) for e in fila]) + "\n")
 
