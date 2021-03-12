@@ -127,7 +127,7 @@ def simularTrayectoria2(rIzq, rDcha, angDcha, dist,fps=30):
 
 
 def Trayectoria2(rIzq, rDcha, dist,fps=30):
-    wxr = np.array([1,5,norm_pi_deg(0)]) # pos inicial
+    wxr = np.array([0,0,0])#1,5,norm_pi_deg(0)]) # pos inicial
     # angulo, trigonometria (tan(th)=opuesto/adyacente)
     # angDcha = norm_pi(np.arcsin((rDcha-rIzq)/dist))
     angDcha = norm_pi(np.arctan((rDcha-rIzq)/dist))
@@ -198,12 +198,12 @@ def main(args):
         t1.getEndPosition()
         # t1.draw()
     else:
-        rI = 1.5
-        rD = 2.5
-        dist = 4
+        r1 = 0.2
+        r2 = 0.25
+        d = 1
         # norm_pi_deg(10)
-        t2 = Trayectoria2(rI, rD, dist)
-
+        t2 = Trayectoria2(r1, r2, d)
+        t2.getEndPosition()
         print(t2)
         print("end position: ", t2.getEndPosition())
         t2.draw()
