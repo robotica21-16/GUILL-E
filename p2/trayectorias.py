@@ -91,36 +91,36 @@ def Trayectoria1Velocidades(d):
 
     return t1
 
-def Trayectoria2Velocidades(rIzq, rDcha, dist):
+def Trayectoria2Velocidades(rIzq=0.2, rDcha=0.3, dist=1):
     """
     Devuelve la trayectoria 1 (secuencia de movimientos)
     """
     #angDcha = norm_pi(np.arctan((rDcha-rIzq)/dist))
-    
+
     #https://en.wikipedia.org/wiki/Tangent_lines_to_circles#Outer_tangent
     # gamma = 0 (because y2 = y1) -> alpha = -beta
     #beta = norm_pi(np.arcsin(rDcha-rIzq)/dist)
     alpha = -norm_pi(np.arcsin(rDcha-rIzq)/dist)
-    
+
     #the bot will be at pi/2 - alpha when the turn has to occur
     #its orientation is perpendicular to that, therefore:
     # orientation = position - pi/2
     #so: orientation_angle1 = -alpha
-    
-    
-    
-    orientation_angle1 = norm_pi(-alpha)
-    
-    #the position where the second turn must occur is the reflexion of 
+
+
+
+    orientation_angle1 = norm_pi(alpha)
+
+    #the position where the second turn must occur is the reflexion of
     #the first one:
     # -(pi/2 - alpha)
     #then:
     #orientation_angle2 = -(pi/2 - alpha) -pi/2
     #orientation_angle2 = alpha - pi
-    
-    orientation_angle2 = norm_pi(alpha - math.pi)
-    
-    
+
+    orientation_angle2 = norm_pi(math.pi + alpha ) # - (pi/2 + alpha)
+
+
     vs = [0, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
     ws = [math.pi/2, vs[1]/-rIzq, 0, vs[3]/-rDcha, vs[3]/-rDcha, 0, vs[5]/-rIzq]
 
@@ -135,18 +135,19 @@ def Trayectoria2Velocidades(rIzq, rDcha, dist):
     y4 = y2 -rDcha * np.cos(alpha)
     x5 = x3 #x0 - rsin(alpha)
     y5 = y1 - rIzq * np.cos(alpha) #y0 - rcos(alpha)
-    
+
      # 0) girar 90º grados dcha (-90) sobre si mismo
     pos0 = np.array([None, None, math.pi/2])
-    
+
     pos1 = np.array([None, None, orientation_angle1])
     # 2)
     pos2 = np.array([x4, None, None])
-    
+
     pos3 = np.array([None, None, -math.pi/2])
-    
+
     pos4 = np.array([None, None, orientation_angle2])
-    
+    print(orientation_angle1, orientation_angle2)
+
     pos5 = np.array([x5, None, None])
     # 4) segunda semicircunferencia
     pos6 = np.array([None, None, math.pi / 2])

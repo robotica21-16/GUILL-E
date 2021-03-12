@@ -182,17 +182,20 @@ class Robot:
         """
         Executes the saved trajectory (sequence of v,w and t)
         """
-        period = 0.005
+        period = 0.05
         for i in range(0, len(self.trajectory.targetPositions)):
             # target = [x,y,th]
             # pos = [x,y,th]
             v = self.trajectory.targetV[i]
             w = self.trajectory.targetW[i]
             self.setSpeed(v, w)
-            while not self.closeEnough(self.trajectory.targetPositions[i], w):
+            end = False
+            while not end:
                 tIni = time.perf_counter()
-                tFin = time.perf_counter()
-                time.sleep(period)#-(tFin-tIni))
+                end = self.closeEnough(self.trajectory.targetPositions[i], w)
+                if not end:
+                    tFin = time.perf_counter()
+                    time.sleep(period-(tFin-tIni))
                 #tIni = time.perf_counter()
                 #v,w = geometry.fromPosToTarget(np.array(self.readOdometry()),
                 #        target, self.vTarget, self.wTarget)
@@ -325,7 +328,7 @@ class Robot:
             self.writeLog(v,w, deltaTh, deltaSi)
 
             tEnd = time.perf_counter()
-            time.sleep(self.P + (tEnd-tIni))
+            time.sleep(self.P - (tEnd-tIni))
 
         #print("Stopping odometry ... X= %d" %(self.x.value))
         sys.stdout.write("Stopping odometry ... X=  %.2f, \
