@@ -79,14 +79,14 @@ def Trayectoria1Velocidades(d):
     w = [math.pi/2, -math.pi/4, math.pi/4,math.pi/4, -math.pi/4]
     t1 = Trajectory()
     # 1) girar 90º grados dcha (-90) sobre si mismo
-    pos1 = np.array([None, None, -math.pi / 2])
+    pos1 = np.array([None, None, math.pi / 2])
     # 2) primera semicircunferencia
-    pos2 = np.array([None, None, math.pi / 2])
-    pos23 = np.array([None, None, -math.pi / 2])
+    pos2 = np.array([None, None, -math.pi / 2])
+    pos23 = np.array([None, None, math.pi / 2])
     # 3) circunferencia
-    pos3 = np.array([None, None, math.pi / 2])
+    pos3 = np.array([None, None, -math.pi / 2])
     # 4) segunda semicircunferencia
-    pos4 = np.array([None, None, -math.pi / 2])
+    pos4 = np.array([None, None, math.pi / 2])
     t1.setTargetPositionsAndSpeeds([pos1, pos2, pos23, pos3, pos4], v, w)
 
     return t1
@@ -125,14 +125,16 @@ def Trayectoria2Velocidades(rIzq, rDcha, dist):
     ws = [math.pi/2, vs[1]/-rIzq, 0, vs[3]/-rDcha, vs[3]/-rDcha, 0, vs[5]/-rIzq]
 
     t2 = Trajectory()
-    #(x1,y1) = (0,0)
-    #(x2,y2) = (dist,0)
-    x3 = rIzq * np.sin(alpha)
-    y3 = rIzq * np.cos(alpha)
-    x4 = dist - rDcha * np.sin(alpha)
-    y4 = -rDcha * np.cos(alpha)
+    x1 = rIzq
+    y1 = 0
+    x2 = dist
+    y2 = 0
+    x3 = x1 + rIzq * np.sin(alpha)
+    y3 = y1 + rIzq * np.cos(alpha)
+    x4 = x2 - rDcha * np.sin(alpha)
+    y4 = y2 -rDcha * np.cos(alpha)
     x5 = x3 #x0 - rsin(alpha)
-    y5 = -y3 #y0 - rsin(alpha)
+    y5 = -y3 #y0 - rcos(alpha)
     
      # 0) girar 90º grados dcha (-90) sobre si mismo
     pos0 = np.array([None, None, math.pi/2])
@@ -141,17 +143,17 @@ def Trayectoria2Velocidades(rIzq, rDcha, dist):
     # 2)
     pos2 = np.array([x4, y4, None])
     
-    pos23 = np.array([None, None, -math.pi/2])
+    pos3 = np.array([None, None, -math.pi/2])
     
-    pos3 = np.array([None, None, orientation_angle2])
+    pos4 = np.array([None, None, orientation_angle2])
     
-    pos4 = np.array([x5, y5, None])
+    pos5 = np.array([x5, y5, None])
     # 4) segunda semicircunferencia
-    pos5 = np.array([None, None, math.pi / 2])
+    pos6 = np.array([None, None, math.pi / 2])
     #for i in range(len(vs)):
     #    vs[i] = vs[i]/3
     #    ws[i] = ws[i]/3
-    t2.setTargetPositionsAndSpeeds([pos0,pos1, pos2, pos23, pos3, pos4,pos5], vs, ws)
+    t2.setTargetPositionsAndSpeeds([pos0,pos1, pos2, pos3, pos4, pos5,pos6], vs, ws)
     #print("wehe")
     #sys.exit(1)
     return t2

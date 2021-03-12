@@ -208,7 +208,7 @@ class Robot:
             # (what we want to store).
             #sys.stdout.write("Reading encoder values .... \n")
             izq = self.BP.get_motor_encoder(self.ruedaIzq)
-            dcha = self.BP.get_motor_encoder(self.ruedaDcha) / 0.9995
+            dcha = self.BP.get_motor_encoder(self.ruedaDcha)
             izq_bk = izq
             dcha_bk = dcha
             izq = izq-self.rotIzqDeg
