@@ -80,7 +80,7 @@ def Trayectoria1Posiciones(d):
     # 1) girar 90º grados dcha (-90) sobre si mismo
     x1 = np.array([ 0.0, 0.0,-1.57079633])
     #t1.addPosition(x1)
-    x2 = np.array([4.00000000e-01, 0, 1.57079633e+00])
+    x2 = np.array([2*d, 0, 1.57079633e+00])
     x3 = x2*2
     x3[2] = -x2[2]
     x4 = x2

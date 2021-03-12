@@ -7,6 +7,9 @@ import brickpi3 # import the BrickPi3 drivers
 import time     # import the time library for the sleep function
 import sys
 
+import picamera
+from picamera.array import PiRGBArray
+
 import datetime
 import numpy as np
 
@@ -15,7 +18,7 @@ from geometry.geometry import *
 # tambien se podria utilizar el paquete de threading
 from multiprocessing import Process, Value, Array, Lock
 
-from color_blobs import search_blobs
+from p3.color_blobs import search_blobs
 
 
 
@@ -36,19 +39,19 @@ class Robot:
 
         # Camera Initialization
         self.cam = picamera.PiCamera()
-        cam.resolution = (320, 240)
-        #cam.resolution = (640, 480)
-        cam.framerate = 32
-        rawCapture = PiRGBArray(cam, size=(320, 240))
-        #rawCapture = PiRGBArray(cam, size=(640, 480))
+        self.cam.resolution = (320, 240)
+        #self.cam.resolution = (640, 480)
+        self.cam.framerate = 32
+        rawCapture = PiRGBArray(self.cam, size=(320, 240))
+        #rawCapture = PiRGBArray(self.cam, size=(640, 480))
 
         # Create an instance of the BrickPi3 class. BP will be the BrickPi3 object.
         self.BP = brickpi3.BrickPi3()
 
         self.wmax = math.pi/3
         self.vmax = 1.0/8.0
-        self.vTarget = vmax/2
-        self.wTarget = wmax/2
+        self.vTarget = self.vmax/2
+        self.wTarget = self.wmax/2
 
 
         self.targetArea = 1 # TODO: poner bien!!!!!
@@ -86,7 +89,7 @@ class Robot:
         self.lock_odometry = Lock()
 
         # odometry update period --> UPDATE value!
-        self.P = 1.0
+        self.P = 0.1
 
         self.f_log = open("logs/log.txt","a")#append
         fila = ["t", "x", "y", "th"]
@@ -132,7 +135,7 @@ class Robot:
         dif = target-np.array(self.readOdometry())
         close = True
         for i in range(3):
-            close = close and math.abs(dif[i])<eps[i]
+            close = close and abs(dif[i])<eps[i]
         return close
 
     def executeTrajectory(self):
@@ -143,10 +146,13 @@ class Robot:
         for target in self.trajectory.targetPositions:
             # target = [x,y,th]
             # pos = [x,y,th]
+            print("for")
             while not self.closeEnough(target):
+                print("while")
                 tIni = time.perf_counter()
-                v,w = geometry.fromPosToTarget(np.array(self.readOdometry()),
+                v,w = fromPosToTarget(np.array(self.readOdometry()),
                         target, self.vTarget, self.wTarget)
+                print(v,w)
                 self.setSpeed(v, w)
                 tFin = time.perf_counter()
                 time.sleep(period-(tFin-tIni))
@@ -160,6 +166,7 @@ class Robot:
         #dcha = self.BP.get_motor_encoder(self.BP.PORT_C)
         #return izq, dcha
         try:
+            # Each of the following BP.get_motor_encoder
             # Each of the following BP.get_motor_encoder functions returns the encoder value
             # (what we want to store).
             #sys.stdout.write("Reading encoder values .... \n")
