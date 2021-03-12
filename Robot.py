@@ -53,6 +53,8 @@ class Robot:
         self.R_rueda = 0.027
         self.L = 0.140
         self.eje_rueda = self.L/2.0
+        
+        self.offset_right = 0.9995 # The way the bot is built, the left tire spins slightly slower than right
 
         # Camera Initialization
         self.cam = picamera.PiCamera()
@@ -130,7 +132,7 @@ class Robot:
             wD = wDI[0]
             wI = wDI[1]
         speedDPS_left = wI/math.pi*180
-        speedDPS_right = 0.9995*wD/math.pi*180
+        speedDPS_right = self.offset_right*wD/math.pi*180
         self.BP.set_motor_dps(self.ruedaIzq, speedDPS_left)
         self.BP.set_motor_dps(self.ruedaDcha, speedDPS_right)
 
@@ -206,7 +208,7 @@ class Robot:
             # (what we want to store).
             #sys.stdout.write("Reading encoder values .... \n")
             izq = self.BP.get_motor_encoder(self.ruedaIzq)
-            dcha = self.BP.get_motor_encoder(self.ruedaDcha)
+            dcha = self.BP.get_motor_encoder(self.ruedaDcha) / 0.9995
             izq_bk = izq
             dcha_bk = dcha
             izq = izq-self.rotIzqDeg
