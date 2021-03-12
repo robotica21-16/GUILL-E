@@ -27,6 +27,18 @@ def reached(x, target, greater):
         return x>=target
     else:
         return x<=target
+        
+def reachedAngle(th, target, w):
+    if w > 0:
+        if target < 0 and th > 0:
+            return th > (2*math.pi + target)
+        else:
+            return th > target
+    elif w < 0:
+        if target > 0 and th < 0:
+            return (2*math.pi+th) < target
+        else:
+            return th < target
 
 class Robot:
     def __init__(self, init_position=[0.0, 0.0, 0.0]):
@@ -97,9 +109,9 @@ class Robot:
         # odometry update period --> UPDATE value!
         self.P = 0.05
 
-        self.f_log = open("logs/log.txt","a")#append
-        fila = ["t", "x", "y", "th"]
-        self.f_log.write(str(datetime.datetime.now()))
+        now = datetime.datetime.now()
+        self.f_log = open("logs/{:d}-{:d}-{:d}-{:02d}:{:02d}".format(now.year, now.month, now.day, now.hour, now.minute)+"-log.txt","a")#append
+        fila = ["t", "x", "y", "th", "v*100", "w", "dTh", "dSi"]
         self.f_log.write("\t".join([str(e) for e in fila]) + "\n")
 
     def setSpeed(self, v, w):
@@ -114,9 +126,9 @@ class Robot:
             wI = vI*(self.R_rueda*2.0*math.pi)
             wD = vD*(self.R_rueda*2.0*math.pi)
         else:
-            wID = izqDchaFromVW(self.R_rueda, self.L, v, w)
-            wI = wID[0]
-            wD = wID[1]
+            wDI = izqDchaFromVW(self.R_rueda, self.L, v, w)
+            wD = wDI[0]
+            wI = wDI[1]
         speedDPS_left = wI/math.pi*180
         speedDPS_right = 0.9995*wD/math.pi*180
         self.BP.set_motor_dps(self.ruedaIzq, speedDPS_left)
@@ -137,12 +149,13 @@ class Robot:
             time.sleep(move.t)
     
 
-    def closeEnough(self, target, eps=np.array([0.02, 0.02, 0.2])):
+    def closeEnough(self, target, w, eps=np.array([0.02, 0.02, 0.2])):
         odo = self.readOdometry()
         close = False
         if target[0] == None and target[1] == None:
-            print(target[2], " ---- ", odo[2])
-            if abs(norm_pi(target[2]-norm_pi(odo[2]))) < eps[2]:
+            #print(target[2], " ---- ", odo[2])
+            #if abs(norm_pi(target[2]-norm_pi(odo[2]))) < eps[2]:
+            if reachedAngle(odo[2], target[2], w):
                 return True
             #if w>0:
             #    close = odo[2] >= (target[2])
@@ -168,10 +181,10 @@ class Robot:
             v = self.trajectory.targetV[i]
             w = self.trajectory.targetW[i]
             self.setSpeed(v, w)
-            while not self.closeEnough(self.trajectory.targetPositions[i]):
+            while not self.closeEnough(self.trajectory.targetPositions[i], w):
                 tIni = time.perf_counter()
                 tFin = time.perf_counter()
-                time.sleep(period-(tFin-tIni))
+                time.sleep(period)#-(tFin-tIni))
                 #tIni = time.perf_counter()
                 #v,w = geometry.fromPosToTarget(np.array(self.readOdometry()),
                 #        target, self.vTarget, self.wTarget)

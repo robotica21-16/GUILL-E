@@ -31,11 +31,12 @@ def norm_pi(th):
     Normaliza el angulo th (en grados) a 0..PI o 0..-PI (-PI..+PI)
     """
     # Nota: crrreo que se podria hacer mas eficiente evitando el if/else
-    th_out = th%(2.0*math.pi) # se evitan vueltas de mas
+    th_out = th % (2.0 * math.pi)  # se evitan vueltas de mas
     if th_out <= math.pi: # mitad superior
         return th_out # mapf(deg, 0, 180, 0, math.pi)
     else: # inferior
         return -(2*math.pi-th_out)# mapf(deg, 180, 360, -math.pi, 0)
+
 
 
 def rot(th):
@@ -135,7 +136,7 @@ def izqDchaFromVW(r, L, v, w):
     L: dist entre ruedas
     v: v lineal
     w: v angular
-    devuelve [wI, wD]
+    devuelve [wD, wI]
     """
     return np.dot(
         np.array([[1/r, L/(2*r)],

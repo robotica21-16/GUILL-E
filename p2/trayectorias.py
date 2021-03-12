@@ -95,66 +95,63 @@ def Trayectoria2Velocidades(rIzq, rDcha, dist):
     """
     Devuelve la trayectoria 1 (secuencia de movimientos)
     """
+    #angDcha = norm_pi(np.arctan((rDcha-rIzq)/dist))
     
-    angDcha = norm_pi(np.arctan((rDcha-rIzq)/dist))
-    vs = []
-    ws = []
-    v = 0
-    w = math.pi/2
+    #https://en.wikipedia.org/wiki/Tangent_lines_to_circles#Outer_tangent
+    # gamma = 0 (because y2 = y1) -> alpha = -beta
+    #beta = norm_pi(np.arcsin(rDcha-rIzq)/dist)
+    alpha = -norm_pi(np.arcsin(rDcha-rIzq)/dist)
     
-    vs += [v]
-    ws += [w]
-    # 2) w = pi/2-r1 (donde r1 es el angulo ese de la dcha)
-    w = -(math.pi/2.0-angDcha)/2
-    v = w * -rIzq #(donde a es el radio de la izq)
-    vs += [v]
-    ws += [w]
-    # 3) w =0
-    w=0
-    v = dist / 4 #(donde r2 es la dist entre los dos tramos)
-    vs += [v]
-    ws += [w]
-    # 4) t4 = 4s
-    w = -(math.pi+2*angDcha)/3
-    v = w*-rDcha
-    vs += [v]
-    ws += [w]
-    # 5) = (3)
-    w=0
-    v = dist / 4 #(donde r2 es la dist entre los dos tramos)
-    vs += [v]
-    ws += [w]
-    # 6) = (2)
-    w = -(math.pi/2-angDcha)
-    v = w * -rIzq #(donde a es el radio de la izq)
-    vs += [v]
-    ws += [w]
+    #the bot will be at pi/2 - alpha when the turn has to occur
+    #its orientation is perpendicular to that, therefore:
+    # orientation = position - pi/2
+    #so: orientation_angle1 = -alpha
+    
+    
+    
+    orientation_angle1 = norm_pi(-alpha)
+    
+    #the position where the second turn must occur is the reflexion of 
+    #the first one:
+    # -(pi/2 - alpha)
+    #then:
+    #orientation_angle2 = -(pi/2 - alpha) -pi/2
+    #orientation_angle2 = alpha - pi
+    
+    orientation_angle2 = norm_pi(alpha - math.pi)
+    
+    
+    vs = [0, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
+    ws = [math.pi/2, vs[1]/-rIzq, 0, vs[3]/-rDcha, vs[3]/-rDcha, 0, vs[5]/-rIzq]
+
     t2 = Trajectory()
+    #(x1,y1) = (0,0)
+    #(x2,y2) = (dist,0)
+    x3 = -rIzq * np.sin(alpha)
+    y3 = -rIzq * np.cos(alpha)
+    x4 = dist - rDcha * np.sin(alpha)
+    y4 = -rDcha * np.cos(alpha)
+    x5 = x3 #x0 - rsin(alpha)
+    y5 = -y3 #y0 - rsin(alpha)
+    
      # 0) girar 90º grados dcha (-90) sobre si mismo
-    pos0 = np.array([None, None, -math.pi/2])
-   
-    x_temp = rIzq * np.sin(-math.pi/2 - angDcha)
-    y_temp = rIzq * (1-np.cos(-math.pi/2 - angDcha))
-    x1 = x_temp
-    y1 = y_temp
-    pos1 = np.array([None, None, angDcha])
-    # 2) 
-    x_temp += np.cos(angDcha)*dist
-    y_temp += np.sin(angDcha)*dist
-    pos2 = np.array([x_temp, y_temp, None])
+    pos0 = np.array([None, None, math.pi/2])
     
-    x_temp -= rDcha * np.sin(-math.pi/2 - angDcha)
-    y_temp -= rDcha * (1-np.cos(-math.pi/2 - angDcha))
+    pos1 = np.array([None, None, orientation_angle1])
+    # 2)
+    pos2 = np.array([x4, y4, None])
     
-    pos3 = np.array([None, None, (-math.pi + angDcha)])
+    pos23 = np.array([None, None, -math.pi/2])
     
-    pos4 = np.array([x1, -y1, None])
+    pos3 = np.array([None, None, orientation_angle2])
+    
+    pos4 = np.array([x5, y5, None])
     # 4) segunda semicircunferencia
-    pos5 = np.array([None, None, -math.pi / 2])
+    pos5 = np.array([None, None, math.pi / 2])
     #for i in range(len(vs)):
     #    vs[i] = vs[i]/3
     #    ws[i] = ws[i]/3
-    t2.setTargetPositionsAndSpeeds([pos0,pos1, pos2, pos3, pos4,pos5], vs, ws)
+    t2.setTargetPositionsAndSpeeds([pos0,pos1, pos2, pos23, pos3, pos4,pos5], vs, ws)
     #print("wehe")
     #sys.exit(1)
     return t2

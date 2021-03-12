@@ -43,7 +43,7 @@ def main(args):
 
             else: # trayectoria 2, 2 radios
                     r1 = 0.2
-                    r2 = 0.25
+                    r2 = 0.3
                     d = 1
                     t2 = Trayectoria2(r1, r2, d)
                     robot.setTrajectory(t2)
@@ -62,7 +62,7 @@ def main(args):
 
             else: # trayectoria 2, 2 radios
                     r1 = 0.2
-                    r2 = 0.25
+                    r2 = 0.3
                     d = 1
                     t2 = Trayectoria2Velocidades(r1, r2, d)
                     robot.setTrajectory(t2)
