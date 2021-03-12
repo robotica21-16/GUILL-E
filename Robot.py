@@ -27,7 +27,7 @@ def reached(x, target, greater):
         return x>=target
     else:
         return x<=target
-        
+
 def reachedAngle(th, target, w):
     if w > 0:
         if target < 0 and th > 0:
@@ -53,7 +53,7 @@ class Robot:
         self.R_rueda = 0.027
         self.L = 0.140
         self.eje_rueda = self.L/2.0
-        
+
         self.offset_right = 0.9995 # The way the bot is built, the left tire spins slightly slower than right
 
         # Camera Initialization
@@ -149,7 +149,7 @@ class Robot:
         for move in self.trajectory.movements:
             self.setSpeed(move.vc[0], move.vc[1])
             time.sleep(move.t)
-    
+
 
     def closeEnough(self, target, w, eps=np.array([0.02, 0.02, 0.2])):
         odo = self.readOdometry()
@@ -312,11 +312,14 @@ class Robot:
             else:
                 deltaSi = v/w*deltaTh
             #print("deltaSi: ", deltaSi)
+            deltax = self.deltaX(deltaSi,deltaTh)
+            deltay = self.deltaY(deltaSi,deltaTh)
+            th = norm_pi(self.th.value+deltaTh)
             self.lock_odometry.acquire()
                 # reducir SC (deltaX, etc)
-            self.x.value += self.deltaX(deltaSi,deltaTh)
-            self.y.value += self.deltaY(deltaSi,deltaTh)
-            self.th.value = norm_pi(self.th.value+deltaTh)
+            self.x.value += deltax
+            self.y.value += deltay
+            self.th.value = th
             self.lock_odometry.release()
 
             self.writeLog(v,w, deltaTh, deltaSi)
