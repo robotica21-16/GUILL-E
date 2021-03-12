@@ -31,14 +31,14 @@ def reached(x, target, greater):
 def reachedAngle(th, target, w):
     if w > 0:
         if target < 0 and th > 0:
-            return th > (2*math.pi + target)
+            return th >= (2*math.pi + target)
         else:
-            return th > target
+            return th >= target
     elif w < 0:
         if target > 0 and th < 0:
-            return (2*math.pi+th) < target
+            return (2*math.pi+th) <= target
         else:
-            return th < target
+            return th <= target
 
 class Robot:
     def __init__(self, init_position=[0.0, 0.0, 0.0]):
@@ -109,7 +109,7 @@ class Robot:
         self.lock_odometry = Lock()
 
         # odometry update period --> UPDATE value!
-        self.P = 0.05
+        self.P = 0.005
 
         now = datetime.datetime.now()
         self.f_log = open("logs/{:d}-{:d}-{:d}-{:02d}_{:02d}".format(now.year, now.month, now.day, now.hour, now.minute)+"-log.txt","a")#append
@@ -163,11 +163,17 @@ class Robot:
             #    close = odo[2] >= (target[2])
             #else:
             #    close = odo[2] <= (target[2])
-        elif target[2] == None:
+        else:
             sinth = np.sin(odo[2])
             costh = np.cos(odo[2])
-            print(target[0], " --x-- ", odo[0], "\n", target[1], "-------y------", odo[1])
-            if reached(odo[0],target[0], costh>0) and reached(odo[1],target[1],sinth>0):
+            cond1 = True
+            cond2 = True
+            if target[0] != None:
+                cond1 = reached(odo[0],target[0], costh>0)
+            elif target[1] != None:
+                cond2 = reached(odo[1],target[1],sinth>0)
+            #print(target[0], " --x-- ", odo[0], "\n", target[1], "-------y------", odo[1])
+            if cond1 and cond2:
             #if abs((target[0] - odo[0])) < eps[0] and abs((target[1] - odo[1])) < eps[1]:
                 close = True
         return close
@@ -316,7 +322,7 @@ class Robot:
             self.writeLog(v,w, deltaTh, deltaSi)
 
             tEnd = time.perf_counter()
-            time.sleep(self.P - (tEnd-tIni))
+            time.sleep(self.P + (tEnd-tIni))
 
         #print("Stopping odometry ... X= %d" %(self.x.value))
         sys.stdout.write("Stopping odometry ... X=  %.2f, \

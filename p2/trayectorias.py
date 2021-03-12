@@ -129,25 +129,25 @@ def Trayectoria2Velocidades(rIzq, rDcha, dist):
     y1 = 0
     x2 = dist
     y2 = 0
-    x3 = x1 + rIzq * np.sin(alpha)
+    x3 = x1 - rIzq * np.sin(alpha)
     y3 = y1 + rIzq * np.cos(alpha)
     x4 = x2 - rDcha * np.sin(alpha)
     y4 = y2 -rDcha * np.cos(alpha)
     x5 = x3 #x0 - rsin(alpha)
-    y5 = -y3 #y0 - rcos(alpha)
+    y5 = y1 - rIzq * np.cos(alpha) #y0 - rcos(alpha)
     
      # 0) girar 90º grados dcha (-90) sobre si mismo
     pos0 = np.array([None, None, math.pi/2])
     
     pos1 = np.array([None, None, orientation_angle1])
     # 2)
-    pos2 = np.array([x4, y4, None])
+    pos2 = np.array([x4, None, None])
     
     pos3 = np.array([None, None, -math.pi/2])
     
     pos4 = np.array([None, None, orientation_angle2])
     
-    pos5 = np.array([x5, y5, None])
+    pos5 = np.array([x5, None, None])
     # 4) segunda semicircunferencia
     pos6 = np.array([None, None, math.pi / 2])
     #for i in range(len(vs)):
