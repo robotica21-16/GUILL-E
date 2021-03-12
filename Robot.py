@@ -90,10 +90,9 @@ class Robot:
 
         # odometry update period --> UPDATE value!
         self.P = 0.1
-
-        self.f_log = open("logs/log.txt","a")#append
+        date = str(datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
+        self.f_log = open("logs/log_" + date + ".txt", "a")#append
         fila = ["t", "x", "y", "th"]
-        self.f_log.write(str(datetime.datetime.now()))
         self.f_log.write("\t".join([str(e) for e in fila]) + "\n")
 
     def setSpeed(self, v, w):
