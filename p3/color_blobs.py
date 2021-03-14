@@ -12,7 +12,7 @@ def search_blobs(cam, colorMin = (0, 0, 50), colorMax = (50, 50, 255)):
 	#rawCapture = PiRGBArray(cam, size=(320, 240))
 	# Read image from camera
 	#img_BGR = cam.capture(rawCapture, format="bgr", use_video_port=True)
-	img_BGR = cv2.imread("photos/2021-3-14-10_46.png")
+	img_BGR = cv2.imread("photos/2021-3-14-11_47.png")
 	
 	# Setup default values for SimpleBlobDetector parameters.
 	params = cv2.SimpleBlobDetector_Params()
@@ -20,12 +20,12 @@ def search_blobs(cam, colorMin = (0, 0, 50), colorMax = (50, 50, 255)):
 	# These are just examples, tune your own if needed
 	# Change thresholds
 	params.minThreshold = 10
-	params.maxThreshold = 200
+	params.maxThreshold = 255
 
 	# Filter by Area
 	params.filterByArea = True
 	params.minArea = 200
-	params.maxArea = 10000
+	params.maxArea = 100000
 
 	# Filter by Circularity
 	params.filterByCircularity = True
@@ -68,9 +68,12 @@ def search_blobs(cam, colorMin = (0, 0, 50), colorMax = (50, 50, 255)):
 	mask2 = cv2.inRange(img_HSV, (170, 70, 50), (180, 255, 255))
     
 	mask = cv2.bitwise_or(mask1, mask2)
-
+	
 	#mask=cv2.inRange(img_BGR, colorMin, colorMax)
-	color = cv2.bitwise_and(img_HSV, img_HSV, mask = mask)
+	color = cv2.bitwise_and(img_BGR, img_BGR, mask = mask)
+	cv2.imshow("Mascara aplicada", color)
+	cv2.waitKey(0)
+
 
 	# apply the mask
 	#color = cv2.bitwise_and(img_BGR, img_BGR, mask = mask)
@@ -83,8 +86,8 @@ def search_blobs(cam, colorMin = (0, 0, 50), colorMax = (50, 50, 255)):
 
 	# documentation of SimpleBlobDetector is not clear on what kp.size is exactly,
 	# but it looks like the diameter of the blob.
-	# for kp in keypoints:
-		# print(kp.pt[0], kp.pt[1], kp.size)
+	#for kp in keypoints:
+		#print(kp.pt[0], kp.pt[1], kp.size)
 
 	
 
