@@ -111,7 +111,7 @@ class Robot:
         self.lock_odometry = Lock()
 
         # odometry update period --> UPDATE value!
-        self.P = 0.005
+        self.P = 0.05
 
         now = datetime.datetime.now()
         self.f_log = open("logs/{:d}-{:d}-{:d}-{:02d}_{:02d}".format(now.year, now.month, now.day, now.hour, now.minute)+"-log.txt","a")#append

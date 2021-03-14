@@ -7,12 +7,12 @@ import numpy as np
 from picamera.array import PiRGBArray
 
 # Defaulted to red blobs
-def search_blobs(cam, colorMin = (10, 10, 100), colorMax = (50, 50, 255)):
+def search_blobs(cam, colorMin = (0, 0, 50), colorMax = (50, 50, 255)):
 	
 	#rawCapture = PiRGBArray(cam, size=(320, 240))
 	# Read image from camera
 	#img_BGR = cam.capture(rawCapture, format="bgr", use_video_port=True)
-	img_BGR = cv2.imread("photos/2021-3-14-10_14.png")
+	img_BGR = cv2.imread("photos/2021-3-14-10_46.png")
 	
 	# Setup default values for SimpleBlobDetector parameters.
 	params = cv2.SimpleBlobDetector_Params()
@@ -61,12 +61,19 @@ def search_blobs(cam, colorMin = (10, 10, 100), colorMax = (50, 50, 255)):
 
 	# Pixels with 100 <= R <= 255, 15 <= B <= 56, 17 <= G <= 50 will be considered red.
 	# similar for BLUE
+	
+	img_HSV = cv2.cvtColor(img_BGR, cv2.COLOR_BGR2HSV)
+	
+	mask1 = cv2.inRange(img_HSV, (0, 70, 50), (10, 255, 255))
+	mask2 = cv2.inRange(img_HSV, (170, 70, 50), (180, 255, 255))
+    
+	mask = cv2.bitwise_or(mask1, mask2)
 
-	mask=cv2.inRange(img_BGR, colorMin, colorMax)
-
+	#mask=cv2.inRange(img_BGR, colorMin, colorMax)
+	color = cv2.bitwise_and(img_HSV, img_HSV, mask = mask)
 
 	# apply the mask
-	color = cv2.bitwise_and(img_BGR, img_BGR, mask = mask)
+	#color = cv2.bitwise_and(img_BGR, img_BGR, mask = mask)
 	# show resulting filtered image next to the original one
 	# cv2.imshow("Red regions", np.hstack([img_BGR, color]))
 
