@@ -7,6 +7,7 @@ import brickpi3 # import the BrickPi3 drivers
 import time     # import the time library for the sleep function
 import sys
 
+import cv2
 import picamera
 from picamera.array import PiRGBArray
 
@@ -61,6 +62,7 @@ class Robot:
         self.cam.resolution = (320, 240)
         #self.cam.resolution = (640, 480)
         self.cam.framerate = 32
+        self.cam.rotation = 180
         rawCapture = PiRGBArray(self.cam, size=(320, 240))
         #rawCapture = PiRGBArray(self.cam, size=(640, 480))
 
@@ -345,14 +347,14 @@ class Robot:
         # cuando A=a (en el objetivo) -> targetArea-A = 0 -> v = 0
         return np.interp(self.targetArea-A, [self.targetArea, 0], [self.vmax, 0])
 
-    def trackObject(self, colorRangeMin=[0,0,0], colorRangeMax=[255,255,255]):
+    def trackObject(self, view=False, colorRangeMin=[0,0,0], colorRangeMax=[255,255,255]):
         # targetSize=??, target??=??, catch=??, ...)
         # targetFound = False
         targetPositionReached = False
         finished = False
         while not finished:
             # 1. search the most promising blob ..
-            kp = search_blobs(self.cam)
+            kp = search_blobs(self.cam, view)
             while not targetPositionReached:
                 # 2. decide v and w for the robot to get closer to target position
 
@@ -366,6 +368,15 @@ class Robot:
                     targetPositionReached  = True
                     finished = True
                     return finished
+                    
+    def takePicture(self):
+        #rawCapture = PiRGBArray(self.cam, size=(320, 240))
+        
+        now = datetime.datetime.now()
+        self.cam.capture("photos/{:d}-{:d}-{:d}-{:02d}_{:02d}".format(now.year, now.month, now.day, now.hour, now.minute)+".png", format="png", use_video_port=True)
+        #data = np.fromstring(stream.getvalue(), dtype=np.uint8)
+        
+        #cv2.imwrite("photos/{:d}-{:d}-{:d}-{:02d}_{:02d}".format(now.year, now.month, now.day, now.hour, now.minute)+".png", img.array)
 
     def catch(self):
         self.catcher = Process(target=self.catchRoutine, args=()) #additional_params?))

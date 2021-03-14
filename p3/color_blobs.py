@@ -3,13 +3,17 @@
 
 # Standard imports
 import cv2
-import numpy as np;
+import numpy as np
+from picamera.array import PiRGBArray
 
 # Defaulted to red blobs
 def search_blobs(cam, colorMin = (10, 10, 100), colorMax = (50, 50, 255)):
+	
+	#rawCapture = PiRGBArray(cam, size=(320, 240))
 	# Read image from camera
-	img_BGR = cam.capture(rawCapture, format="bgr", use_video_port=True)
-
+	#img_BGR = cam.capture(rawCapture, format="bgr", use_video_port=True)
+	img_BGR = cv2.imread("photos/2021-3-14-10_14.png")
+	
 	# Setup default values for SimpleBlobDetector parameters.
 	params = cv2.SimpleBlobDetector_Params()
 
@@ -80,9 +84,12 @@ def search_blobs(cam, colorMin = (10, 10, 100), colorMax = (50, 50, 255)):
 	# Draw detected blobs as red circles.
 	# cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS ensures
 	# the size of the circle corresponds to the size of blob
-	# im_with_keypoints = cv2.drawKeypoints(img_BGR, keypoints, np.array([]),
-	# 	(255,255,255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+	im_with_keypoints = cv2.drawKeypoints(img_BGR, keypoints, np.array([]),
+	 	(255,255,255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
 	# im_with_keypoints2 = cv2.drawKeypoints(img_BGR, keypoints_blue, np.array([]),
 	# 	(255,255,255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+	
+	cv2.imshow("Keypoints on RED", im_with_keypoints)
+	cv2.waitKey(0)
 
 	return max(keypoints, key=lambda kp: kp.size)

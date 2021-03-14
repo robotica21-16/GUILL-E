@@ -5,12 +5,10 @@ import cv2
 import numpy as np
 import time
 from Robot import Robot
+from p3.color_blobs import search_blobs
 
 def main(args):
     try:
-        if args.radioD < 0:
-            print 'd must be a positive value'
-            exit(1)
 
         # Initialize Odometry. Default value will be 0,0,0
         robot = Robot() 
@@ -24,6 +22,8 @@ def main(args):
         # At least COLOR, the rest are up to you, but always put a default value.
     	# res = robot.trackObject(colorRangeMin=[0,0,0], colorRangeMax=[255,255,255], 
         #                   targetSize=??, target??=??, ...)
+        #robot.trackObject(args.view)
+        search_blobs(robot.cam)
 
         # if res:
         #   robot.catch
@@ -46,6 +46,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--color", help="color of the ball to track",
                         type=float, default=40.0)
+    parser.add_argument("-v", "--view", help="Ver camera",
+                    type=bool, default=False)
     args = parser.parse_args()
 
     main(args)
