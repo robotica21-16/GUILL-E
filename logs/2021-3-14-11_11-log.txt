@@ -1,0 +1,4 @@
+t	x	y	th	v*100	w	dTh	dSi
+t	x	y	th	v*100	w	dTh	dSi
+t	x	y	th	v*100	w	dTh	dSi
+t	x	y	th	v*100	w	dTh	dSi

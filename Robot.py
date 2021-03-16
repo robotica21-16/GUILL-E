@@ -19,7 +19,7 @@ from geometry.geometry import *
 # tambien se podria utilizar el paquete de threading
 from multiprocessing import Process, Value, Array, Lock
 
-from p3.color_blobs import search_blobs
+from p3.color_blobs import *
 
 
 
@@ -63,7 +63,6 @@ class Robot:
         #self.cam.resolution = (640, 480)
         self.cam.framerate = 32
         self.cam.rotation = 180
-        rawCapture = PiRGBArray(self.cam, size=(320, 240))
         #rawCapture = PiRGBArray(self.cam, size=(640, 480))
 
         # Create an instance of the BrickPi3 class. BP will be the BrickPi3 object.
@@ -376,10 +375,28 @@ class Robot:
         #rawCapture = PiRGBArray(self.cam, size=(320, 240))
         
         now = datetime.datetime.now()
-        self.cam.capture("photos/{:d}-{:d}-{:d}-{:02d}_{:02d}".format(now.year, now.month, now.day, now.hour, now.minute)+".png", format="png", use_video_port=True)
+        self.cam.capture("photos/{:d}-{:d}-{:d}-{:02d}_{:02d}_{:02d}".format(now.year, now.month, now.day, now.hour, now.minute, now.second)+".png", format="png", use_video_port=True)
         #data = np.fromstring(stream.getvalue(), dtype=np.uint8)
         
         #cv2.imwrite("photos/{:d}-{:d}-{:d}-{:02d}_{:02d}".format(now.year, now.month, now.day, now.hour, now.minute)+".png", img.array)
+
+    def detect_continuous(self):
+        period = 5.0 # 1 sec
+        rawCapture = PiRGBArray(self.cam, size=(320, 240))
+        detector = init_detector()
+        for img in self.cam.capture_continuous(rawCapture, format="bgr", use_video_port=True):
+
+            tIni = time.perf_counter()
+            frame = img.array
+            
+            cv2.imshow("frame", frame)
+            noseque = search_blobs_detector(self.cam, frame, detector)
+            rawCapture.truncate(0)
+            
+            
+            tEnd = time.perf_counter()
+            time.sleep(period - (tEnd-tIni))
+            
 
     def catch(self):
         self.catcher = Process(target=self.catchRoutine, args=()) #additional_params?))

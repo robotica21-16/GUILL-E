@@ -23,8 +23,12 @@ def main(args):
     	# res = robot.trackObject(colorRangeMin=[0,0,0], colorRangeMax=[255,255,255], 
         #                   targetSize=??, target??=??, ...)
         #robot.trackObject(args.view)
-        #search_blobs(robot.cam)
-        robot.takePicture()
+        if args.search:
+            search_blobs(robot.cam, args.file)
+        elif args.picture:
+            robot.takePicture()
+        elif args.debug_continuous:
+            robot.detect_continuous()
 
         # if res:
         #   robot.catch
@@ -49,6 +53,15 @@ if __name__ == "__main__":
                         type=float, default=40.0)
     parser.add_argument("-v", "--view", help="Ver camera",
                     type=bool, default=False)
+    parser.add_argument("-s", "--search", help="Search blobs",
+                    type=bool, default=False)
+    
+    parser.add_argument("-p", "--picture", help="Take picture",
+                    type=bool, default=False)
+    parser.add_argument("-f", "--file", help="Detect blobs from file",
+                    type=str, default=None)
+    parser.add_argument("-d", "--debug_continuous", help="Continuous",
+                    type=bool, default=True)
     args = parser.parse_args()
 
     main(args)
