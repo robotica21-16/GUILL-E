@@ -23,8 +23,8 @@ def main(args):
     	# res = robot.trackObject(colorRangeMin=[0,0,0], colorRangeMax=[255,255,255], 
         #                   targetSize=??, target??=??, ...)
         #robot.trackObject(args.view)
-        search_blobs(robot.cam)
-        #robot.takePicture()
+        #search_blobs(robot.cam)
+        robot.takePicture()
 
         # if res:
         #   robot.catch
