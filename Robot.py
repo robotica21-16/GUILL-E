@@ -392,7 +392,7 @@ class Robot:
         #cv2.imwrite("photos/{:d}-{:d}-{:d}-{:02d}_{:02d}".format(now.year, now.month, now.day, now.hour, now.minute)+".png", img.array)
 
     def detect_continuous(self):
-        period = 1.0 # 1 sec
+        period = 0.25 # 1 sec
         #rawCapture = PiRGBArray(self.cam, size=(320, 240))
         detector = init_detector()
         #cv2.namedWindow('frame', cv2.WINDOW_AUTOSIZE)
@@ -414,39 +414,6 @@ class Robot:
             
         cv2.destroyAllWindows()
             
-    def detect_continuous_(self):
-
-        ESC = 27
-        KNN = 1
-        MOG2 = 2
-
-        cam = picamera.PiCamera()
-
-        cam.resolution = (320, 240)
-        #cam.resolution = (640, 480)
-        cam.framerate = 32
-        rawCapture = PiRGBArray(cam, size=(320, 240))
-        #rawCapture = PiRGBArray(cam, size=(640, 480))
-         
-        # allow the camera to warmup
-        time.sleep(0.1)
-
-        #cam.rotation=180
-
-        for img in cam.capture_continuous(rawCapture, format="bgr", use_video_port=True):
-
-            frame = img.array
-            cv2.imshow('Captura', frame)
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            # clear the stream in preparation for the next frame
-            rawCapture.truncate(0)
-            k = cv2.waitKey(1) & 0xff
-            if k == ESC:
-                cam.close()
-                break
-
-        cv2.destroyAllWindows()
-
 
 
     def catch(self):

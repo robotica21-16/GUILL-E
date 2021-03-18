@@ -111,11 +111,17 @@ def search_blobs_old(cam, imagefile, colorMin = (0, 0, 50), colorMax = (50, 50, 
 	
 
 # Defaulted to red blobs
-def search_blobs(cam, imagefile, colorMin = (0, 0, 50), colorMax = (50, 50, 255)):
+def search_blobs(cam, imagefile, 
+	hsv1=(0, 200, 50), hsv2=(5, 255, 200), 
+	hsv3= (170, 200, 50), hsv4=(180, 255, 200)):
 	
 	
 	detector = init_detector()
-	return search_blobs_detector(cam, imagefile, detector, colorMin, colorMax)
+	img= cv2.imread(imagefile)
+	verbose=True
+	result= search_blobs_detector(cam, img, detector, hsv1,hsv2,hsv3,hsv4,verbose)
+	cv2.waitKey(0)
+	return result
 	
 def init_detector():
 	
@@ -130,7 +136,7 @@ def init_detector():
 	# Filter by Area
 	params.filterByArea = True
 	params.minArea = 200
-	params.maxArea = 35000
+	params.maxArea = 38000
 
 	# Filter by Circularity
 	params.filterByCircularity = False
@@ -153,8 +159,8 @@ def init_detector():
 	return detector
 	
 def search_blobs_detector(cam, img_BGR, detector,
-	hsv1=(0, 70, 50), hsv2=(10, 255, 255), 
-	hsv3= (170, 70, 50), hsv4=(180, 255, 255)):#, colorMax = (50, 50, 255)):
+	hsv1=(0, 200, 50), hsv2=(5, 255, 200), 
+	hsv3= (170, 200, 50), hsv4=(180, 255, 200), verbose=False):#, colorMax = (50, 50, 255)):
 	#print("uaehsfouaseh")
 	cv2.imshow("original", img_BGR)
 	#rawCapture = PiRGBArray(cam, size=(320, 240))
@@ -203,8 +209,9 @@ def search_blobs_detector(cam, img_BGR, detector,
 
 	# documentation of SimpleBlobDetector is not clear on what kp.size is exactly,
 	# but it looks like the diameter of the blob.
-	#for kp in keypoints:
-		#print(kp.pt[0], kp.pt[1], kp.size)
+	if verbose:
+		for kp in keypoints:
+			print(kp.pt[0], kp.pt[1], kp.size)
 
 	
 

@@ -5,7 +5,7 @@ import cv2
 import numpy as np
 import time
 from Robot import Robot
-from p3.color_blobs import search_blobs
+from p3.color_blobs import *
 
 def main(args):
     try:
@@ -23,7 +23,7 @@ def main(args):
     	# res = robot.trackObject(colorRangeMin=[0,0,0], colorRangeMax=[255,255,255], 
         #                   targetSize=??, target??=??, ...)
         #robot.trackObject(args.view)
-        if args.search:
+        if args.search or args.file:
             search_blobs(robot.cam, args.file)
         elif args.picture:
             robot.takePicture()
@@ -61,7 +61,7 @@ if __name__ == "__main__":
     parser.add_argument("-f", "--file", help="Detect blobs from file",
                     type=str, default=None)
     parser.add_argument("-d", "--debug_continuous", help="Continuous",
-                    type=bool, default=True)
+                    type=bool, default=False)
     args = parser.parse_args()
 
     main(args)
