@@ -152,8 +152,10 @@ def init_detector():
 		detector = cv2.SimpleBlobDetector_create(params)
 	return detector
 	
-def search_blobs_detector(cam, img_BGR, detector,colorMin = (0, 0, 50), colorMax = (50, 50, 255)):
-	print("uaehsfouaseh")
+def search_blobs_detector(cam, img_BGR, detector,
+	hsv1=(0, 70, 50), hsv2=(10, 255, 255), 
+	hsv3= (170, 70, 50), hsv4=(180, 255, 255)):#, colorMax = (50, 50, 255)):
+	#print("uaehsfouaseh")
 	cv2.imshow("original", img_BGR)
 	#rawCapture = PiRGBArray(cam, size=(320, 240))
 	# Read image from camera
@@ -176,8 +178,8 @@ def search_blobs_detector(cam, img_BGR, detector,colorMin = (0, 0, 50), colorMax
 	
 	img_HSV = cv2.cvtColor(img_BGR, cv2.COLOR_BGR2HSV)
 	
-	mask1 = cv2.inRange(img_HSV, (0, 70, 50), (10, 255, 255))
-	mask2 = cv2.inRange(img_HSV, (170, 70, 50), (180, 255, 255))
+	mask1 = cv2.inRange(img_HSV, hsv1, hsv2)
+	mask2 = cv2.inRange(img_HSV, hsv3, hsv4)
     
 	mask = cv2.bitwise_or(mask1, mask2)
 	

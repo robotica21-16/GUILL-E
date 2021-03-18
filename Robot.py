@@ -9,10 +9,10 @@ import sys
 
 import cv2
 import picamera
-from picamera.array import PiRGBArray
-
 import datetime
 import numpy as np
+from picamera.array import PiRGBArray
+
 
 from geometry.geometry import *
 
@@ -58,12 +58,22 @@ class Robot:
         self.offset_right = 0.9995 # The way the bot is built, the left tire spins slightly slower than right
 
         # Camera Initialization
-        self.cam = picamera.PiCamera()
-        self.cam.resolution = (320, 240)
+        #self.cam = picamera.PiCamera()
+        #self.cam.resolution = (320, 240)
         #self.cam.resolution = (640, 480)
-        self.cam.framerate = 32
-        self.cam.rotation = 180
-        #rawCapture = PiRGBArray(self.cam, size=(640, 480))
+        #self.cam.framerate = 32
+        #self.cam.rotation = 180
+        #####################
+        
+        self.cam = picamera.PiCamera()
+
+        #self.cam.resolution = (320, 240)
+        self.cam.resolution = (640, 480)
+        self.cam.framerate = 2
+        #self.rawCapture = PiRGBArray(self.cam, size=(320, 240))
+        self.rawCapture = PiRGBArray(self.cam, size=(640, 480))
+        
+        self.cam.rotation=180;
 
         # Create an instance of the BrickPi3 class. BP will be the BrickPi3 object.
         self.BP = brickpi3.BrickPi3()
@@ -116,6 +126,7 @@ class Robot:
         self.f_log = open("logs/{:d}-{:d}-{:d}-{:02d}_{:02d}".format(now.year, now.month, now.day, now.hour, now.minute)+"-log.txt","a")#append
         fila = ["t", "x", "y", "th", "v*100", "w", "dTh", "dSi"]
         self.f_log.write("\t".join([str(e) for e in fila]) + "\n")
+        time.sleep(0.2)
 
     def setSpeed(self, v, w):
         """
@@ -381,22 +392,62 @@ class Robot:
         #cv2.imwrite("photos/{:d}-{:d}-{:d}-{:02d}_{:02d}".format(now.year, now.month, now.day, now.hour, now.minute)+".png", img.array)
 
     def detect_continuous(self):
-        period = 5.0 # 1 sec
-        rawCapture = PiRGBArray(self.cam, size=(320, 240))
+        period = 1.0 # 1 sec
+        #rawCapture = PiRGBArray(self.cam, size=(320, 240))
         detector = init_detector()
-        for img in self.cam.capture_continuous(rawCapture, format="bgr", use_video_port=True):
+        #cv2.namedWindow('frame', cv2.WINDOW_AUTOSIZE)
+        time.sleep(1)
+        for img in self.cam.capture_continuous(self.rawCapture, format="bgr", use_video_port=True):
 
             tIni = time.perf_counter()
             frame = img.array
             
-            cv2.imshow("frame", frame)
+            #cv2.imshow('frame', frame)
+            #print(":(")
+            
             noseque = search_blobs_detector(self.cam, frame, detector)
-            rawCapture.truncate(0)
+            self.rawCapture.truncate(0)
             
             
             tEnd = time.perf_counter()
-            time.sleep(period - (tEnd-tIni))
+            cv2.waitKey(int(1000*period - (tEnd-tIni)))
             
+        cv2.destroyAllWindows()
+            
+    def detect_continuous_(self):
+
+        ESC = 27
+        KNN = 1
+        MOG2 = 2
+
+        cam = picamera.PiCamera()
+
+        cam.resolution = (320, 240)
+        #cam.resolution = (640, 480)
+        cam.framerate = 32
+        rawCapture = PiRGBArray(cam, size=(320, 240))
+        #rawCapture = PiRGBArray(cam, size=(640, 480))
+         
+        # allow the camera to warmup
+        time.sleep(0.1)
+
+        #cam.rotation=180
+
+        for img in cam.capture_continuous(rawCapture, format="bgr", use_video_port=True):
+
+            frame = img.array
+            cv2.imshow('Captura', frame)
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            # clear the stream in preparation for the next frame
+            rawCapture.truncate(0)
+            k = cv2.waitKey(1) & 0xff
+            if k == ESC:
+                cam.close()
+                break
+
+        cv2.destroyAllWindows()
+
+
 
     def catch(self):
         self.catcher = Process(target=self.catchRoutine, args=()) #additional_params?))
