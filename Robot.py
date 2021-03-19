@@ -382,6 +382,8 @@ class Robot:
         #self.cam.framerate=(1)
         print("Estoy vivo")
         a=30
+        vFin = self.vTarget/2
+        tRecorridoFinal = 0.06/vFin
         for img in self.cam.capture_continuous(self.rawCapture, format="bgr", use_video_port=True):
 
             tIni = time.perf_counter()
@@ -392,9 +394,12 @@ class Robot:
             
             kp = search_blobs_detector(self.cam, frame, detector, verbose = False, show=False)
             self.rawCapture.truncate(0)
+            
             if kp is None:
                 print("No se donde esta la bola")
+                
                 self.setSpeed(0,0)
+                
             else:
                 # 1. search the most promising blob ..
                 #kp = search_blobs(self.cam, view)
@@ -416,6 +421,7 @@ class Robot:
                     print(A)
                     
                     
+                    
                 #if self.targetGarras -eps < A < self.targetGarras + eps:
                 if self.targetGarras < A and not self.closing.value and not garrasAbiertas:
                     garrasAbiertas=True
@@ -424,16 +430,24 @@ class Robot:
                 
                 if self.targetArea-eps < A < self.targetArea+eps:
                     targetPositionReached  = True
-                    finished = True
+                    
                     self.setSpeed(0,0)
                     print("Estoy delante")
                     #return finished
+            
+            if targetPositionReached:
+                if tRecorridoFinal<=0:
+                    self.setSpeed(0,0)
+                
                     if not cerrando:
                         cerrando=True
                         self.catch()
+                else:
+                    self.setSpeed(vFin,0)
+                    tRecorridoFinal-=period
                     
-            
             tEnd = time.perf_counter()
+            
             cv2.waitKey(int(1000*period - (tEnd-tIni)))
                     
     def takePicture(self):
