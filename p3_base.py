@@ -10,6 +10,7 @@ from p3.color_blobs import *
 def main(args):
     try:
 
+        #print("Antes")
         # Initialize Odometry. Default value will be 0,0,0
         robot = Robot() 
         # 1. launch updateOdometry thread()
@@ -23,12 +24,19 @@ def main(args):
     	# res = robot.trackObject(colorRangeMin=[0,0,0], colorRangeMax=[255,255,255], 
         #                   targetSize=??, target??=??, ...)
         #robot.trackObject(args.view)
+        
         if args.search or args.file:
-            search_blobs(robot.cam, args.file)
+            search_blobs(robot.cam, args.file, show=True)
         elif args.picture:
             robot.takePicture()
         elif args.debug_continuous:
             robot.detect_continuous()
+        elif args.track:
+            robot.trackObject()
+        elif args.catch:
+            robot.closing = True
+            robot.moveClaws()
+            #robot.moveClaws()
 
         # if res:
         #   robot.catch
@@ -49,8 +57,8 @@ if __name__ == "__main__":
     # get and parse arguments passed to main
     # Add as many args as you need ...
     parser = argparse.ArgumentParser()
-    parser.add_argument("-c", "--color", help="color of the ball to track",
-                        type=float, default=40.0)
+    parser.add_argument("-c", "--catch", help="catch the ball",
+                        type=bool, default=False)
     parser.add_argument("-v", "--view", help="Ver camera",
                     type=bool, default=False)
     parser.add_argument("-s", "--search", help="Search blobs",
@@ -61,6 +69,8 @@ if __name__ == "__main__":
     parser.add_argument("-f", "--file", help="Detect blobs from file",
                     type=str, default=None)
     parser.add_argument("-d", "--debug_continuous", help="Continuous",
+                    type=bool, default=False)
+    parser.add_argument("-t", "--track", help="Track ball",
                     type=bool, default=False)
     args = parser.parse_args()
 

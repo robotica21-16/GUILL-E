@@ -112,14 +112,14 @@ def search_blobs_old(cam, imagefile, colorMin = (0, 0, 50), colorMax = (50, 50, 
 
 # Defaulted to red blobs
 def search_blobs(cam, imagefile, 
-	hsv1=(0, 200, 50), hsv2=(5, 255, 200), 
-	hsv3= (170, 200, 50), hsv4=(180, 255, 200)):
+	hsv1=(0, 200, 20), hsv2=(5, 255, 200), 
+	hsv3= (170, 200, 20), hsv4=(180, 255, 200), show=False):
 	
 	
 	detector = init_detector()
 	img= cv2.imread(imagefile)
 	verbose=True
-	result= search_blobs_detector(cam, img, detector, hsv1,hsv2,hsv3,hsv4,verbose)
+	result= search_blobs_detector(cam, img, detector, hsv1,hsv2,hsv3,hsv4,verbose, show=show)
 	cv2.waitKey(0)
 	return result
 	
@@ -135,8 +135,8 @@ def init_detector():
 
 	# Filter by Area
 	params.filterByArea = True
-	params.minArea = 200
-	params.maxArea = 38000
+	params.minArea = 500
+	params.maxArea = 60000
 
 	# Filter by Circularity
 	params.filterByCircularity = False
@@ -159,10 +159,10 @@ def init_detector():
 	return detector
 	
 def search_blobs_detector(cam, img_BGR, detector,
-	hsv1=(0, 200, 50), hsv2=(5, 255, 200), 
-	hsv3= (170, 200, 50), hsv4=(180, 255, 200), verbose=False):#, colorMax = (50, 50, 255)):
+	hsv1=(0, 200, 30), hsv2=(5, 255, 200), 
+	hsv3= (170, 200, 30), hsv4=(180, 255, 200), verbose=False, show=False):#, colorMax = (50, 50, 255)):
 	#print("uaehsfouaseh")
-	cv2.imshow("original", img_BGR)
+	#cv2.imshow("original", img_BGR)
 	#rawCapture = PiRGBArray(cam, size=(320, 240))
 	# Read image from camera
 	#img_BGR = cam.capture(rawCapture, format="bgr", use_video_port=True)
@@ -191,20 +191,23 @@ def search_blobs_detector(cam, img_BGR, detector,
 	
 	#mask=cv2.inRange(img_BGR, colorMin, colorMax)
 	color = cv2.bitwise_and(img_BGR, img_BGR, mask = mask)
-	cv2.imshow("Mascara aplicada", color)
+	if show:
+		cv2.imshow("Mascara aplicada", color)
 	#cv2.waitKey(0)
 
 
 	# apply the mask
 	#color = cv2.bitwise_and(img_BGR, img_BGR, mask = mask)
 	# show resulting filtered image next to the original one
-	# cv2.imshow("Red regions", np.hstack([img_BGR, color]))
+	
+	#cv2.imshow("Red regions", np.hstack([img_BGR, color]))
 
 	
 	# detector finds "dark" blobs by default, so invert image for results with same detector
 	keypoints = detector.detect(255-mask)
 	#keypoints = detector.detect(mask)
-	#cv2.imshow("Mask", 255-mask)
+	if show:
+		cv2.imshow("Mask", 255-mask)
 	#cv2.waitKey(0)
 
 	# documentation of SimpleBlobDetector is not clear on what kp.size is exactly,
@@ -223,7 +226,7 @@ def search_blobs_detector(cam, img_BGR, detector,
 	# im_with_keypoints2 = cv2.drawKeypoints(img_BGR, keypoints_blue, np.array([]),
 	# 	(255,255,255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
 	
-	cv2.imshow("Keypoints on RED", im_with_keypoints)
-	#cv2.waitKey(0)
+	if show:
+		cv2.imshow("Keypoints on RED", im_with_keypoints)
 	
-	return max(keypoints, key=lambda kp: kp.size) if len(keypoints)>0 else 0
+	return max(keypoints, key=lambda kp: kp.size) if len(keypoints)>0 else None

@@ -142,3 +142,8 @@ def izqDchaFromVW(r, L, v, w):
         np.array([[1/r, L/(2*r)],
                 [1/r, -L/(2*r)]]),
         np.array([v, w]))
+
+
+
+def horizontalDistance(kp, obj=[0,0]):
+    return -kp.pt[0]+obj[0]

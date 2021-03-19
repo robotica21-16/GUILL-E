@@ -21,6 +21,7 @@ from multiprocessing import Process, Value, Array, Lock
 
 from p3.color_blobs import *
 
+resolution=[320,240]
 
 
 def reached(x, target, greater):
@@ -65,27 +66,33 @@ class Robot:
         #self.cam.rotation = 180
         #####################
         
+        
         self.cam = picamera.PiCamera()
 
         #self.cam.resolution = (320, 240)
-        self.cam.resolution = (640, 480)
-        self.cam.framerate = 2
+        self.cam.resolution = tuple(resolution)
+        self.cam.framerate = 60
         #self.rawCapture = PiRGBArray(self.cam, size=(320, 240))
-        self.rawCapture = PiRGBArray(self.cam, size=(640, 480))
+        self.rawCapture = PiRGBArray(self.cam, size=tuple(resolution))
         
-        self.cam.rotation=180;
+        self.cam.rotation=180
+        
 
         # Create an instance of the BrickPi3 class. BP will be the BrickPi3 object.
         self.BP = brickpi3.BrickPi3()
 
         self.wmax = math.pi/3
-        self.vmax = 1.0/8.0
-        self.vTarget = self.vmax/2
+        self.vmax = 1.0/4.0
+        self.vTarget = self.vmax
         self.wTarget = self.wmax/2
 
 
-        self.targetArea = 1 # TODO: poner bien!!!!!
-
+        self.targetArea = 120#200.71975708007812 # TODO: poner bien!!!!!
+        self.targetGarras = 60
+        self.targetX = resolution[0]/2.0 # 318.3089599609375 
+        self.lock_garras = Lock()
+        
+        self.closing = Value('b',0)
         # Configure sensors, for example a touch sensor.
         #self.BP.set_sensor_type(self.BP.PORT_1, self.BP.SENSOR_TYPE.TOUCH)
 
@@ -93,7 +100,7 @@ class Robot:
         self.ruedaIzq = self.BP.PORT_D
         self.ruedaDcha = self.BP.PORT_A
         self.motorGarras = self.BP.PORT_C
-        self.maxRotGarras = 30 # angulo de giro de las garras 30 grados, comprobar!
+        self.maxRotGarras = 75 # angulo de giro de las garras 30 grados, comprobar!
         self.BP.offset_motor_encoder(self.ruedaIzq,
             self.BP.get_motor_encoder(self.ruedaIzq))
         self.BP.offset_motor_encoder(self.ruedaDcha,
@@ -111,7 +118,7 @@ class Robot:
         self.y = Value('d',0.0)
         self.th = Value('d',0.0)
         self.finished = Value('b',1) # boolean to show if odometry updates are finished
-
+        self.changeClaws = Value('b',1)
 
         self.tLast = time.perf_counter()
         self.tInitialization = self.tLast
@@ -336,6 +343,7 @@ class Robot:
             self.y.value += deltay
             self.th.value = th
             self.lock_odometry.release()
+            
 
             self.writeLog(v,w, deltaTh, deltaSi)
 
@@ -346,11 +354,11 @@ class Robot:
         sys.stdout.write("Stopping odometry ... X=  %.2f, \
                 Y=  %.2f, th=  %.2f \n" %(self.x.value, self.y.value, self.th.value))
 
-    def horizontalDistance(kp, obj=[0,0]):
-        return math.abs(kp[0], obj[0])
 
-    def targetW(self, d, dmin=-320/2, dmax=320/2):
-        return np.interp(d, [-dmin, dmax], [-self.wmax, +self.wmax])
+    def targetW(self, d, dmin=-resolution[0]/2.0, dmax=resolution[0]/2.0, eps=15):
+        if (abs(d)<eps):
+            return 0
+        return np.interp(d, [dmin, dmax], [-self.wTarget, self.wTarget])
 
     def targetV(self, A):
         """
@@ -358,29 +366,75 @@ class Robot:
         """
         # cuando A=0 (en el infinito) -> targetArea-A = targetArea -> v=vmax
         # cuando A=a (en el objetivo) -> targetArea-A = 0 -> v = 0
-        return np.interp(self.targetArea-A, [self.targetArea, 0], [self.vmax, 0])
+        #print(A, "A, target", self.targetArea, "Resta: ", self.targetArea-A)
+        return self.vTarget-np.interp(A-self.targetArea, [-self.targetArea,0], [0, self.vTarget-0.1])
 
     def trackObject(self, view=False, colorRangeMin=[0,0,0], colorRangeMax=[255,255,255]):
         # targetSize=??, target??=??, catch=??, ...)
         # targetFound = False
         targetPositionReached = False
         finished = False
-        while not finished:
-            # 1. search the most promising blob ..
-            kp = search_blobs(self.cam, view)
-            while not targetPositionReached:
+        garrasAbiertas=False
+        cerrando=False
+        detector = init_detector()
+        period = 0.05
+        #cv2.namedWindow('frame', cv2.WINDOW_AUTOSIZE)
+        #self.cam.framerate=(1)
+        print("Estoy vivo")
+        a=30
+        for img in self.cam.capture_continuous(self.rawCapture, format="bgr", use_video_port=True):
+
+            tIni = time.perf_counter()
+            frame = img.array
+            
+            #cv2.imshow('frame', frame)
+            #print(":(")
+            
+            kp = search_blobs_detector(self.cam, frame, detector, verbose = False, show=False)
+            self.rawCapture.truncate(0)
+            if kp is None:
+                print("No se donde esta la bola")
+                self.setSpeed(0,0)
+            else:
+                # 1. search the most promising blob ..
+                #kp = search_blobs(self.cam, view)
+                #while not targetPositionReached:
                 # 2. decide v and w for the robot to get closer to target position
 
-                d = horizontalDistance(kp, [0,0])
-                r = kp.size/2 # suponiendo que es el diametro
-                A = r**2 * math.pi
+                d = horizontalDistance(kp, [self.targetX,0])
+                #r = kp.size/2 # suponiendo que es el diametro
+                #A = r**2 * math.pi
+                A=kp.size
                 w = self.targetW(d)
                 v = self.targetV(A)
-                eps = 0.01
-                if self.targetArea-eps > A > self.targetArea+eps:
+                #print(v,w, A,d)
+                self.setSpeed(v,w)
+                eps = 15
+                a-=1
+                if a<=0:
+                    a=30
+                    print(A)
+                    
+                    
+                #if self.targetGarras -eps < A < self.targetGarras + eps:
+                if self.targetGarras < A and not self.closing.value and not garrasAbiertas:
+                    garrasAbiertas=True
+                    self.catch()
+                    #abrir las garras 
+                
+                if self.targetArea-eps < A < self.targetArea+eps:
                     targetPositionReached  = True
                     finished = True
-                    return finished
+                    self.setSpeed(0,0)
+                    print("Estoy delante")
+                    #return finished
+                    if not cerrando:
+                        cerrando=True
+                        self.catch()
+                    
+            
+            tEnd = time.perf_counter()
+            cv2.waitKey(int(1000*period - (tEnd-tIni)))
                     
     def takePicture(self):
         #rawCapture = PiRGBArray(self.cam, size=(320, 240))
@@ -397,6 +451,7 @@ class Robot:
         detector = init_detector()
         #cv2.namedWindow('frame', cv2.WINDOW_AUTOSIZE)
         time.sleep(1)
+        self.cam.framerate=(1)
         for img in self.cam.capture_continuous(self.rawCapture, format="bgr", use_video_port=True):
 
             tIni = time.perf_counter()
@@ -405,7 +460,7 @@ class Robot:
             #cv2.imshow('frame', frame)
             #print(":(")
             
-            noseque = search_blobs_detector(self.cam, frame, detector)
+            noseque = search_blobs_detector(self.cam, frame, detector, verbose = True)
             self.rawCapture.truncate(0)
             
             
@@ -417,26 +472,43 @@ class Robot:
 
 
     def catch(self):
-        self.catcher = Process(target=self.catchRoutine, args=()) #additional_params?))
+        self.catcher = Process(target=self.moveClaws, args=()) #additional_params?))
         self.catcher.start()
+
         # decide the strategy to catch the ball once you have reached the target position
         pass
 
-    def catchRoutine(self):
+    def moveClaws(self):
         """
         Rutina paralela para cerrar las garras
         """
-        DPS = 20 # 20º por segundo
+        self.lock_garras.acquire()
+
+        DPS = 30 # 20º por segundo
         end = False
         period = 0.2
+        print("hoho")
+        self.finished.value = False
         while not self.finished.value and not end:
+            print("hehe")
+            if self.closing.value:
+                print("Todo ok")
+            else:
+                print("Todo mal")
             tIni = time.perf_counter()
-            end = -self.maxRotGarras < self.BP.get_motor_encoder(self.motorGarras) < self.maxRotGarras
+            if self.closing.value:
+                end = self.BP.get_motor_encoder(self.motorGarras) > 0
+            else:
+                print(self.BP.get_motor_encoder(self.motorGarras))
+                end = self.BP.get_motor_encoder(self.motorGarras) < -self.maxRotGarras
             if not end:
-                self.BP.set_motor_dps(self.motorGarras, DPS)
+                self.BP.set_motor_dps(self.motorGarras, DPS if self.closing.value else -DPS)
                 tEnd = time.perf_counter()
                 time.sleep(period - (tEnd-tIni))
-
+        print("huhu")
+        self.BP.set_motor_dps(self.motorGarras, 0)
+        self.closing.value= not self.closing.value
+        self.lock_garras.release()
 
     # Stop the odometry thread.
     def stopOdometry(self):
