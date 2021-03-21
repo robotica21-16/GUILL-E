@@ -436,7 +436,8 @@ class Robot:
             if targetPositionReached:
                 if self.closeEnough(objetivo, 0):
                     self.setSpeed(0,0)
-                    self.catch()
+                    self.moveClaws()
+                    break
                     
                 else:
                     vFin=vFin/1.25
