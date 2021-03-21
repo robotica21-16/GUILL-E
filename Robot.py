@@ -407,7 +407,7 @@ class Robot:
             elif kp is None:
                 print("No se donde esta la bola")
                 
-                self.setSpeed(0,0)
+                self.setSpeed(0,self.wTarget/1.5)
                 
             else:
                 # 1. search the most promising blob ..
@@ -439,7 +439,7 @@ class Robot:
                 
                 if self.targetArea-eps < A and not targetPositionReached:# < self.targetArea+eps:
                     targetPositionReached  = True
-                    objetivo=self.avanzarDistancia(0.19)
+                    objetivo=self.avanzarDistancia(0.2)
                     objetivo=[objetivo[0], objetivo[1], None]
                     self.setSpeed(vFin/2,0)
                     print("Estoy delante", A)
