@@ -100,7 +100,7 @@ class Robot:
         self.ruedaIzq = self.BP.PORT_D
         self.ruedaDcha = self.BP.PORT_A
         self.motorGarras = self.BP.PORT_C
-        self.maxRotGarras = 75 # angulo de giro de las garras 30 grados, comprobar!
+        self.maxRotGarras = 70 # angulo de giro de las garras 30 grados, comprobar!
         self.BP.offset_motor_encoder(self.ruedaIzq,
             self.BP.get_motor_encoder(self.ruedaIzq))
         self.BP.offset_motor_encoder(self.ruedaDcha,
@@ -392,7 +392,19 @@ class Robot:
             kp = search_blobs_detector(self.cam, frame, detector, verbose = False, show=False)
             self.rawCapture.truncate(0)
             
-            if kp is None:
+            if targetPositionReached:
+                if self.closeEnough(objetivo, 0):
+                    print("closing off")
+                    self.setSpeed(0,0)
+                    self.moveClaws()
+                    break
+                    
+                else:
+                    print("haha")
+                    vFin=vFin/1.005
+                    self.setSpeed(vFin,0)
+            
+            elif kp is None:
                 print("No se donde esta la bola")
                 
                 self.setSpeed(0,0)
@@ -411,7 +423,7 @@ class Robot:
                 v = self.targetV(A)
                 #print(v,w, A,d)
                 self.setSpeed(v,w)
-                eps = 15
+                eps = 5
                 a-=1
                 if a<=0:
                     a=30
@@ -425,28 +437,19 @@ class Robot:
                     self.catch()
                     #abrir las garras 
                 
-                if self.targetArea-eps < A < self.targetArea+eps:
+                if self.targetArea-eps < A and not targetPositionReached:# < self.targetArea+eps:
                     targetPositionReached  = True
-                    objetivo=self.avanzarDistancia(0.1)
+                    objetivo=self.avanzarDistancia(0.19)
                     objetivo=[objetivo[0], objetivo[1], None]
                     self.setSpeed(vFin/2,0)
-                    print("Estoy delante")
+                    print("Estoy delante", A)
                     #return finished
-            
-            if targetPositionReached:
-                if self.closeEnough(objetivo, 0):
-                    self.setSpeed(0,0)
-                    self.moveClaws()
-                    break
-                    
-                else:
-                    vFin=vFin/1.25
-                    self.setSpeed(vFin,0)
                     
                     
             tEnd = time.perf_counter()
             
-            cv2.waitKey(int(1000*period - (tEnd-tIni)))
+            print(tEnd - tIni)
+            #cv2.waitKey(int(1000*period - (tEnd-tIni)))
                     
     def takePicture(self):
         #rawCapture = PiRGBArray(self.cam, size=(320, 240))
@@ -496,28 +499,23 @@ class Robot:
         """
         self.lock_garras.acquire()
 
-        DPS = 30 # 20º por segundo
+        DPS = 40 # 40º por segundo
         end = False
-        period = 0.2
-        print("hoho")
+        period = 0.1
+
         self.finished.value = False
         while not self.finished.value and not end:
-            print("hehe")
-            if self.closing.value:
-                print("Todo ok")
-            else:
-                print("Todo mal")
             tIni = time.perf_counter()
             if self.closing.value:
-                end = self.BP.get_motor_encoder(self.motorGarras) > 0
+                end = self.BP.get_motor_encoder(self.motorGarras) >= 0
             else:
                 print(self.BP.get_motor_encoder(self.motorGarras))
-                end = self.BP.get_motor_encoder(self.motorGarras) < -self.maxRotGarras
+                end = self.BP.get_motor_encoder(self.motorGarras) <= -self.maxRotGarras
             if not end:
                 self.BP.set_motor_dps(self.motorGarras, DPS if self.closing.value else -DPS)
                 tEnd = time.perf_counter()
                 time.sleep(period - (tEnd-tIni))
-        print("huhu")
+
         self.BP.set_motor_dps(self.motorGarras, 0)
         self.closing.value= not self.closing.value
         self.lock_garras.release()
@@ -538,5 +536,5 @@ class Robot:
         xLoc=np.array([dist, 0, 0])
         xRW=np.array(self.readOdometry())
         xWorld=loc(np.dot(hom(xRW), hom(xLoc)))
-        print("Lo que queremos avanzar:  ", xLoc, "Las supuestas coordenadas en el mundo:  ", xWorld, "Nestor quiere esto: ", xRW, sep='\n')
+        #print("Lo que queremos avanzar:  ", xLoc, "Las supuestas coordenadas en el mundo:  ", xWorld, "Nestor quiere esto: ", xRW, sep='\n')
         return xWorld

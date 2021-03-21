@@ -14,7 +14,7 @@ def main(args):
         # Initialize Odometry. Default value will be 0,0,0
         robot = Robot() 
         # 1. launch updateOdometry thread()
-        #robot.startOdometry()
+        robot.startOdometry()
 
         # 2. Loop running the tracking until ??, then catch the ball
         # TO-DO: ADD to the Robot class a method to track an object, given certain parameters
