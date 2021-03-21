@@ -147,3 +147,9 @@ def izqDchaFromVW(r, L, v, w):
 
 def horizontalDistance(kp, obj=[0,0]):
     return -kp.pt[0]+obj[0]
+
+def avanzarDistancia(dist, odometry):
+    xLoc=np.array([dist, 0, 0])
+    xRW=np.array(odometry)
+    xWorld=loc(np.dot(hom(xRW), hom(xLoc)))
+    print("Lo que queremos avanzar:  ", xLoc, "Las supuestas coordenadas en el mundo:  ", xWorld, "Nestor quiere esto: ", xRW, sep='\n')

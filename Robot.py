@@ -373,9 +373,7 @@ class Robot:
         # targetSize=??, target??=??, catch=??, ...)
         # targetFound = False
         targetPositionReached = False
-        finished = False
         garrasAbiertas=False
-        cerrando=False
         detector = init_detector()
         period = 0.05
         #cv2.namedWindow('frame', cv2.WINDOW_AUTOSIZE)
@@ -383,7 +381,6 @@ class Robot:
         print("Estoy vivo")
         a=30
         vFin = self.vTarget/2
-        tRecorridoFinal = 0.06/vFin
         for img in self.cam.capture_continuous(self.rawCapture, format="bgr", use_video_port=True):
 
             tIni = time.perf_counter()
@@ -430,21 +427,21 @@ class Robot:
                 
                 if self.targetArea-eps < A < self.targetArea+eps:
                     targetPositionReached  = True
-                    
-                    self.setSpeed(0,0)
+                    objetivo=self.avanzarDistancia(0.1)
+                    objetivo=[objetivo[0], objetivo[1], None]
+                    self.setSpeed(vFin/2,0)
                     print("Estoy delante")
                     #return finished
             
             if targetPositionReached:
-                if tRecorridoFinal<=0:
+                if self.closeEnough(objetivo, 0):
                     self.setSpeed(0,0)
-                
-                    if not cerrando:
-                        cerrando=True
-                        self.catch()
+                    self.catch()
+                    
                 else:
+                    vFin=vFin/1.25
                     self.setSpeed(vFin,0)
-                    tRecorridoFinal-=period
+                    
                     
             tEnd = time.perf_counter()
             
@@ -534,3 +531,11 @@ class Robot:
         self.setSpeed(0,0)
         self.BP.set_motor_dps(self.motorGarras, 0)
         #self.BP.reset_all()
+
+
+    def avanzarDistancia(self, dist):
+        xLoc=np.array([dist, 0, 0])
+        xRW=np.array(self.readOdometry())
+        xWorld=loc(np.dot(hom(xRW), hom(xLoc)))
+        print("Lo que queremos avanzar:  ", xLoc, "Las supuestas coordenadas en el mundo:  ", xWorld, "Nestor quiere esto: ", xRW, sep='\n')
+        return xWorld
