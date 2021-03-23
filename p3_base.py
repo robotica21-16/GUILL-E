@@ -32,7 +32,7 @@ def main(args):
         elif args.debug_continuous:
             robot.detect_continuous()
         elif args.track:
-            robot.trackObject()
+            robot.trackBall()
         elif args.catch:
             robot.closing = True
             robot.moveClaws()
@@ -59,8 +59,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--catch", help="catch the ball",
                         type=bool, default=False)
-    parser.add_argument("-v", "--view", help="Ver camera",
-                    type=bool, default=False)
     parser.add_argument("-s", "--search", help="Search blobs",
                     type=bool, default=False)
     

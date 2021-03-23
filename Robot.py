@@ -87,9 +87,9 @@ class Robot:
         self.wTarget = self.wmax/2
 
 
-        self.targetArea = 120#200.71975708007812 # TODO: poner bien!!!!!
-        self.targetGarras = 60
-        self.targetX = resolution[0]/2.0 # 318.3089599609375 
+        self.ballArea = 120 #200.71975708007812 # TODO: poner bien!!!!!
+        self.ballClawsArea = 60
+        self.ballX = resolution[0]/2.0 # 318.3089599609375 
         self.lock_garras = Lock()
         
         self.closing = Value('b',0)
@@ -105,8 +105,22 @@ class Robot:
             self.BP.get_motor_encoder(self.ruedaIzq))
         self.BP.offset_motor_encoder(self.ruedaDcha,
             self.BP.get_motor_encoder(self.ruedaDcha))
-        self.BP.offset_motor_encoder(self.motorGarras,
-            self.BP.get_motor_encoder(self.motorGarras))
+        #self.BP.offset_motor_encoder(self.motorGarras,
+        #    self.BP.get_motor_encoder(self.motorGarras))
+        ##Adjust Claws to be closed
+        posClawsIni = self.BP.get_motor_encoder(self.motorGarras)
+        if(posClawsIni < -5 or posClawsIni > 0):
+            print("Adjusting claws")
+            while(posClawsIni < -5):
+                self.BP.set_motor_dps(self.motorGarras, 20)
+                posClawsIni = self.BP.get_motor_encoder(self.motorGarras)
+                #print(posClawsIni)
+            while(posClawsIni > 0):
+                self.BP.set_motor_dps(self.motorGarras, -20)
+                posClawsIni = self.BP.get_motor_encoder(self.motorGarras)
+                #print(posClawsIni)
+        self.BP.set_motor_dps(self.motorGarras, 0)
+        
 
         self.rotIzqDeg = 0
         self.rotDchaDeg = 0
@@ -141,15 +155,11 @@ class Robot:
         v (linear ms) and w (angular rad s)
         """
         # wID = [wI, wD]:
-        if v == 0 and False:
-            vI = w*self.eje_rueda
-            vD = -vI
-            wI = vI*(self.R_rueda*2.0*math.pi)
-            wD = vD*(self.R_rueda*2.0*math.pi)
-        else:
-            wDI = izqDchaFromVW(self.R_rueda, self.L, v, w)
-            wD = wDI[0]
-            wI = wDI[1]
+        
+        wDI = izqDchaFromVW(self.R_rueda, self.L, v, w)
+        wD = wDI[0]
+        wI = wDI[1]
+        
         speedDPS_left = wI/math.pi*180
         speedDPS_right = self.offset_right*wD/math.pi*180
         self.BP.set_motor_dps(self.ruedaIzq, speedDPS_left)
@@ -355,21 +365,27 @@ class Robot:
                 Y=  %.2f, th=  %.2f \n" %(self.x.value, self.y.value, self.th.value))
 
 
-    def targetW(self, d, dmin=-resolution[0]/2.0, dmax=resolution[0]/2.0, eps=15):
+    def getMappedW(self, d, dmin=-resolution[0] / 2.0, dmax=resolution[0] / 2.0, eps=15):
+        """
+        Returns a mapped angular speed, given a distance 'd' in pixels and its POSIBLE range '(dmin, dmax)'
+        """
         if (abs(d)<eps):
             return 0
         return np.interp(d, [dmin, dmax], [-self.wTarget, self.wTarget])
 
-    def targetV(self, A):
+    def getMappedV(self, A, targetArea):
         """
-        ...
+        Returns a mapped linear speed, given a value 'A' in pixels and its DESIRED value 'targetArea'
         """
         # cuando A=0 (en el infinito) -> targetArea-A = targetArea -> v=vmax
         # cuando A=a (en el objetivo) -> targetArea-A = 0 -> v = 0
-        #print(A, "A, target", self.targetArea, "Resta: ", self.targetArea-A)
-        return self.vTarget-np.interp(A-self.targetArea, [-self.targetArea,0], [0, self.vTarget-0.1])
+        #print(A, "A, target", targetArea, "Resta: ", targetArea-A)
+        return self.vTarget-np.interp(A-targetArea, [-targetArea, 0], [0, self.vTarget-0.1])
 
-    def trackObject(self, view=False, colorRangeMin=[0,0,0], colorRangeMax=[255,255,255]):
+    def trackBall(self):
+        self.trackObject(self.ballArea, self.ballX, self.ballClawsArea, True, 5)
+
+    def trackObject(self, targetSize, targetX = resolution[0]/2.0, targetClawsSize = 0, mustCatch = False, eps = 5):
         # targetSize=??, target??=??, catch=??, ...)
         # targetFound = False
         targetPositionReached = False
@@ -379,8 +395,8 @@ class Robot:
         #cv2.namedWindow('frame', cv2.WINDOW_AUTOSIZE)
         #self.cam.framerate=(1)
         print("Estoy vivo")
-        a=30
-        vFin = self.vTarget/2
+        vFin = self.vTarget / 2
+
         for img in self.cam.capture_continuous(self.rawCapture, format="bgr", use_video_port=True):
 
             tIni = time.perf_counter()
@@ -394,13 +410,14 @@ class Robot:
             
             if targetPositionReached:
                 if self.closeEnough(objetivo, 0):
-                    print("closing off")
-                    self.setSpeed(0,0)
-                    self.moveClaws()
+                    print("Closing claws")
+                    self.setSpeed(0, 0)
+                    if mustCatch:
+                        self.moveClaws()
                     break
                     
                 else:
-                    print("haha")
+                    #Decelerate
                     vFin=vFin/1.005
                     self.setSpeed(vFin,0)
             
@@ -415,29 +432,24 @@ class Robot:
                 #while not targetPositionReached:
                 # 2. decide v and w for the robot to get closer to target position
 
-                d = horizontalDistance(kp, [self.targetX,0])
+                d = horizontalDistance(kp, [targetX,0])
                 #r = kp.size/2 # suponiendo que es el diametro
                 #A = r**2 * math.pi
-                A=kp.size
-                w = self.targetW(d)
-                v = self.targetV(A)
+                A = kp.size
+                #range is (targetX - resolution(x), targetX - 0)
+                #so if we targetX = middle of the screen -> range is (-middle of the screen, middle of the screen)
+                w = self.getMappedW(d, targetX - resolution[0], targetX)
+                v = self.getMappedV(A, targetSize)
                 #print(v,w, A,d)
                 self.setSpeed(v,w)
-                eps = 5
-                a-=1
-                if a<=0:
-                    a=30
-                    print(A)
                     
-                    
-                    
-                #if self.targetGarras -eps < A < self.targetGarras + eps:
-                if self.targetGarras < A and not self.closing.value and not garrasAbiertas:
+                #if targetClawsSize -eps < A < targetClawsSize + eps:
+                if targetClawsSize < A and not self.closing.value and not garrasAbiertas and mustCatch:
                     garrasAbiertas=True
                     self.catch()
                     #abrir las garras 
                 
-                if self.targetArea-eps < A and not targetPositionReached:# < self.targetArea+eps:
+                if targetSize-eps < A and not targetPositionReached:# < targetSize+eps:
                     targetPositionReached  = True
                     objetivo=self.avanzarDistancia(0.2)
                     objetivo=[objetivo[0], objetivo[1], None]
@@ -472,7 +484,7 @@ class Robot:
             tIni = time.perf_counter()
             frame = img.array
             
-            #cv2.imshow('frame', frame)
+            cv2.imshow('frame', frame)
             #print(":(")
             
             noseque = search_blobs_detector(self.cam, frame, detector, verbose = True)
