@@ -5,7 +5,7 @@ import cv2
 import numpy as np
 import time
 from Robot import Robot
-from p3.color_blobs import *
+from camera.color_blobs import *
 
 def main(args):
     try:
@@ -16,14 +16,7 @@ def main(args):
         # 1. launch updateOdometry thread()
         robot.startOdometry()
 
-        # 2. Loop running the tracking until ??, then catch the ball
-        # TO-DO: ADD to the Robot class a method to track an object, given certain parameters
-        # for example the different target properties we want (size, position, color, ..)
-        # or a boolean to indicate if we want the robot to catch the object or not
-        # At least COLOR, the rest are up to you, but always put a default value.
-    	# res = robot.trackObject(colorRangeMin=[0,0,0], colorRangeMax=[255,255,255], 
-        #                   targetSize=??, target??=??, ...)
-        #robot.trackObject(args.view)
+        # 2. Loop running the tracking until it is near enough, then catch the ball
         
         if args.search or args.file:
             search_blobs(robot.cam, args.file, show=True)

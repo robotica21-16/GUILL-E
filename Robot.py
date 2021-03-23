@@ -19,7 +19,7 @@ from geometry.geometry import *
 # tambien se podria utilizar el paquete de threading
 from multiprocessing import Process, Value, Array, Lock
 
-from p3.color_blobs import *
+from camera.color_blobs import *
 
 resolution=[320,240]
 

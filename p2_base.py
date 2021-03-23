@@ -5,7 +5,7 @@ import numpy as np
 import time
 from Robot import Robot
 
-from p2.trayectorias import *
+from trayectorias.trayectorias import *
 
 
 def main(args):
