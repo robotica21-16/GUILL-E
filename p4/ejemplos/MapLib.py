@@ -461,7 +461,7 @@ class Map2D:
                 y_min=current_y
                 min_cost=self.costMatrix[x_min][y_min]
             if(isConnected(current_x, current_y, 2) and self.costMatrix[current_x+1][current_y]<min_cost):
-                x_min=current_x-1
+                x_min=current_x+1
                 y_min=current_y
                 min_cost=self.costMatrix[x_min][y_min]
             if(isConnected(current_x, current_y, 4) and self.costMatrix[current_x][current_y-1]<min_cost):
