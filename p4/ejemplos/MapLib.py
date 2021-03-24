@@ -391,12 +391,46 @@ class Map2D:
     # METHODS to IMPLEMENT in P4
     # ############################################################
 
-    # def fillCostMatrix(self, ??):
-    # """
-    # NOTE: Make sure self.costMatrix is a 2D numpy array of dimensions dimX x dimY
-    # TO-DO
-    # """
-    # self.costMatrix = ....
+    def neighbourCell(self, x, y, neighbour):
+        if neighbour==0:
+            return x, y+1
+        elif neighbour==2:
+            return x+1, y
+        elif neighbour==4:
+            return x, y-1
+        elif neighbour==6:
+            return x-1, y
+
+
+    def hasValue(self, neighbour_cell):
+        return self.costMatrix[neighbour_cell[0], neighbour_cell[1]] >= 0
+
+    def fillCostMatrix(self, goal):
+    """
+    NOTE: Make sure self.costMatrix is a 2D numpy array of dimensions dimX x dimY
+    TO-DO
+    """
+    end = False
+    cost = 0
+    frontier = [goal]
+    procesadas = 0
+    # num_rows, num_cols = self.costMatrix.shape
+    # todo_cells = [[True for i in range(num_rows)] for j in range(num_cols)]
+    while not end:
+        newFront = []
+        for cell in frontier:
+            self.costMatrix[cell[0], cell[1]] = cost
+            for i in range(4):
+                neighbour = i*2
+                neighbour_cell = [self.neighbourCell(cell[0], cell[1],neighbour)]
+                if self.isConnected(cell[0], cell[1], neighbour) and not self.hasValue(neighbour_cell):
+                    newFront += [neighbour_cell]
+            procesadas+=1
+            if procesadas >= self.costMatrix.size():
+                end=True
+        frontier=newFront
+        cost += 1
+
 
 
     def findPath(self, x_ini,  y_ini, x_end, y_end):
@@ -407,7 +441,9 @@ class Map2D:
         NOTE: Make sure self.currentPath is a 2D numpy array
         ...  TO-DO  ....
         """
+
         # FAKE sample path: [ [0,0], [0,0], [0,0], ...., [0,0]  ]
+        # self.fillCostMatrix()
         self.currentPath = np.array( [ [0,0] ] * num_steps )
         pathFound = True
 
@@ -418,4 +454,3 @@ class Map2D:
 
     # def replanPath(self, ??):
     # """ TO-DO """
-
