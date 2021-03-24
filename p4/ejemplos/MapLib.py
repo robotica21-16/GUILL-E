@@ -399,6 +399,7 @@ class Map2D:
     # self.costMatrix = ....
 
 
+
     def findPath(self, x_ini,  y_ini, x_end, y_end):
         """
         x_ini, y_ini, x_end, y_end: integer values that indicate \
@@ -408,10 +409,35 @@ class Map2D:
         ...  TO-DO  ....
         """
         # FAKE sample path: [ [0,0], [0,0], [0,0], ...., [0,0]  ]
-        self.currentPath = np.array( [ [0,0] ] * num_steps )
-        pathFound = True
-
-        # ????
+        self.currentPath = [[]]
+        pathFound = False
+        current_x=x_ini
+        current_y=y_ini
+        while not pathFound:
+            x_min=0
+            y_min=0
+            min_cost=math.inf
+            if(isConnected(current_x, current_y, 0) and self.costMatrix[current_x][current_y+1]<min_cost):
+                x_min=current_x
+                y_min=y_min+1
+                min_cost=self.costMatrix[x_min][y_min]
+            if(isConnected(current_x, current_y, 6) and self.costMatrix[current_x-1][current_y]<min_cost):
+                x_min=current_x-1
+                y_min=current_y
+                min_cost=self.costMatrix[x_min][y_min]
+            if(isConnected(current_x, current_y, 2) and self.costMatrix[current_x+1][current_y]<min_cost):
+                x_min=current_x-1
+                y_min=current_y
+                min_cost=self.costMatrix[x_min][y_min]
+            if(isConnected(current_x, current_y, 4) and self.costMatrix[current_x][current_y-1]<min_cost):
+                x_min=current_x
+                y_min=current_y-1
+                min_cost=self.costMatrix[x_min][y_min]
+            current_x=x_min
+            current_y=y_min
+            self.currentPath+=[[current_x, current_y]]
+            if(current_x==x_end and current_y==y_end): 
+                pathFound=True
 
         return pathFound
 
