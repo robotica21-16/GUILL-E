@@ -550,3 +550,27 @@ class Robot:
         xWorld=loc(np.dot(hom(xRW), hom(xLoc)))
         #print("Lo que queremos avanzar:  ", xLoc, "Las supuestas coordenadas en el mundo:  ", xWorld, "Nestor quiere esto: ", xRW, sep='\n')
         return xWorld
+
+    def go(x_goal, y_goal):
+        odo = self.readOdometry()
+        th_goal = math.atan2(y_goal, x_goal)
+        w = self.wTarget
+        if (th_goal < odo[2]):
+            w = -w
+        end = False
+        while not end:
+            tIni = time.perf_counter()
+            end = reachedAngle(odo[2], th_goal, w)
+            if not end:
+                tEnd = time.perf_counter()
+                time.sleep(period - (tFin - tIni))
+
+        end = False
+        while not end:
+            tIni = time.perf_counter()
+            end = reached(odo[0], x_goal, x_goal >= odo[0])
+            end = end and reached(odo[1], y_goal, y_goal >= odo[1])
+            if not end:
+                tEnd = time.perf_counter()
+                time.sleep(period - (tFin - tIni))
+                
