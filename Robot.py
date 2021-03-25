@@ -20,7 +20,7 @@ from geometry.geometry import *
 from multiprocessing import Process, Value, Array, Lock
 
 from camera.color_blobs import *
-from p4.MapLib import *
+#from p4.MapLib import *
 
 
 resolution=[320,240]
@@ -428,7 +428,7 @@ class Robot:
                     self.setSpeed(vFin,0)
              
             elif kp is None:
-                self.setSpeed(0,self.wTarget/1.5)
+                self.setSpeed(0,self.wTarget/1.0)
             
                 
             else:
@@ -456,7 +456,7 @@ class Robot:
                 
                 if targetSize-eps < A and not targetPositionReached:# < targetSize+eps:
                     targetPositionReached  = True
-                    objetivo=self.avanzarDistancia(0.2)
+                    objetivo=self.avanzarDistancia(0.21)
                     objetivo=[objetivo[0], objetivo[1], None]
                     self.setSpeed(vFin/2,0)
                     print("Estoy delante", A)
@@ -578,10 +578,10 @@ class Robot:
                 tEnd = time.perf_counter()
                 time.sleep(period - (tFin - tIni))
                 
-    def detectObstacle(self):
+    #def detectObstacle(self):
 
-        obstacle,x,y=sensorDetection() #funcion que detecta obstaculo y por arte de magia te dice donde estan
-        objectDetected(x,y)
-        return obstacle
+    #    obstacle,x,y=sensorDetection() #funcion que detecta obstaculo y por arte de magia te dice donde estan
+    #    objectDetected(x,y)
+    #    return obstacle
         
             

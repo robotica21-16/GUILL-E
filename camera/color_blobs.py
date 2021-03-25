@@ -21,8 +21,8 @@ def init_detector():
 
 	# Filter by Area
 	params.filterByArea = True
-	params.minArea = 500
-	params.maxArea = 60000
+	params.minArea = 200
+	params.maxArea = 50000
 
 	# Filter by Circularity
 	params.filterByCircularity = False
