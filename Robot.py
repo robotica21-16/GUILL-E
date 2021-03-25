@@ -87,7 +87,7 @@ class Robot:
         self.wTarget = self.wmax/2
 
 
-        self.ballArea = 120 #200.71975708007812 # TODO: poner bien!!!!!
+        self.ballArea = 110 #200.71975708007812 # TODO: poner bien!!!!!
         self.ballClawsArea = 60
         self.ballX = resolution[0]/2.0 # 318.3089599609375 
         self.lock_garras = Lock()
@@ -408,6 +408,10 @@ class Robot:
             kp = search_blobs_detector(self.cam, frame, detector, verbose = False, show=False)
             self.rawCapture.truncate(0)
             
+            
+            if kp is None:
+                print("No se donde esta la bola")
+           
             if targetPositionReached:
                 if self.closeEnough(objetivo, 0):
                     print("Closing claws")
@@ -420,11 +424,10 @@ class Robot:
                     #Decelerate
                     vFin=vFin/1.005
                     self.setSpeed(vFin,0)
-            
+             
             elif kp is None:
-                print("No se donde esta la bola")
-                
                 self.setSpeed(0,self.wTarget/1.5)
+            
                 
             else:
                 # 1. search the most promising blob ..
@@ -521,7 +524,6 @@ class Robot:
             if self.closing.value:
                 end = self.BP.get_motor_encoder(self.motorGarras) >= 0
             else:
-                print(self.BP.get_motor_encoder(self.motorGarras))
                 end = self.BP.get_motor_encoder(self.motorGarras) <= -self.maxRotGarras
             if not end:
                 self.BP.set_motor_dps(self.motorGarras, DPS if self.closing.value else -DPS)

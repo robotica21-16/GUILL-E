@@ -44,6 +44,9 @@ def main(args):
     # except the program gets interrupted by Ctrl+C on the keyboard.
     # THIS IS IMPORTANT if we want that motors STOP when we Ctrl+C ...
         robot.stopOdometry()
+    except BaseException as e:
+        print(e)
+        robot.stopOdometry()
 
 if __name__ == "__main__":
 

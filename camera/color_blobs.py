@@ -6,8 +6,8 @@ import cv2
 import numpy as np
 from picamera.array import PiRGBArray
 
-red_hsv_range1 = [(0, 200, 20), (5, 255, 200)]
-red_hsv_range2 = [(170, 200, 20), (180, 255, 200)]
+red_hsv_range1 = [(0, 200, 60), (5, 255, 200)]
+red_hsv_range2 = [(170, 200, 60), (180, 255, 200)]
 	
 def init_detector():
 	
@@ -61,7 +61,9 @@ def search_blobs(cam, imagefile,
 def search_blobs_detector(cam, img_BGR, detector,
 	hsv1=red_hsv_range1[0], hsv2=red_hsv_range1[1], 
 	hsv3= red_hsv_range2[0], hsv4=red_hsv_range2[1],  verbose=False, show=False):
-		
+	
+	nPixelsBorder = 10 # numero de pixeles a añadir al borde (para facilitar deteccion)
+	img_BGR = cv2.copyMakeBorder(img_BGR, nPixelsBorder, nPixelsBorder, nPixelsBorder, nPixelsBorder, cv2.BORDER_CONSTANT)
 	# Show blobs
 	# cv2.imshow("Keypoints on Gray Scale", im_with_keypoints)
 	# cv2.waitKey(0)
