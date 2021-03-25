@@ -48,8 +48,8 @@ class Map2D:
         self.costMatrix =  None
         self.currentPath =  None
 
-        self.endx
-        self.endy
+        #self.endx
+        #self.endy
 
         if self._loadMap(map_description_file):
             print("Map %s loaded ok" % map_description_file)
@@ -436,7 +436,7 @@ class Map2D:
         # print(front,"esta?", neighbour_cell not in front)
         return neighbour_cell in front or self.costMatrix[neighbour_cell[0], neighbour_cell[1]] >= 0
 
-    def fillCostMatrix(self, goal):
+    def fillCostMatrix(self):
         """
         Fills the cost matrix with the costs of getting to goal=[x,y].
         If any cells are unreachable they keep cost -2
@@ -444,7 +444,7 @@ class Map2D:
 
         end = False
         cost = 0
-        frontier = [goal]
+        frontier = [self.goal]
         procesadas = 0
         # num_rows, num_cols = self.costMatrix.shape
         # todo_cells = [[True for i in range(num_rows)] for j in range(num_cols)]
@@ -490,7 +490,8 @@ class Map2D:
         NOTE: Make sure self.currentPath is a 2D numpy array
         ...  TO-DO  ....
         """
-        self.fillCostMatrix([x_end,y_end])
+        self.goal = [x_end,y_end]
+        self.fillCostMatrix()
 
         # FAKE sample path: [ [0,0], [0,0], [0,0], ...., [0,0]  ]
         self.currentPath = []
@@ -539,14 +540,16 @@ class Map2D:
 
 
 
-    def obstacleDetected(self,x_ob, y_ob):
-        celxObs,celyObs()=self._pos2cell(x_ob,y_ob)
+    def obstacleDetected(self,x_now, y_now, neighbour):
+        x_now, y_now = self._pos2cell(x_now, y_now)
+        #celxObs,celyObs=self._pos2cell(x_ob,y_ob)
+        self.deleteConnection(x_now, y_now, neighbour)
         
 
     def replanPath(self, x, y, x_end=-1, y_end=-1):
     #""" TO-DO """
         inix,iniy=self._pos2cell(inix, iniy)
-        if(x_end not -1 and y_end not -1):
+        if(x_end != -1 and y_end != -1):
             self.findPath(inix, iniy, self.endx, self.endy)
         else:
             inix,iniy=self._pos2cell(x_end, y_end)

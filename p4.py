@@ -9,8 +9,8 @@ import matplotlib
 matplotlib.use("TkAgg")
 # sudo apt-get install tcl-dev tk-dev python-tk python3-tk if TkAgg is not available
 
-# from Robot import Robot
-from MapLib import Map2D
+from Robot import Robot
+from p4.MapLib import Map2D
 
 # NOTES ABOUT TASKS to DO in P4:
 # 1)findPath(x1,y1, x2,y2),   fillCostMatrix(), replanPath () --> should be methods from the new Map2D class
@@ -24,13 +24,21 @@ def main(args):
     """
 
     try:
+        if args.test_go!="":
+            robot = Robot()
+            robot.startOdometry()
+            robot.go(0.15,0)
+            robot.go(0.15,0.15)
+            robot.go(0,0.15)
+            robot.go(0,0)
+            robot.stopOdometry()
+            exit(0)
         if not os.path.isfile(args.mapfile):
             print('Map file %s does not exist' % args.mapfile)
             exit(1)
 
         map_file = args.mapfile;
         # Instantiate Odometry with your own files from P2/P3
-        # robot = Robot()
         # ...
 
         # 1. load map and compute costs and path
@@ -66,11 +74,13 @@ def main(args):
         x2,y2 = 5,3
         if myMap.findPath(x1,y1,x2,y2):
             print("camino encontrado")
+            print(myMap.currentPath)
             myMap.drawMap(saveSnapshot=False)
             
         # 2. launch updateOdometry thread()
-        # robot.startOdometry()
+    
         # ...
+        
 
 
         # 3. perform trajectory
@@ -104,5 +114,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-m", "--mapfile", help="path to find map file",
                         default="mapa1.txt")
+    parser.add_argument("-g", "--test_go", help="test go function",
+                        default="")
     args = parser.parse_args()
     main(args)

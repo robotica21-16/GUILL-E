@@ -20,7 +20,7 @@ from geometry.geometry import *
 from multiprocessing import Process, Value, Array, Lock
 
 from camera.color_blobs import *
-#from p4.MapLib import *
+from p4.MapLib import *
 
 
 resolution=[320,240]
@@ -73,7 +73,7 @@ class Robot:
 
         #self.cam.resolution = (320, 240)
         self.cam.resolution = tuple(resolution)
-        self.cam.framerate = 60
+        self.cam.framerate = 60 # TODO: mirar maximo real
         #self.rawCapture = PiRGBArray(self.cam, size=(320, 240))
         self.rawCapture = PiRGBArray(self.cam, size=tuple(resolution))
         
@@ -86,7 +86,7 @@ class Robot:
         self.wmax = math.pi/3
         self.vmax = 1.0/4.0
         self.vTarget = self.vmax
-        self.wTarget = self.wmax/2
+        self.wTarget = self.wmax#/2
 
 
         self.ballArea = 110 #200.71975708007812 # TODO: poner bien!!!!!
@@ -182,7 +182,7 @@ class Robot:
             time.sleep(move.t)
 
 
-    def closeEnough(self, target, w, eps=np.array([0.02, 0.02, 0.2])):
+    def closeEnough(self, target, w):
         odo = self.readOdometry()
         close = False
         if target[0] == None and target[1] == None:
@@ -388,24 +388,20 @@ class Robot:
         self.trackObject(self.ballArea, self.ballX, self.ballClawsArea, True, 5)
 
     def trackObject(self, targetSize, targetX = resolution[0]/2.0, targetClawsSize = 0, mustCatch = False, eps = 5):
-        # targetSize=??, target??=??, catch=??, ...)
-        # targetFound = False
+        """
+        ...
+        """
         targetPositionReached = False
         garrasAbiertas=False
         detector = init_detector()
         period = 0.05
-        #cv2.namedWindow('frame', cv2.WINDOW_AUTOSIZE)
-        #self.cam.framerate=(1)
-        print("Estoy vivo")
+        
         vFin = self.vTarget / 2
 
-        for img in self.cam.capture_continuous(self.rawCapture, format="bgr", use_video_port=True):
+        for img in self.cam.capture_continuous(self.rawCapture, format="bgr", use_video_port=True):# todo: sleep como antes
 
             tIni = time.perf_counter()
             frame = img.array
-            
-            #cv2.imshow('frame', frame)
-            #print(":(")
             
             kp = search_blobs_detector(self.cam, frame, detector, verbose = False, show=False)
             self.rawCapture.truncate(0)
@@ -516,7 +512,7 @@ class Robot:
         """
         self.lock_garras.acquire()
 
-        DPS = 40 # 40ยบ por segundo
+        DPS = 40 # 40บ por segundo
         end = False
         period = 0.1
 
@@ -553,30 +549,47 @@ class Robot:
         xRW=np.array(self.readOdometry())
         xWorld=loc(np.dot(hom(xRW), hom(xLoc)))
         #print("Lo que queremos avanzar:  ", xLoc, "Las supuestas coordenadas en el mundo:  ", xWorld, "Nestor quiere esto: ", xRW, sep='\n')
-        return xWorld
+        return xWorld 
 
-    def go(x_goal, y_goal):
+    def go(self, x_goal, y_goal):
+        
+        #xLoc=np.array([dist, 0, 0])
+        #xRW=np.array(self.readOdometry())
+        #xWorld = loc(np.dot(np.hom(xRW), hom(xLoc)))
+        
         odo = self.readOdometry()
-        th_goal = math.atan2(y_goal, x_goal)
+        period = 0.01
+        #if sine is negative (if dY is negative) then the rotation must be negative
+        dX = x_goal - odo[0]
+        dY = y_goal - odo[1]
         w = self.wTarget
-        if (th_goal < odo[2]):
+        th_goal = norm_pi(math.atan2(dY, dX))
+        if (dY < 0):
             w = -w
+            th_goal = -th_goal
+        
         end = False
+        self.setSpeed(0,w)
         while not end:
             tIni = time.perf_counter()
-            end = reachedAngle(odo[2], th_goal, w)
+            end = self.closeEnough([None, None, th_goal], w)
             if not end:
                 tEnd = time.perf_counter()
-                time.sleep(period - (tFin - tIni))
+                time.sleep(period - (tEnd - tIni))
 
         end = False
+        v = self.vTarget
+        self.setSpeed(v,0)
         while not end:
             tIni = time.perf_counter()
-            end = reached(odo[0], x_goal, x_goal >= odo[0])
-            end = end and reached(odo[1], y_goal, y_goal >= odo[1])
+            end = self.closeEnough([x_goal, y_goal, None], w)
             if not end:
                 tEnd = time.perf_counter()
-                time.sleep(period - (tFin - tIni))
+                time.sleep(period - (tEnd - tIni))
+        while (v > 0.1):
+            v = v / 1.05
+            self.setSpeed(v, 0)
+        self.setSpeed(0, 0)
                 
     #def detectObstacle(self):
 
