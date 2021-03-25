@@ -48,6 +48,9 @@ class Map2D:
         self.costMatrix =  None
         self.currentPath =  None
 
+        self.endx
+        self.endy
+
         if self._loadMap(map_description_file):
             print("Map %s loaded ok" % map_description_file)
         else:
@@ -494,6 +497,8 @@ class Map2D:
         pathFound = False
         current_x=x_ini
         current_y=y_ini
+        self.endx=x_end
+        self.endy=y_end
         while not pathFound:
             # print("Iteracion de findPath: ", current_x, current_y,#self.currentPath,
             #      "------------------------------------------")
@@ -533,5 +538,18 @@ class Map2D:
         return pathFound
 
 
-    # def replanPath(self, ??):
-    # """ TO-DO """
+
+    def obstacleDetected(self,x_ob, y_ob):
+        celxObs,celyObs()=self._pos2cell(x_ob,y_ob)
+        
+
+    def replanPath(self, x, y, x_end=-1, y_end=-1):
+    #""" TO-DO """
+        inix,iniy=self._pos2cell(inix, iniy)
+        if(x_end not -1 and y_end not -1):
+            self.findPath(inix, iniy, self.endx, self.endy)
+        else:
+            inix,iniy=self._pos2cell(x_end, y_end)
+            self.findPath(inix, iniy, x_end, y_end)
+
+

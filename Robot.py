@@ -20,6 +20,8 @@ from geometry.geometry import *
 from multiprocessing import Process, Value, Array, Lock
 
 from camera.color_blobs import *
+from p4.MapLib import *
+
 
 resolution=[320,240]
 
@@ -576,3 +578,10 @@ class Robot:
                 tEnd = time.perf_counter()
                 time.sleep(period - (tFin - tIni))
                 
+    def detectObstacle(self):
+
+        obstacle,x,y=sensorDetection() #funcion que detecta obstaculo y por arte de magia te dice donde estan
+        objectDetected(x,y)
+        return obstacle
+        
+            
