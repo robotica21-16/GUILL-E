@@ -8,6 +8,7 @@ from matplotlib import animation
 import numpy as np
 import time
 import os
+import math
 
 class Map2D:
     def __init__(self, map_description_file):
@@ -197,7 +198,7 @@ class Map2D:
         [connX, connY] = self._cell2connCoord(cellX, cellY, numNeigh)
         self.connectionMatrix[connX, connY] = 0 # False
 
-    def isConnected(self, cellX, cellY, numNeigh):
+    def isConnectedNumber(self, cellX, cellY, numNeigh):
         """
         returns True if the connnection from cell (x,y) to its neighbour number numNeigh is open.
 
@@ -210,7 +211,25 @@ class Map2D:
 
         """
         [connX, connY] = self._cell2connCoord(cellX, cellY, numNeigh)
+
+        # print("En conn: ",connX, connY, self.connectionMatrix[connX, connY])
         return self.connectionMatrix[connX, connY]
+
+    def isConnected(self, cellX, cellY, numNeigh):
+        """
+        returns True if the connnection from cell (x,y) to its neighbour number numNeigh is open.
+
+        The neighbour indexing is considered as follows
+        (8-neighbours from cell x,y numbered clock-wise):
+
+        7     0       1
+        6   (x,y)     2
+        5     4       3
+
+        """
+        n = self.isConnectedNumber(cellX, cellY, numNeigh)
+        # print(n)
+        return n>0.5
 
     # aux functions to display (or save image) with robot and map stuff
     def _drawGrid(self):
@@ -393,43 +412,57 @@ class Map2D:
 
     def neighbourCell(self, x, y, neighbour):
         if neighbour==0:
-            return x, y+1
+            return [x, y+1]
         elif neighbour==2:
-            return x+1, y
+            return [x+1, y]
         elif neighbour==4:
-            return x, y-1
+            return [x, y-1]
         elif neighbour==6:
-            return x-1, y
+            return [x-1, y]
 
 
     def hasValue(self, neighbour_cell):
         return self.costMatrix[neighbour_cell[0], neighbour_cell[1]] >= 0
 
     def fillCostMatrix(self, goal):
-    """
-    NOTE: Make sure self.costMatrix is a 2D numpy array of dimensions dimX x dimY
-    TO-DO
-    """
-    end = False
-    cost = 0
-    frontier = [goal]
-    procesadas = 0
-    # num_rows, num_cols = self.costMatrix.shape
-    # todo_cells = [[True for i in range(num_rows)] for j in range(num_cols)]
-    while not end:
-        newFront = []
-        for cell in frontier:
-            self.costMatrix[cell[0], cell[1]] = cost
-            for i in range(4):
-                neighbour = i*2
-                neighbour_cell = [self.neighbourCell(cell[0], cell[1],neighbour)]
-                if self.isConnected(cell[0], cell[1], neighbour) and not self.hasValue(neighbour_cell):
-                    newFront += [neighbour_cell]
-            procesadas+=1
-            if procesadas >= self.costMatrix.size():
-                end=True
-        frontier=newFront
-        cost += 1
+        """
+        NOTE: Make sure self.costMatrix is a 2D numpy array of dimensions dimX x dimY
+        TO-DO
+        """
+
+        end = False
+        cost = 0
+        frontier = [goal]
+        procesadas = 0
+        # num_rows, num_cols = self.costMatrix.shape
+        # todo_cells = [[True for i in range(num_rows)] for j in range(num_cols)]
+        while not end:
+            newFront = []
+            if not frontier: # is empty
+                end = True
+            # print("FRontier:", frontier)
+            for cell in frontier:
+                # print("in cell ", cell, " cost: ", cost, "------------------------------")
+                self.costMatrix[cell[0], cell[1]] = cost
+                for i in range(4): # for each neighbour
+                    neighbour = i*2
+                    neighbour_cell = self.neighbourCell(cell[0], cell[1],neighbour)
+                    #print("neighbour: ", neighbour)
+                    # print(neighbour_cell, "isconnected: ", self.isConnected(cell[0], cell[1], neighbour))
+                    #print("Connection thingy\n", self.connectionMatrix)
+                    if self.isConnected(cell[0], cell[1], neighbour) and not self.hasValue(neighbour_cell):
+                        newFront += [neighbour_cell]
+                procesadas+=1
+                #print("size, procesadas",self.costMatrix.size, procesadas)
+                #print("End of fillcost: \n",self.costMatrix)
+                if procesadas >= self.costMatrix.size:
+                    end=True
+            frontier=newFront
+            cost += 1
+        print("End of fillCostMatrix")
+        for row in range(len(self.costMatrix)):
+            print(self.costMatrix[len(self.costMatrix-2-row)])
+        # exit(1)
 
 
 
@@ -442,6 +475,7 @@ class Map2D:
         NOTE: Make sure self.currentPath is a 2D numpy array
         ...  TO-DO  ....
         """
+        self.fillCostMatrix([x_end,y_end])
 
         # FAKE sample path: [ [0,0], [0,0], [0,0], ...., [0,0]  ]
         self.currentPath = [[]]
@@ -452,19 +486,19 @@ class Map2D:
             x_min=0
             y_min=0
             min_cost=math.inf
-            if(isConnected(current_x, current_y, 0) and self.costMatrix[current_x][current_y+1]<min_cost):
+            if(self.isConnected(current_x, current_y, 0) and self.costMatrix[current_x][current_y+1]<min_cost):
                 x_min=current_x
                 y_min=y_min+1
                 min_cost=self.costMatrix[x_min][y_min]
-            if(isConnected(current_x, current_y, 6) and self.costMatrix[current_x-1][current_y]<min_cost):
+            if(self.isConnected(current_x, current_y, 6) and self.costMatrix[current_x-1][current_y]<min_cost):
                 x_min=current_x-1
                 y_min=current_y
                 min_cost=self.costMatrix[x_min][y_min]
-            if(isConnected(current_x, current_y, 2) and self.costMatrix[current_x+1][current_y]<min_cost):
+            if(self.isConnected(current_x, current_y, 2) and self.costMatrix[current_x+1][current_y]<min_cost):
                 x_min=current_x+1
                 y_min=current_y
                 min_cost=self.costMatrix[x_min][y_min]
-            if(isConnected(current_x, current_y, 4) and self.costMatrix[current_x][current_y-1]<min_cost):
+            if(self.isConnected(current_x, current_y, 4) and self.costMatrix[current_x][current_y-1]<min_cost):
                 x_min=current_x
                 y_min=current_y-1
                 min_cost=self.costMatrix[x_min][y_min]
@@ -474,6 +508,8 @@ class Map2D:
             if(current_x==x_end and current_y==y_end):
                 pathFound=True
 
+        print("------------------ PATH ------------------ ")
+        print(self.currentPath)
         return pathFound
 
 

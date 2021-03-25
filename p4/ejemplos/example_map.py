@@ -36,7 +36,7 @@ def main(args):
         # 1. load map and compute costs and path
         myMap = Map2D(map_file)
         #myMap.verbose = True
-        myMap.drawMap(saveSnapshot=False)
+        #myMap.drawMap(saveSnapshot=False)
 
         # you can set verbose to False to stop displaying plots interactively
         # (and maybe just save the snapshots of the map)
@@ -47,19 +47,25 @@ def main(args):
         # this will save a .png with the current map visualization,
         # all robot positions, last one in green
         #myMap.verbose = True
-        myMap.drawMapWithRobotLocations( sampleRobotLocations, saveSnapshot=False )
+        # myMap.drawMapWithRobotLocations( sampleRobotLocations, saveSnapshot=False )
 
         # this shows the current, and empty, map and an additionally closed connection
-        myMap.deleteConnection(0,0,0)
+        #myMap.deleteConnection(0,0,0)
         #myMap.verbose = True
-        myMap.drawMap(saveSnapshot=False)
+        # myMap.drawMap(saveSnapshot=False)
 
         # this will open a window with the results, but does not work well remotely
         #myMap.verbose = True
         sampleRobotLocations = [ [200, 200, 3.14/2.0], [200, 600, 3.14/4.0], [200, 1000, -3.14/2.0],  ]
-        myMap.drawMapWithRobotLocations( sampleRobotLocations, saveSnapshot=False )
+        # myMap.drawMapWithRobotLocations( sampleRobotLocations, saveSnapshot=False )
 
         matplotlib.pyplot.close('all')
+
+
+        x1,y1 = 0,0
+        x2,y2 = 2,2
+        if myMap.findPath(x1,y1,x2,y2):
+            print("camino encontrado")
         # 2. launch updateOdometry thread()
         # robot.startOdometry()
         # ...
@@ -85,7 +91,7 @@ def main(args):
     except KeyboardInterrupt:
     # except the program gets interrupted by Ctrl+C on the keyboard.
     # THIS IS IMPORTANT if we want that motors STOP when we Ctrl+C ...
-    #    robot.stopOdometry()
+        robot.stopOdometry()
         print('do something to stop Robot when we Ctrl+C ...')
 
 
