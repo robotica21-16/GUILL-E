@@ -420,6 +420,20 @@ class Map2D:
         elif neighbour==6:
             return [x-1, y]
 
+    def printCostMatrix(self):
+        """
+        Prints the cost matrix in the same order as the maps (X right, Y up)
+        """
+        nRows = len(self.costMatrix)
+        nCols = len(self.costMatrix[0])
+        print(nRows, nCols)
+        for col in range(nCols):
+            for row in range(nRows):
+                # print(self.costMatrix[nCols-1-col][row], end=" ") # reverse
+                print(self.costMatrix[col][nRows-1-row], end=" ") # reverse
+            print()
+        print(self.costMatrix)
+        print(self.costMatrix[::-1])
 
     def hasValue(self, neighbour_cell):
         return self.costMatrix[neighbour_cell[0], neighbour_cell[1]] >= 0
@@ -460,8 +474,9 @@ class Map2D:
             frontier=newFront
             cost += 1
         print("End of fillCostMatrix")
-        for row in range(len(self.costMatrix)):
-            print(self.costMatrix[len(self.costMatrix-2-row)])
+        self.printCostMatrix()
+
+            # print(self.costMatrix[len(self.costMatrix-2-row)])
         # exit(1)
 
 
@@ -478,17 +493,20 @@ class Map2D:
         self.fillCostMatrix([x_end,y_end])
 
         # FAKE sample path: [ [0,0], [0,0], [0,0], ...., [0,0]  ]
-        self.currentPath = [[]]
+        self.currentPath = []
         pathFound = False
         current_x=x_ini
         current_y=y_ini
         while not pathFound:
+            print("Iteracion de findPath: ", current_x, current_y,#self.currentPath,
+                 "------------------------------------------")
             x_min=0
             y_min=0
             min_cost=math.inf
+            foundOne=False
             if(self.isConnected(current_x, current_y, 0) and self.costMatrix[current_x][current_y+1]<min_cost):
                 x_min=current_x
-                y_min=y_min+1
+                y_min=current_y+1
                 min_cost=self.costMatrix[x_min][y_min]
             if(self.isConnected(current_x, current_y, 6) and self.costMatrix[current_x-1][current_y]<min_cost):
                 x_min=current_x-1
@@ -502,6 +520,12 @@ class Map2D:
                 x_min=current_x
                 y_min=current_y-1
                 min_cost=self.costMatrix[x_min][y_min]
+            if math.isinf(min_cost):
+                print("Blocked path in ", current_x, current_y)
+                print("Current path:",self.currentPath )
+                exit(1)
+            else:
+                print(min_cost)
             current_x=x_min
             current_y=y_min
             self.currentPath+=[[current_x, current_y]]
