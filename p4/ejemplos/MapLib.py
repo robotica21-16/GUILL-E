@@ -450,15 +450,15 @@ class Map2D:
             if not frontier: # is empty
                 print('EMPTY FRONTIER')
                 end = True
-            print("FRontier:", frontier, "===============================================")
+            # print("FRontier:", frontier, "===============================================")
             for cell in frontier:
-                print("in cell ", cell, " cost: ", cost, "------------------------------")
+                # print("in cell ", cell, " cost: ", cost, "------------------------------")
                 self.costMatrix[cell[0], cell[1]] = cost
                 for i in range(4): # for each neighbour
                     neighbour = i*2
                     neighbour_cell = self.neighbourCell(cell[0], cell[1],neighbour)
                     #print("neighbour: ", neighbour)
-                    print(neighbour_cell, "isconnected: ", self.isConnected(cell[0], cell[1], neighbour))
+                    # print(neighbour_cell, "isconnected: ", self.isConnected(cell[0], cell[1], neighbour))
                     #print("Connection thingy\n", self.connectionMatrix)
                     if self.isConnected(cell[0], cell[1], neighbour) and not self.hasValue(neighbour_cell, newFront):
                         newFront += [neighbour_cell]
@@ -466,12 +466,12 @@ class Map2D:
                 #print("size, procesadas",self.costMatrix.size, procesadas)
                 #print("End of fillcost: \n",self.costMatrix)
                 if procesadas >= self.costMatrix.size:
-                    print("Procesadas todas")
+                    # print("Procesadas todas")
 
                     end=True
             frontier=newFront
             cost += 1
-        print("End of fillCostMatrix")
+        # print("End of fillCostMatrix")
         self.printCostMatrix()
         # self.drawMap(saveSnapshot=False)
         # exit(1)
