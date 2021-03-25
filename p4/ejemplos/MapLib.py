@@ -424,16 +424,7 @@ class Map2D:
         """
         Prints the cost matrix in the same order as the maps (X right, Y up)
         """
-        nRows = len(self.costMatrix)
-        nCols = len(self.costMatrix[0])
-        print(nRows, nCols)
-        for col in range(nCols):
-            for row in range(nRows):
-                # print(self.costMatrix[nCols-1-col][row], end=" ") # reverse
-                print(self.costMatrix[col][nRows-1-row], end=" ") # reverse
-            print()
-        print(self.costMatrix)
-        print(self.costMatrix[::-1])
+        print(np.rot90(self.costMatrix))
 
     def hasValue(self, neighbour_cell):
         return self.costMatrix[neighbour_cell[0], neighbour_cell[1]] >= 0
