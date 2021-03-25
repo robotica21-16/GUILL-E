@@ -25,6 +25,8 @@ from p4.MapLib import *
 
 resolution=[320,240]
 
+DEBUG_MODE = False
+
 
 def reached(x, target, greater):
     if greater:
@@ -67,18 +69,18 @@ class Robot:
         #self.cam.framerate = 32
         #self.cam.rotation = 180
         #####################
-        
-        
+
+
         self.cam = picamera.PiCamera()
 
         #self.cam.resolution = (320, 240)
         self.cam.resolution = tuple(resolution)
-        self.cam.framerate = 60 # TODO: mirar maximo real
+        self.cam.framerate = 32 # TODO: mirar maximo real
         #self.rawCapture = PiRGBArray(self.cam, size=(320, 240))
         self.rawCapture = PiRGBArray(self.cam, size=tuple(resolution))
-        
+
         self.cam.rotation=180
-        
+
 
         # Create an instance of the BrickPi3 class. BP will be the BrickPi3 object.
         self.BP = brickpi3.BrickPi3()
@@ -91,9 +93,9 @@ class Robot:
 
         self.ballArea = 110 #200.71975708007812 # TODO: poner bien!!!!!
         self.ballClawsArea = 60
-        self.ballX = resolution[0]/2.0 # 318.3089599609375 
+        self.ballX = resolution[0]/2.0 # 318.3089599609375
         self.lock_garras = Lock()
-        
+
         self.closing = Value('b',0)
         # Configure sensors, for example a touch sensor.
         #self.BP.set_sensor_type(self.BP.PORT_1, self.BP.SENSOR_TYPE.TOUCH)
@@ -122,7 +124,7 @@ class Robot:
                 posClawsIni = self.BP.get_motor_encoder(self.motorGarras)
                 #print(posClawsIni)
         self.BP.set_motor_dps(self.motorGarras, 0)
-        
+
 
         self.rotIzqDeg = 0
         self.rotDchaDeg = 0
@@ -157,11 +159,11 @@ class Robot:
         v (linear ms) and w (angular rad s)
         """
         # wID = [wI, wD]:
-        
+
         wDI = izqDchaFromVW(self.R_rueda, self.L, v, w)
         wD = wDI[0]
         wI = wDI[1]
-        
+
         speedDPS_left = wI/math.pi*180
         speedDPS_right = self.offset_right*wD/math.pi*180
         self.BP.set_motor_dps(self.ruedaIzq, speedDPS_left)
@@ -355,7 +357,7 @@ class Robot:
             self.y.value += deltay
             self.th.value = th
             self.lock_odometry.release()
-            
+
 
             self.writeLog(v,w, deltaTh, deltaSi)
 
@@ -381,99 +383,83 @@ class Robot:
         """
         # cuando A=0 (en el infinito) -> targetArea-A = targetArea -> v=vmax
         # cuando A=a (en el objetivo) -> targetArea-A = 0 -> v = 0
-        #print(A, "A, target", targetArea, "Resta: ", targetArea-A)
         return self.vTarget-np.interp(A-targetArea, [-targetArea, 0], [0, self.vTarget-0.1])
 
     def trackBall(self):
+        """
+        Tracks and catches the red ball
+        """
         self.trackObject(self.ballArea, self.ballX, self.ballClawsArea, True, 5)
 
     def trackObject(self, targetSize, targetX = resolution[0]/2.0, targetClawsSize = 0, mustCatch = False, eps = 5):
         """
-        ...
+        Tracks an object with the given parameters, tries to catch it with the claws when its close enough.
+        The robot spins at a constant rate while it doesnt detect the object
         """
         targetPositionReached = False
-        garrasAbiertas=False
+        # abrir garras, en paralelo:
+        garrasAbiertas=True
+        self.catch()
+        # inicializar detector:
         detector = init_detector()
         period = 0.05
-        
+
         vFin = self.vTarget / 2
 
         for img in self.cam.capture_continuous(self.rawCapture, format="bgr", use_video_port=True):# todo: sleep como antes
 
             tIni = time.perf_counter()
             frame = img.array
-            
+
             kp = search_blobs_detector(self.cam, frame, detector, verbose = False, show=False)
             self.rawCapture.truncate(0)
-            
-            
-            if kp is None:
+
+
+            if DEBUG_MODE and kp is None:
                 print("No se donde esta la bola")
-           
+
             if targetPositionReached:
                 if self.closeEnough(objetivo, 0):
-                    print("Closing claws")
                     self.setSpeed(0, 0)
                     if mustCatch:
                         self.moveClaws()
                     break
-                    
+
                 else:
                     #Decelerate
                     vFin=vFin/1.005
                     self.setSpeed(vFin,0)
-             
-            elif kp is None:
-                self.setSpeed(0,self.wTarget/1.0)
-            
-                
-            else:
-                # 1. search the most promising blob ..
-                #kp = search_blobs(self.cam, view)
-                #while not targetPositionReached:
-                # 2. decide v and w for the robot to get closer to target position
 
+            elif kp is None:
+                # target not detected, spin in place to find it
+                self.setSpeed(0,self.wTarget)
+            else: # we see the target and the target position hasnt been reached
                 d = horizontalDistance(kp, [targetX,0])
-                #r = kp.size/2 # suponiendo que es el diametro
-                #A = r**2 * math.pi
                 A = kp.size
-                #range is (targetX - resolution(x), targetX - 0)
-                #so if we targetX = middle of the screen -> range is (-middle of the screen, middle of the screen)
                 w = self.getMappedW(d, targetX - resolution[0], targetX)
                 v = self.getMappedV(A, targetSize)
-                #print(v,w, A,d)
                 self.setSpeed(v,w)
-                    
-                #if targetClawsSize -eps < A < targetClawsSize + eps:
-                if targetClawsSize < A and not self.closing.value and not garrasAbiertas and mustCatch:
-                    garrasAbiertas=True
-                    self.catch()
-                    #abrir las garras 
-                
-                if targetSize-eps < A and not targetPositionReached:# < targetSize+eps:
+
+                if targetSize-eps < A and not targetPositionReached:
+                    # close enough to target, we set the objective from current position+some distance
                     targetPositionReached  = True
                     objetivo=self.avanzarDistancia(0.21)
                     objetivo=[objetivo[0], objetivo[1], None]
                     self.setSpeed(vFin/2,0)
-                    print("Estoy delante", A)
-                    #return finished
-                    
-                    
+
             tEnd = time.perf_counter()
-            
-            print(tEnd - tIni)
-            #cv2.waitKey(int(1000*period - (tEnd-tIni)))
-                    
+            #time.sleep(period-(tEnd-tIni))
+
     def takePicture(self):
-        #rawCapture = PiRGBArray(self.cam, size=(320, 240))
-        
         now = datetime.datetime.now()
-        self.cam.capture("photos/{:d}-{:d}-{:d}-{:02d}_{:02d}_{:02d}".format(now.year, now.month, now.day, now.hour, now.minute, now.second)+".png", format="png", use_video_port=True)
-        #data = np.fromstring(stream.getvalue(), dtype=np.uint8)
-        
-        #cv2.imwrite("photos/{:d}-{:d}-{:d}-{:02d}_{:02d}".format(now.year, now.month, now.day, now.hour, now.minute)+".png", img.array)
+        self.cam.capture("photos/{:d}-{:d}-{:d}-{:02d}_{:02d}_{:02d}".format(
+            now.year, now.month, now.day, now.hour, now.minute, now.second)+
+            ".png", format="png", use_video_port=True)
 
     def detect_continuous(self):
+        """
+        Debug function to test camera and detector
+        """
         period = 0.25 # 1 sec
         #rawCapture = PiRGBArray(self.cam, size=(320, 240))
         detector = init_detector()
@@ -484,35 +470,31 @@ class Robot:
 
             tIni = time.perf_counter()
             frame = img.array
-            
+
             cv2.imshow('frame', frame)
-            #print(":(")
-            
             noseque = search_blobs_detector(self.cam, frame, detector, verbose = True)
             self.rawCapture.truncate(0)
-            
-            
             tEnd = time.perf_counter()
             cv2.waitKey(int(1000*period - (tEnd-tIni)))
-            
+
         cv2.destroyAllWindows()
-            
+
 
 
     def catch(self):
+        """
+        Starts the process that closes or opens the claws
+        """
         self.catcher = Process(target=self.moveClaws, args=()) #additional_params?))
         self.catcher.start()
 
-        # decide the strategy to catch the ball once you have reached the target position
-        pass
-
     def moveClaws(self):
         """
-        Rutina paralela para cerrar las garras
+        Rutina paralela para cerrar o abrir las garras
         """
         self.lock_garras.acquire()
 
-        DPS = 40 # 40º por segundo
+        DPS = 40 # 40ï¿½ por segundo
         end = False
         period = 0.1
 
@@ -535,7 +517,7 @@ class Robot:
     # Stop the odometry thread.
     def stopOdometry(self):
         """
-        Stops odometry and sets the speed to 0
+        Stops odometry and sets the speed of all motors to 0
         """
         self.finished.value = True
         self.f_log.close()
@@ -545,18 +527,25 @@ class Robot:
 
 
     def avanzarDistancia(self, dist):
+        """
+        Devuelve la posicion global (con respecto al origen de la odometria)
+        resultante de avanzar dist desde la posicion actual.
+        """
         xLoc=np.array([dist, 0, 0])
         xRW=np.array(self.readOdometry())
         xWorld=loc(np.dot(hom(xRW), hom(xLoc)))
         #print("Lo que queremos avanzar:  ", xLoc, "Las supuestas coordenadas en el mundo:  ", xWorld, "Nestor quiere esto: ", xRW, sep='\n')
-        return xWorld 
+        return xWorld
 
     def go(self, x_goal, y_goal):
-        
+        """
+        Moves the robot to x_goal, y_goal (first it turns, then it advances, for cell navigation)
+        """
+
         #xLoc=np.array([dist, 0, 0])
         #xRW=np.array(self.readOdometry())
         #xWorld = loc(np.dot(np.hom(xRW), hom(xLoc)))
-        
+
         odo = self.readOdometry()
         period = 0.01
         #if sine is negative (if dY is negative) then the rotation must be negative
@@ -567,7 +556,7 @@ class Robot:
         if (dY < 0):
             w = -w
             th_goal = -th_goal
-        
+
         end = False
         self.setSpeed(0,w)
         while not end:
@@ -590,11 +579,9 @@ class Robot:
             v = v / 1.05
             self.setSpeed(v, 0)
         self.setSpeed(0, 0)
-                
+
     #def detectObstacle(self):
 
     #    obstacle,x,y=sensorDetection() #funcion que detecta obstaculo y por arte de magia te dice donde estan
     #    objectDetected(x,y)
     #    return obstacle
-        
-            

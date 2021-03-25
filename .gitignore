@@ -136,3 +136,5 @@ p3/Scripts/
 *.cfg
 
 .vscode
+
+Scripts/
