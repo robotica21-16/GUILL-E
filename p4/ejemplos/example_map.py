@@ -63,9 +63,11 @@ def main(args):
 
 
         x1,y1 = 0,0
-        x2,y2 = 2,2
+        x2,y2 = 5,3
         if myMap.findPath(x1,y1,x2,y2):
             print("camino encontrado")
+            myMap.drawMap(saveSnapshot=False)
+            
         # 2. launch updateOdometry thread()
         # robot.startOdometry()
         # ...

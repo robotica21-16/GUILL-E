@@ -426,13 +426,17 @@ class Map2D:
         """
         print(np.rot90(self.costMatrix))
 
-    def hasValue(self, neighbour_cell):
-        return self.costMatrix[neighbour_cell[0], neighbour_cell[1]] >= 0
+    def hasValue(self, neighbour_cell, front):
+        """
+        returns True if the cell already has a value or is in the frontier
+        """
+        # print(front,"esta?", neighbour_cell not in front)
+        return neighbour_cell in front or self.costMatrix[neighbour_cell[0], neighbour_cell[1]] >= 0
 
     def fillCostMatrix(self, goal):
         """
-        NOTE: Make sure self.costMatrix is a 2D numpy array of dimensions dimX x dimY
-        TO-DO
+        Fills the cost matrix with the costs of getting to goal=[x,y].
+        If any cells are unreachable they keep cost -2
         """
 
         end = False
@@ -444,30 +448,32 @@ class Map2D:
         while not end:
             newFront = []
             if not frontier: # is empty
+                print('EMPTY FRONTIER')
                 end = True
-            # print("FRontier:", frontier)
+            print("FRontier:", frontier, "===============================================")
             for cell in frontier:
-                # print("in cell ", cell, " cost: ", cost, "------------------------------")
+                print("in cell ", cell, " cost: ", cost, "------------------------------")
                 self.costMatrix[cell[0], cell[1]] = cost
                 for i in range(4): # for each neighbour
                     neighbour = i*2
                     neighbour_cell = self.neighbourCell(cell[0], cell[1],neighbour)
                     #print("neighbour: ", neighbour)
-                    # print(neighbour_cell, "isconnected: ", self.isConnected(cell[0], cell[1], neighbour))
+                    print(neighbour_cell, "isconnected: ", self.isConnected(cell[0], cell[1], neighbour))
                     #print("Connection thingy\n", self.connectionMatrix)
-                    if self.isConnected(cell[0], cell[1], neighbour) and not self.hasValue(neighbour_cell):
+                    if self.isConnected(cell[0], cell[1], neighbour) and not self.hasValue(neighbour_cell, newFront):
                         newFront += [neighbour_cell]
                 procesadas+=1
                 #print("size, procesadas",self.costMatrix.size, procesadas)
                 #print("End of fillcost: \n",self.costMatrix)
                 if procesadas >= self.costMatrix.size:
+                    print("Procesadas todas")
+
                     end=True
             frontier=newFront
             cost += 1
         print("End of fillCostMatrix")
         self.printCostMatrix()
-
-            # print(self.costMatrix[len(self.costMatrix-2-row)])
+        # self.drawMap(saveSnapshot=False)
         # exit(1)
 
 
@@ -489,8 +495,8 @@ class Map2D:
         current_x=x_ini
         current_y=y_ini
         while not pathFound:
-            print("Iteracion de findPath: ", current_x, current_y,#self.currentPath,
-                 "------------------------------------------")
+            # print("Iteracion de findPath: ", current_x, current_y,#self.currentPath,
+            #      "------------------------------------------")
             x_min=0
             y_min=0
             min_cost=math.inf
@@ -515,16 +521,15 @@ class Map2D:
                 print("Blocked path in ", current_x, current_y)
                 print("Current path:",self.currentPath )
                 exit(1)
-            else:
-                print(min_cost)
+            # else:
+            #     print(min_cost)
             current_x=x_min
             current_y=y_min
             self.currentPath+=[[current_x, current_y]]
             if(current_x==x_end and current_y==y_end):
                 pathFound=True
-
-        print("------------------ PATH ------------------ ")
-        print(self.currentPath)
+        # print("------------------ PATH ------------------ ")
+        # print(self.currentPath)
         return pathFound
 
 
