@@ -544,7 +544,7 @@ class Map2D:
         x_now, y_now = self._pos2cell(x_now, y_now)
         #celxObs,celyObs=self._pos2cell(x_ob,y_ob)
         self.deleteConnection(x_now, y_now, neighbour)
-        
+
 
     def replanPath(self, x, y, x_end=-1, y_end=-1):
     #""" TO-DO """
@@ -556,3 +556,23 @@ class Map2D:
             self.findPath(inix, iniy, x_end, y_end)
 
 
+    def neighbourFromCells(self, cell1, cell2):
+        dif1 = cell2[0]-cell1[0]
+        dif2 = cell2[1]-cell1[1]
+        if dif1==0 and dif2==1:
+            res=0
+        elif dif1==1 and dif2==1:
+            res=1
+        elif dif1==1 and dif2==0:
+            res=2
+        elif dif1==1 and dif2==-1:
+            res=3
+        elif dif1==0 and dif2==-1:
+            res=4
+        elif dif1==-1 and dif2==-1:
+            res=5
+        elif dif1==-1 and dif2==0:
+            res=6
+        elif dif1==-1 and dif2==1:
+            res=7
+        return res
