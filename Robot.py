@@ -580,6 +580,28 @@ class Robot:
             self.setSpeed(v, 0)
         self.setSpeed(0, 0)
 
+    # ---------------------------------------------- p4:
+    def setMap(self, map, ini=None, end=None):
+        self.map = map
+        # TODO: que pasa si ini!=[0,0]
+        # pos = self.map.
+        if ini is not None and end is not None:
+            if ini[0]!=0 or ini[1]!=0:
+                print('TODO......')
+                exit(1)
+            if not self.map.findPath(ini[0], ini[1],end[0],end[1]):
+                print("ERROR en findPath")
+                self.stopOdometry()
+
+
+    def executePath(self):
+        for step in self.map.currentPath:
+            self.go(self.posFromCell(step[0], step[1]))
+
+    def posFromCell(self, x,y):
+        return x*self.map.sizeCell, y*self.map.sizeCell
+
+
     #def detectObstacle(self):
 
     #    obstacle,x,y=sensorDetection() #funcion que detecta obstaculo y por arte de magia te dice donde estan
