@@ -572,6 +572,12 @@ class Robot:
                 time.sleep(period - (tEnd - tIni))
         self.setSpeed(0,0)
 
+    def fixGoal(self, goal, eps=0.02):
+        for i in range(len(goal)-1):
+            if -eps <= goal[i] <= eps:
+                goal[i] = None
+        return goal
+
     def goToNeighbour(self, neighbour):
         th_goal = math.pi/2
         if neighbour == 2:
@@ -588,6 +594,7 @@ class Robot:
         self.align(th_goal)
         goal = self.avanzarDistancia(self.map.sizeCell)
         goal=[goal[0], goal[1], None]
+        goal = self.fixGoal(goal)
         vFin = self.vTarget
         period = 0.02
         while True:
