@@ -7,10 +7,10 @@ import math
 import sys
 
 
-import pandas as pd
+# import pandas as pd
 import matplotlib.pyplot as plt
  
-def plotFile(fileName, sep="\t"):
+""" def plotFile(fileName, sep="\t"):
     df  = pd.read_csv(fileName, sep=sep)
     print(df)
     #df.plot()  # plots all columns against index
@@ -21,19 +21,19 @@ def plotFile(fileName, sep="\t"):
     ax.set_ylabel("y (m)")
     ax.set_aspect('equal')
     #df.plot(kind='density')  # estimate density function
-    plt.show()
+    plt.show() """
 
 def writeLog(f_log, data, sep="\t"):
     """
     Writes a row of the log (t, x, y, th, v, w, deltaTh, deltaSi)
     (each with 2 decimal positions, v multiplied by 100 to gain precision)
     """
-    data = "\t".join(['{0:.2f}'.format(e) for e in data])+"\n"
+    data = "\t".join(['{0:.3f}'.format(e) for e in data])+"\n"
     #print(fila)
     f_log.write(data)
     f_log.flush()
 
-def getMappedW(wTarget, d, dmin=-resolution[0] / 2.0, dmax=resolution[0] / 2.0, eps=15):
+def getMappedW(wTarget, d, dmin, dmax, eps=15):
     """
     Returns a mapped angular speed in (-wTarget, wTarget), given a distance 'd' in pixels and its POSIBLE range '(dmin, dmax)'
     """

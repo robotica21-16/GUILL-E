@@ -27,9 +27,9 @@ def main(args):
         if args.test_go!="":
             robot = Robot()
             robot.startOdometry()
-            robot.go(0.15,0)
-            robot.go(0.15,0.15)
-            robot.go(0,0.15)
+            robot.go(0,0.4)
+            robot.go(0,0.8)
+            robot.go(0,1.2)
             robot.go(0,0)
             robot.stopOdometry()
             exit(0)

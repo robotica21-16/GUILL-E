@@ -13,6 +13,7 @@ import datetime
 import numpy as np
 from picamera.array import PiRGBArray
 
+from utils.utils import *
 
 from geometry.geometry import *
 
@@ -229,7 +230,7 @@ class Robot:
             cond2 = True
             if target[0] != None:
                 cond1 = reached(odo[0],target[0], costh>0)
-            elif target[1] != None:
+            if target[1] != None:
                 cond2 = reached(odo[1],target[1],sinth>0)
             #print(target[0], " --x-- ", odo[0], "\n", target[1], "-------y------", odo[1])
             if cond1 and cond2:
@@ -326,7 +327,7 @@ class Robot:
             self.lock_odometry.release()
             
 
-            self.writeLog(self.f_log, [self.tLast-self.tInitialization, self.x.value, self.y.value, self.th.value, v, w, deltaTh, deltaSi])
+            writeLog(self.f_log, [self.tLast-self.tInitialization, self.x.value, self.y.value, self.th.value, v, w, deltaTh, deltaSi])
 
             tEnd = time.perf_counter()
             time.sleep(self.P - (tEnd-tIni))
@@ -337,7 +338,7 @@ class Robot:
 
     # Stop the odometry thread.
     def stopOdometry(self):
-         """
+        """
         Stops odometry and sets the speed of all motors to 0
         """
         self.finished.value = True
@@ -350,7 +351,7 @@ class Robot:
     # TRACKING FUNCTIONS
 
     def trackBall(self):
-         """
+        """
         Tracks and catches the red ball
         """
         self.trackObject(self.ballArea, self.ballX, self.ballClawsArea, True, 5)
@@ -400,8 +401,8 @@ class Robot:
             else: # we see the target and the target position hasnt been reached
                 d = horizontalDistance(kp, [targetX,0])
                 A = kp.size
-                w = self.getMappedW(d, targetX - resolution[0], targetX)
-                v = self.getMappedV(A, targetSize)
+                w = getMappedW(self.wTarget, d, targetX - resolution[0], targetX)
+                v = getMappedV(self.vTarget, A, targetSize)
                 self.setSpeed(v,w)
 
                 if targetSize-eps < A and not targetPositionReached:
@@ -510,27 +511,37 @@ class Robot:
         """
         Moves the robot to x_goal, y_goal (first it turns, then it advances, for cell navigation)
         """
-        #xLoc=np.array([dist, 0, 0])
-        #xRW=np.array(self.readOdometry())
-        #xWorld = loc(np.dot(np.hom(xRW), hom(xLoc)))
+        xWorld=np.array([x_goal, y_goal, 0])
+        xRW=np.array(self.readOdometry())
+        xLoc = loc(np.dot(hom(xWorld), np.linalg.inv(hom(xRW))))
+        #print(x_goal, y_goal, xLoc, xRW, sep='\n')
+
         
         odo = self.readOdometry()
-        period = 0.01
+        period = 0.02
         #if sine is negative (if dY is negative) then the rotation must be negative
+        w = self.wTarget /2
         dX = x_goal - odo[0]
         dY = y_goal - odo[1]
-        w = self.wTarget
         th_goal = norm_pi(math.atan2(dY, dX))
-        if (dY < 0):
+
+        if (th_goal < odo[2]):
+        #if xLoc[1] < 0:
             w = -w
-            th_goal = -th_goal
+            #th_goal = -th_goal
+        print("X", dX, "Y", dY, "TH", th_goal, sep='\n')
         
         end = False
-        self.setSpeed(0,w)
+        
         while not end:
             tIni = time.perf_counter()
+            odo = self.readOdometry()
+            dX = x_goal - odo[0]
+            dY = y_goal - odo[1]
+            th_goal = norm_pi(math.atan2(dY, dX))
             end = self.closeEnough([None, None, th_goal], w)
             if not end:
+                self.setSpeed(0,w)
                 tEnd = time.perf_counter()
                 time.sleep(period - (tEnd - tIni))
 
@@ -543,9 +554,6 @@ class Robot:
             if not end:
                 tEnd = time.perf_counter()
                 time.sleep(period - (tEnd - tIni))
-        while (v > 0.1):
-            v = v / 1.05
-            self.setSpeed(v, 0)
         self.setSpeed(0, 0)
 
     # ---------------------------------------------- p4:
@@ -564,10 +572,12 @@ class Robot:
 
     def executePath(self):
         for step in self.map.currentPath:
-            self.go(self.posFromCell(step[0], step[1]))
+            x, y = self.posFromCell(step[0], step[1])
+            #print(step, x, y)
+            self.go(x, y)
 
     def posFromCell(self, x,y):
-        return x*self.map.sizeCell, y*self.map.sizeCell
+        return x*self.map.sizeCell/1000.0, y*self.map.sizeCell/1000.0
 
 
     #def detectObstacle(self):
