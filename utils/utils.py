@@ -9,7 +9,7 @@ import sys
 
 import pandas as pd
 import matplotlib.pyplot as plt
-
+ 
 def plotFile(fileName, sep="\t"):
     df  = pd.read_csv(fileName, sep=sep)
     print(df)
