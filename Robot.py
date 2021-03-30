@@ -593,6 +593,49 @@ class Robot:
                 print("ERROR en findPath")
                 self.stopOdometry()
 
+    def align(self, th_goal):
+        end = False
+        self.setSpeed(0,w)
+        while not end:
+            tIni = time.perf_counter()
+            end = self.closeEnough([None, None, th_goal], w)
+            if not end:
+                tEnd = time.perf_counter()
+                time.sleep(period - (tEnd - tIni))
+        self.setSpeed(0,0)
+
+    def goToNeighbour(self, neighbour):
+        th_goal = math.pi/2
+        if neighbour == 2:
+            th_goal = 0
+        elif neighbour == 4:
+            th_goal = -math.pi/2
+        elif neighbour == 6:
+            th_goal = math.pi
+        odo = self.readOdometry()
+        dif = norm_pi(2*math.pi+th_goal-odo[2])
+        w=self.wTarget
+        if dif>0: # TODO: IGUAL AL REVES
+            w=-w
+        self.align(th_goal)
+        goal = self.avanzarDistancia(self.map.sizeCell)
+        goal=[goal[0], goal[1], None]
+        vFin = self.vTarget
+        while True:
+            if self.closeEnough(goal, 0):
+                self.setSpeed(0, 0)
+                break
+            else:
+                #Decelerate
+                vFin=vFin/1.005
+                self.setSpeed(vFin,0)
+
+    def executePath_neigh(self):
+        last = [0.,0.]
+        for step in self.map.currentPath:
+            neigh = self.map.neighbourFromCells(last,step)
+            self.goToNeighbour(neigh)
+            last = step
 
     def executePath(self):
         for step in self.map.currentPath:
