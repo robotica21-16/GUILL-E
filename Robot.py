@@ -41,7 +41,7 @@ class Robot:
         self.eje_rueda = self.L/2.0
 
         self.offset_right = 0.9995 # The way the bot is built, the left tire spins slightly slower than right
-        
+
         ##################################################
         # Camera initialization
         self.cam = picamera.PiCamera()
@@ -51,9 +51,9 @@ class Robot:
         self.cam.framerate = 60 # TODO: mirar maximo real
         #self.rawCapture = PiRGBArray(self.cam, size=(320, 240))
         self.rawCapture = PiRGBArray(self.cam, size=tuple(resolution))
-        
+
         self.cam.rotation=180
-        
+
         ##################################################
         # Create an instance of the BrickPi3 class. BP will be the BrickPi3 object.
         self.BP = brickpi3.BrickPi3()
@@ -64,7 +64,7 @@ class Robot:
         self.vmax = 1.0/4.0
         self.vTarget = self.vmax
         self.wTarget = self.wmax  #/2
-        
+
         self.rotIzqDeg = 0
         self.rotDchaDeg = 0
 
@@ -73,9 +73,9 @@ class Robot:
         self.ballArea = 110
         self.ballClawsArea = 60
         self.ballX = resolution[0]/2.0
-        
-        
-        
+
+
+
         # Configure sensors, for example a touch sensor.
         #self.BP.set_sensor_type(self.BP.PORT_1, self.BP.SENSOR_TYPE.TOUCH)
 
@@ -142,11 +142,11 @@ class Robot:
         v (linear ms) and w (angular rad s)
         """
         # wID = [wI, wD]:
-        
+
         wDI = izqDchaFromVW(self.R_rueda, self.L, v, w)
         wD = wDI[0]
         wI = wDI[1]
-        
+
         speedDPS_left = wI/math.pi*180
         speedDPS_right = self.offset_right*wD/math.pi*180
         self.BP.set_motor_dps(self.ruedaIzq, speedDPS_left)
@@ -193,7 +193,7 @@ class Robot:
         v,w = vWiFromIzqDcha(self.R_rueda, self.L, wI, wD)
         #print("v, w: ", v, w)
         return v, w
-        
+
     ####################################################################################################
     # Trajectories functions
 
@@ -257,7 +257,7 @@ class Robot:
                     tFin = time.perf_counter()
                     time.sleep(period-(tFin-tIni))
         self.setSpeed(0, 0)
-        
+
     ####################################################################################################
     # ODOMETRY FUNCTIONS
 
@@ -288,7 +288,7 @@ class Robot:
         self.p = Process(target=self.updateOdometry, args=()) #additional_params?))
         self.p.start()
         print("PID: ", self.p.pid)
-    
+
     def readOdometry(self):
         """ Returns current value of odometry estimation """
         return self.x.value, self.y.value, self.th.value
@@ -325,7 +325,7 @@ class Robot:
             self.y.value += deltay
             self.th.value = th
             self.lock_odometry.release()
-            
+
 
             writeLog(self.f_log, [self.tLast-self.tInitialization, self.x.value, self.y.value, self.th.value, v, w, deltaTh, deltaSi])
 
@@ -420,11 +420,11 @@ class Robot:
 
     def takePicture(self):
         #rawCapture = PiRGBArray(self.cam, size=(320, 240))
-        
+
         now = datetime.datetime.now()
         self.cam.capture("photos/{:d}-{:d}-{:d}-{:02d}_{:02d}_{:02d}".format(now.year, now.month, now.day, now.hour, now.minute, now.second)+".png", format="png", use_video_port=True)
         #data = np.fromstring(stream.getvalue(), dtype=np.uint8)
-        
+
         #cv2.imwrite("photos/{:d}-{:d}-{:d}-{:02d}_{:02d}".format(now.year, now.month, now.day, now.hour, now.minute)+".png", img.array)
 
     def detect_continuous(self):
@@ -441,19 +441,19 @@ class Robot:
 
             tIni = time.perf_counter()
             frame = img.array
-            
+
             cv2.imshow('frame', frame)
             #print(":(")
-            
+
             noseque = search_blobs_detector(self.cam, frame, detector, verbose = True)
             self.rawCapture.truncate(0)
-            
-            
+
+
             tEnd = time.perf_counter()
             cv2.waitKey(int(1000*period - (tEnd-tIni)))
-            
+
         cv2.destroyAllWindows()
-            
+
     ####################################################################################################
     # CLAWS FUNCTIONS
 
@@ -502,7 +502,7 @@ class Robot:
         xLoc=np.array([dist, 0, 0])
         xRW=np.array(self.readOdometry())
         xWorld=loc(np.dot(hom(xRW), hom(xLoc)))
-        return xWorld 
+        return xWorld
 
     ####################################################################################################
     # MAP & MOVING FUNCTIONS
@@ -511,12 +511,10 @@ class Robot:
         """
         Moves the robot to x_goal, y_goal (first it turns, then it advances, for cell navigation)
         """
-        xWorld=np.array([x_goal, y_goal, 0])
-        xRW=np.array(self.readOdometry())
-        xLoc = loc(np.dot(hom(xWorld), np.linalg.inv(hom(xRW))))
-        #print(x_goal, y_goal, xLoc, xRW, sep='\n')
+        #xLoc=np.array([dist, 0, 0])
+        #xRW=np.array(self.readOdometry())
+        #xWorld = loc(np.dot(np.hom(xRW), hom(xLoc)))
 
-        
         odo = self.readOdometry()
         period = 0.02
         #if sine is negative (if dY is negative) then the rotation must be negative
@@ -570,6 +568,8 @@ class Robot:
                 self.stopOdometry()
 
     def align(self, th_goal):
+        period = 0.02
+        w = self.wTarget / 2
         end = False
         self.setSpeed(0,w)
         while not end:
@@ -594,17 +594,21 @@ class Robot:
         if dif>0: # TODO: IGUAL AL REVES
             w=-w
         self.align(th_goal)
-        goal = self.avanzarDistancia(self.map.sizeCell)
+        goal = self.advanceDistance(self.map.sizeCell)
         goal=[goal[0], goal[1], None]
         vFin = self.vTarget
+        period = 0.02
         while True:
+            tIni = time.perf_counter()
             if self.closeEnough(goal, 0):
                 self.setSpeed(0, 0)
                 break
             else:
                 #Decelerate
-                vFin=vFin/1.005
+                #vFin=vFin/1.005
                 self.setSpeed(vFin,0)
+                tEnd = time.perf_counter()
+                time.sleep(period-(tEnd-tIni))
 
     def executePath_neigh(self):
         last = [0.,0.]
@@ -628,5 +632,3 @@ class Robot:
     #    obstacle,x,y=sensorDetection() #funcion que detecta obstaculo y por arte de magia te dice donde estan
     #    objectDetected(x,y)
     #    return obstacle
-        
-            

@@ -77,7 +77,8 @@ def main(args):
         robot = Robot()
         robot.setMap(myMap, [x1,y1], [x2,y2])
         robot.startOdometry()
-        robot.executePath()
+        #robot.executePath()
+        robot.executePath_neigh()
         robot.stopOdometry()
         # if myMap.findPath(x1,y1,x2,y2):
         #     print("camino encontrado")
