@@ -25,27 +25,6 @@ from p4.MapLib import *
 
 resolution=[320,240]
 
-DEBUG_MODE = False
-
-
-def reached(x, target, greater):
-    if greater:
-        return x>=target
-    else:
-        return x<=target
-
-def reachedAngle(th, target, w):
-    if w > 0:
-        if target < 0 and th > 0:
-            return th >= (2*math.pi + target)
-        else:
-            return th >= target
-    elif w < 0:
-        if target > 0 and th < 0:
-            return (2*math.pi+th) <= target
-        else:
-            return th <= target
-
 class Robot:
     def __init__(self, init_position=[0.0, 0.0, 0.0]):
         """
@@ -53,7 +32,7 @@ class Robot:
 
         Initialize Motors and Sensors according to the set up in your robot
         """
-
+        ##################################################
         # Robot construction parameters
 
         self.R_rueda = 0.027
@@ -61,50 +40,53 @@ class Robot:
         self.eje_rueda = self.L/2.0
 
         self.offset_right = 0.9995 # The way the bot is built, the left tire spins slightly slower than right
-
-        # Camera Initialization
-        #self.cam = picamera.PiCamera()
-        #self.cam.resolution = (320, 240)
-        #self.cam.resolution = (640, 480)
-        #self.cam.framerate = 32
-        #self.cam.rotation = 180
-        #####################
-
-
+        
+        ##################################################
+        # Camera initialization
         self.cam = picamera.PiCamera()
 
         #self.cam.resolution = (320, 240)
         self.cam.resolution = tuple(resolution)
-        self.cam.framerate = 32 # TODO: mirar maximo real
+        self.cam.framerate = 60 # TODO: mirar maximo real
         #self.rawCapture = PiRGBArray(self.cam, size=(320, 240))
         self.rawCapture = PiRGBArray(self.cam, size=tuple(resolution))
-
+        
         self.cam.rotation=180
-
-
+        
+        ##################################################
         # Create an instance of the BrickPi3 class. BP will be the BrickPi3 object.
         self.BP = brickpi3.BrickPi3()
 
+        ##################################################
+        # Speed parameters
         self.wmax = math.pi/3
         self.vmax = 1.0/4.0
         self.vTarget = self.vmax
-        self.wTarget = self.wmax#/2
+        self.wTarget = self.wmax  #/2
+        
+        self.rotIzqDeg = 0
+        self.rotDchaDeg = 0
 
-
-        self.ballArea = 110 #200.71975708007812 # TODO: poner bien!!!!!
+        ##################################################
+        # Ball parameters
+        self.ballArea = 110
         self.ballClawsArea = 60
-        self.ballX = resolution[0]/2.0 # 318.3089599609375
-        self.lock_garras = Lock()
-
-        self.closing = Value('b',0)
+        self.ballX = resolution[0]/2.0
+        
+        
+        
         # Configure sensors, for example a touch sensor.
         #self.BP.set_sensor_type(self.BP.PORT_1, self.BP.SENSOR_TYPE.TOUCH)
 
+        ##################################################
+        # Sensors and motors
         # reset encoder B and C (or all the motors you are using)
+        self.lock_garras = Lock()
+        self.closing = Value('b',0)
         self.ruedaIzq = self.BP.PORT_D
         self.ruedaDcha = self.BP.PORT_A
         self.motorGarras = self.BP.PORT_C
-        self.maxRotGarras = 70 # angulo de giro de las garras 30 grados, comprobar!
+        self.maxRotGarras = 70 # angulo de giro de las garras 30 grados
         self.BP.offset_motor_encoder(self.ruedaIzq,
             self.BP.get_motor_encoder(self.ruedaIzq))
         self.BP.offset_motor_encoder(self.ruedaDcha,
@@ -125,11 +107,7 @@ class Robot:
                 #print(posClawsIni)
         self.BP.set_motor_dps(self.motorGarras, 0)
 
-
-        self.rotIzqDeg = 0
-        self.rotDchaDeg = 0
-
-        ##################################################
+        ####################################################################################################
         # odometry shared memory values
         # usar parametro
         self.x = Value('d',0.0)
@@ -144,30 +122,79 @@ class Robot:
         # if we want to block several instructions to be run together, we may want to use an explicit Lock
         self.lock_odometry = Lock()
 
-        # odometry update period --> UPDATE value!
+        # odometry update period
         self.P = 0.05
 
+        ####################################################################################################
+        # Logs
         now = datetime.datetime.now()
         self.f_log = open("logs/{:d}-{:d}-{:d}-{:02d}_{:02d}".format(now.year, now.month, now.day, now.hour, now.minute)+"-log.txt","a")#append
-        fila = ["t", "x", "y", "th", "v*100", "w", "dTh", "dSi"]
+        fila = ["t", "x", "y", "th", "v", "w", "dTh", "dSi"]
         self.f_log.write("\t".join([str(e) for e in fila]) + "\n")
         time.sleep(0.2)
 
+    ####################################################################################################
+    # SPEED FUNCTIONS
     def setSpeed(self, v, w):
         """
         Sets the speed as degrees PS to each motor according to
         v (linear ms) and w (angular rad s)
         """
         # wID = [wI, wD]:
-
+        
         wDI = izqDchaFromVW(self.R_rueda, self.L, v, w)
         wD = wDI[0]
         wI = wDI[1]
-
+        
         speedDPS_left = wI/math.pi*180
         speedDPS_right = self.offset_right*wD/math.pi*180
         self.BP.set_motor_dps(self.ruedaIzq, speedDPS_left)
         self.BP.set_motor_dps(self.ruedaDcha, speedDPS_right)
+
+    def readSpeedIzqDcha(self, dT):
+        """
+        Returns vL, vD as DPS of the wheels (left, right)
+        """
+        #izq = self.BP.get_motor_encoder(self.BP.PORT_B)
+        #dcha = self.BP.get_motor_encoder(self.BP.PORT_C)
+        #return izq, dcha
+        try:
+            # Each of the following BP.get_motor_encoder functions returns the encoder value
+            # (what we want to store).
+            #sys.stdout.write("Reading encoder values .... \n")
+            izq = self.BP.get_motor_encoder(self.ruedaIzq)
+            dcha = self.BP.get_motor_encoder(self.ruedaDcha)
+            izq_bk = izq
+            dcha_bk = dcha
+            izq = izq-self.rotIzqDeg
+            dcha = dcha-self.rotDchaDeg
+            #print("ideg, ddeg: ", self.rotIzqDeg, self.rotDchaDeg)
+
+            self.rotIzqDeg = izq_bk
+            self.rotDchaDeg = dcha_bk
+            #print("i, d (sin dT): ", izq, dcha, dT)
+            return izq/dT, dcha/dT
+        except IOError as error:
+            #print(error)
+            sys.stdout.write(error)
+
+    def readSpeed(self, dT):
+        """
+        In: dT = delta of time
+        Returns v,w (in m/s and rad/s) according to the motor encoders
+        """
+
+        izq, dcha = self.readSpeedIzqDcha(dT)
+
+        wI = np.radians(izq)
+        wD = np.radians(dcha)
+
+        v,w = vWiFromIzqDcha(self.R_rueda, self.L, wI, wD)
+        #print("v, w: ", v, w)
+        return v, w
+        
+    ####################################################################################################
+    # Trajectories functions
 
     def setTrajectory(self,trajectory):
         """
@@ -182,7 +209,6 @@ class Robot:
         for move in self.trajectory.movements:
             self.setSpeed(move.vc[0], move.vc[1])
             time.sleep(move.t)
-
 
     def closeEnough(self, target, w):
         odo = self.readOdometry()
@@ -229,68 +255,10 @@ class Robot:
                 if not end:
                     tFin = time.perf_counter()
                     time.sleep(period-(tFin-tIni))
-                #tIni = time.perf_counter()
-                #v,w = geometry.fromPosToTarget(np.array(self.readOdometry()),
-                #        target, self.vTarget, self.wTarget)
-                #self.setSpeed(v, w)
-                #tFin = time.perf_counter()
-                #time.sleep(period-(tFin-tIni))
-        self.setSpeed(0,0)
-
-
-    def readSpeedIzqDcha(self, dT):
-        """
-        Returns vL, vD as DPS of the wheels (left, right)
-        """
-        #izq = self.BP.get_motor_encoder(self.BP.PORT_B)
-        #dcha = self.BP.get_motor_encoder(self.BP.PORT_C)
-        #return izq, dcha
-        try:
-            # Each of the following BP.get_motor_encoder functions returns the encoder value
-            # (what we want to store).
-            #sys.stdout.write("Reading encoder values .... \n")
-            izq = self.BP.get_motor_encoder(self.ruedaIzq)
-            dcha = self.BP.get_motor_encoder(self.ruedaDcha)
-            izq_bk = izq
-            dcha_bk = dcha
-            izq = izq-self.rotIzqDeg
-            dcha = dcha-self.rotDchaDeg
-            #print("ideg, ddeg: ", self.rotIzqDeg, self.rotDchaDeg)
-
-            self.rotIzqDeg = izq_bk
-            self.rotDchaDeg = dcha_bk
-            #print("i, d (sin dT): ", izq, dcha, dT)
-            return izq/dT, dcha/dT
-        except IOError as error:
-            #print(error)
-            sys.stdout.write(error)
-
-    def readSpeed(self, dT):
-        """
-        In: dT = delta of time
-        Returns v,w (in m/s and rad/s) according to the motor encoders
-        """
-        #print('-----------------------------------')
-        izq, dcha = self.readSpeedIzqDcha(dT)
-        #print("i, d: ", izq, dcha)
-        wI = np.radians(izq)
-        wD = np.radians(dcha)
-        #rint("wi, wd: ", wI, wD)
-        v,w = vWiFromIzqDcha(self.R_rueda, self.L, wI, wD)
-        #print("v, w: ", v, w)
-        return v,w
-
-    def readOdometry(self):
-        """ Returns current value of odometry estimation """
-        return self.x.value, self.y.value, self.th.value
-
-    def startOdometry(self):
-        """ This starts a new process/thread that will be updating the odometry periodically """
-        self.finished.value = False
-        self.p = Process(target=self.updateOdometry, args=()) #additional_params?))
-        self.p.start()
-        print("PID: ", self.p.pid)
-
+        self.setSpeed(0, 0)
+        
+    ####################################################################################################
+    # ODOMETRY FUNCTIONS
 
     def deltaX(self, deltaSi, deltaTh):
         """
@@ -313,17 +281,16 @@ class Robot:
         """
         return deltaSi*np.sin(self.th.value + deltaTh/2.0)
 
-    def writeLog(self, v,w, deltaTh, deltaSi,sep="\t"):
-        """
-        Writes a row of the log (t, x, y, th, v, w, deltaTh, deltaSi)
-        (each with 2 decimal positions, v multiplied by 100 to gain precision)
-        """
-        fila = [self.tLast-self.tInitialization, self.x.value,
-        self.y.value, self.th.value, 100*v,w, deltaTh, deltaSi]
-        fila = "\t".join(['{0:.2f}'.format(e) for e in fila])+"\n"
-        #print(fila)
-        self.f_log.write(fila)
-        self.f_log.flush()
+    def startOdometry(self):
+        """ This starts a new process/thread that will be updating the odometry periodically """
+        self.finished.value = False
+        self.p = Process(target=self.updateOdometry, args=()) #additional_params?))
+        self.p.start()
+        print("PID: ", self.p.pid)
+    
+    def readOdometry(self):
+        """ Returns current value of odometry estimation """
+        return self.x.value, self.y.value, self.th.value
 
     # You may want to pass additional shared variables besides the odometry values and stop flag
     def updateOdometry(self): #, additional_params?):
@@ -357,36 +324,33 @@ class Robot:
             self.y.value += deltay
             self.th.value = th
             self.lock_odometry.release()
+            
 
-
-            self.writeLog(v,w, deltaTh, deltaSi)
+            self.writeLog(self.f_log, [self.tLast-self.tInitialization, self.x.value, self.y.value, self.th.value, v, w, deltaTh, deltaSi])
 
             tEnd = time.perf_counter()
             time.sleep(self.P - (tEnd-tIni))
 
         #print("Stopping odometry ... X= %d" %(self.x.value))
         sys.stdout.write("Stopping odometry ... X=  %.2f, \
-                Y=  %.2f, th=  %.2f \n" %(self.x.value, self.y.value, self.th.value))
+                Y=  %.2f, th=  %.2f \n" % (self.x.value, self.y.value, self.th.value))
 
+    # Stop the odometry thread.
+    def stopOdometry(self):
+         """
+        Stops odometry and sets the speed of all motors to 0
+        """
+        self.finished.value = True
+        self.f_log.close()
+        self.setSpeed(0,0)
+        self.BP.set_motor_dps(self.motorGarras, 0)
+        #self.BP.reset_all()
 
-    def getMappedW(self, d, dmin=-resolution[0] / 2.0, dmax=resolution[0] / 2.0, eps=15):
-        """
-        Returns a mapped angular speed, given a distance 'd' in pixels and its POSIBLE range '(dmin, dmax)'
-        """
-        if (abs(d)<eps):
-            return 0
-        return np.interp(d, [dmin, dmax], [-self.wTarget, self.wTarget])
-
-    def getMappedV(self, A, targetArea):
-        """
-        Returns a mapped linear speed, given a value 'A' in pixels and its DESIRED value 'targetArea'
-        """
-        # cuando A=0 (en el infinito) -> targetArea-A = targetArea -> v=vmax
-        # cuando A=a (en el objetivo) -> targetArea-A = 0 -> v = 0
-        return self.vTarget-np.interp(A-targetArea, [-targetArea, 0], [0, self.vTarget-0.1])
+    ####################################################################################################
+    # TRACKING FUNCTIONS
 
     def trackBall(self):
-        """
+         """
         Tracks and catches the red ball
         """
         self.trackObject(self.ballArea, self.ballX, self.ballClawsArea, True, 5)
@@ -443,18 +407,24 @@ class Robot:
                 if targetSize-eps < A and not targetPositionReached:
                     # close enough to target, we set the objective from current position+some distance
                     targetPositionReached  = True
-                    objetivo=self.avanzarDistancia(0.21)
+                    objetivo=self.advanceDistance(0.21)
                     objetivo=[objetivo[0], objetivo[1], None]
                     self.setSpeed(vFin/2,0)
 
             tEnd = time.perf_counter()
             #time.sleep(period-(tEnd-tIni))
 
+    ####################################################################################################
+    # CAMERA DEBUG FUNCTIONS
+
     def takePicture(self):
+        #rawCapture = PiRGBArray(self.cam, size=(320, 240))
+        
         now = datetime.datetime.now()
-        self.cam.capture("photos/{:d}-{:d}-{:d}-{:02d}_{:02d}_{:02d}".format(
-            now.year, now.month, now.day, now.hour, now.minute, now.second)+
-            ".png", format="png", use_video_port=True)
+        self.cam.capture("photos/{:d}-{:d}-{:d}-{:02d}_{:02d}_{:02d}".format(now.year, now.month, now.day, now.hour, now.minute, now.second)+".png", format="png", use_video_port=True)
+        #data = np.fromstring(stream.getvalue(), dtype=np.uint8)
+        
+        #cv2.imwrite("photos/{:d}-{:d}-{:d}-{:02d}_{:02d}".format(now.year, now.month, now.day, now.hour, now.minute)+".png", img.array)
 
     def detect_continuous(self):
         """
@@ -470,16 +440,21 @@ class Robot:
 
             tIni = time.perf_counter()
             frame = img.array
-
+            
             cv2.imshow('frame', frame)
+            #print(":(")
+            
             noseque = search_blobs_detector(self.cam, frame, detector, verbose = True)
             self.rawCapture.truncate(0)
+            
+            
             tEnd = time.perf_counter()
             cv2.waitKey(int(1000*period - (tEnd-tIni)))
-
+            
         cv2.destroyAllWindows()
-
-
+            
+    ####################################################################################################
+    # CLAWS FUNCTIONS
 
     def catch(self):
         """
@@ -488,9 +463,12 @@ class Robot:
         self.catcher = Process(target=self.moveClaws, args=()) #additional_params?))
         self.catcher.start()
 
+        # decide the strategy to catch the ball once you have reached the target position
+        pass
+
     def moveClaws(self):
         """
-        Rutina paralela para cerrar o abrir las garras
+        Rutina paralela para cerrar las garras
         """
         self.lock_garras.acquire()
 
@@ -514,19 +492,8 @@ class Robot:
         self.closing.value= not self.closing.value
         self.lock_garras.release()
 
-    # Stop the odometry thread.
-    def stopOdometry(self):
-        """
-        Stops odometry and sets the speed of all motors to 0
-        """
-        self.finished.value = True
-        self.f_log.close()
-        self.setSpeed(0,0)
-        self.BP.set_motor_dps(self.motorGarras, 0)
-        #self.BP.reset_all()
 
-
-    def avanzarDistancia(self, dist):
+    def advanceDistance(self, dist):
         """
         Devuelve la posicion global (con respecto al origen de la odometria)
         resultante de avanzar dist desde la posicion actual.
@@ -534,18 +501,19 @@ class Robot:
         xLoc=np.array([dist, 0, 0])
         xRW=np.array(self.readOdometry())
         xWorld=loc(np.dot(hom(xRW), hom(xLoc)))
-        #print("Lo que queremos avanzar:  ", xLoc, "Las supuestas coordenadas en el mundo:  ", xWorld, "Nestor quiere esto: ", xRW, sep='\n')
-        return xWorld
+        return xWorld 
+
+    ####################################################################################################
+    # MAP & MOVING FUNCTIONS
 
     def go(self, x_goal, y_goal):
         """
         Moves the robot to x_goal, y_goal (first it turns, then it advances, for cell navigation)
         """
-
         #xLoc=np.array([dist, 0, 0])
         #xRW=np.array(self.readOdometry())
         #xWorld = loc(np.dot(np.hom(xRW), hom(xLoc)))
-
+        
         odo = self.readOdometry()
         period = 0.01
         #if sine is negative (if dY is negative) then the rotation must be negative
@@ -556,7 +524,7 @@ class Robot:
         if (dY < 0):
             w = -w
             th_goal = -th_goal
-
+        
         end = False
         self.setSpeed(0,w)
         while not end:
@@ -650,3 +618,5 @@ class Robot:
     #    obstacle,x,y=sensorDetection() #funcion que detecta obstaculo y por arte de magia te dice donde estan
     #    objectDetected(x,y)
     #    return obstacle
+        
+            
