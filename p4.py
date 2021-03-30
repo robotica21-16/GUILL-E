@@ -33,6 +33,7 @@ def main(args):
             robot.go(0,0)
             robot.stopOdometry()
             exit(0)
+
         if not os.path.isfile(args.mapfile):
             print('Map file %s does not exist' % args.mapfile)
             exit(1)
@@ -51,7 +52,7 @@ def main(args):
         # myMap.verbose = False
 
         # sample commands to see how to draw the map
-        sampleRobotLocations = [ [0,0,0], [600, 600, 3.14] ]
+        # sampleRobotLocations = [ [0,0,0], [600, 600, 3.14] ]
         # this will save a .png with the current map visualization,
         # all robot positions, last one in green
         #myMap.verbose = True
@@ -64,7 +65,7 @@ def main(args):
 
         # this will open a window with the results, but does not work well remotely
         #myMap.verbose = True
-        sampleRobotLocations = [ [200, 200, 3.14/2.0], [200, 600, 3.14/4.0], [200, 1000, -3.14/2.0],  ]
+        # sampleRobotLocations = [ [200, 200, 3.14/2.0], [200, 600, 3.14/4.0], [200, 1000, -3.14/2.0],  ]
         # myMap.drawMapWithRobotLocations( sampleRobotLocations, saveSnapshot=False )
 
         matplotlib.pyplot.close('all')
@@ -72,15 +73,21 @@ def main(args):
 
         x1,y1 = 0,0
         x2,y2 = 5,3
-        if myMap.findPath(x1,y1,x2,y2):
-            print("camino encontrado")
-            print(myMap.currentPath)
-            myMap.drawMap(saveSnapshot=False)
-            
+
+        robot = Robot()
+        robot.setMap(myMap, [x1,y1], [x2,y2])
+        robot.startOdometry()
+        robot.executePath()
+        robot.stopOdometry()
+        # if myMap.findPath(x1,y1,x2,y2):
+        #     print("camino encontrado")
+        #     print(myMap.currentPath)
+        #     myMap.drawMap(saveSnapshot=False)
+
         # 2. launch updateOdometry thread()
-    
+
         # ...
-        
+
 
 
         # 3. perform trajectory
@@ -104,7 +111,10 @@ def main(args):
     # except the program gets interrupted by Ctrl+C on the keyboard.
     # THIS IS IMPORTANT if we want that motors STOP when we Ctrl+C ...
         robot.stopOdometry()
-        print('do something to stop Robot when we Ctrl+C ...')
+    except BaseException as e:
+        print(e)
+        robot.stopOdometry()
+
 
 
 if __name__ == "__main__":

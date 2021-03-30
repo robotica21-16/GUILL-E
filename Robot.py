@@ -151,8 +151,8 @@ class Robot:
         self.BP.set_motor_dps(self.ruedaIzq, speedDPS_left)
         self.BP.set_motor_dps(self.ruedaDcha, speedDPS_right)
 
-        def readSpeedIzqDcha(self, dT):
-            """
+    def readSpeedIzqDcha(self, dT):
+        """
         Returns vL, vD as DPS of the wheels (left, right)
         """
         #izq = self.BP.get_motor_encoder(self.BP.PORT_B)
@@ -183,12 +183,12 @@ class Robot:
         In: dT = delta of time
         Returns v,w (in m/s and rad/s) according to the motor encoders
         """
-        #print('-----------------------------------')
+
         izq, dcha = self.readSpeedIzqDcha(dT)
-        #print("i, d: ", izq, dcha)
+
         wI = np.radians(izq)
         wD = np.radians(dcha)
-        #rint("wi, wd: ", wI, wD)
+
         v,w = vWiFromIzqDcha(self.R_rueda, self.L, wI, wD)
         #print("v, w: ", v, w)
         return v, w
@@ -255,12 +255,6 @@ class Robot:
                 if not end:
                     tFin = time.perf_counter()
                     time.sleep(period-(tFin-tIni))
-                #tIni = time.perf_counter()
-                #v,w = geometry.fromPosToTarget(np.array(self.readOdometry()),
-                #        target, self.vTarget, self.wTarget)
-                #self.setSpeed(v, w)
-                #tFin = time.perf_counter()
-                #time.sleep(period-(tFin-tIni))
         self.setSpeed(0, 0)
         
     ####################################################################################################
@@ -287,16 +281,16 @@ class Robot:
         """
         return deltaSi*np.sin(self.th.value + deltaTh/2.0)
 
-    def readOdometry(self):
-        """ Returns current value of odometry estimation """
-        return self.x.value, self.y.value, self.th.value
-
     def startOdometry(self):
         """ This starts a new process/thread that will be updating the odometry periodically """
         self.finished.value = False
         self.p = Process(target=self.updateOdometry, args=()) #additional_params?))
         self.p.start()
         print("PID: ", self.p.pid)
+    
+    def readOdometry(self):
+        """ Returns current value of odometry estimation """
+        return self.x.value, self.y.value, self.th.value
 
     # You may want to pass additional shared variables besides the odometry values and stop flag
     def updateOdometry(self): #, additional_params?):
@@ -343,8 +337,8 @@ class Robot:
 
     # Stop the odometry thread.
     def stopOdometry(self):
-        """
-        Stops odometry and sets the speed to 0
+         """
+        Stops odometry and sets the speed of all motors to 0
         """
         self.finished.value = True
         self.f_log.close()
@@ -356,78 +350,73 @@ class Robot:
     # TRACKING FUNCTIONS
 
     def trackBall(self):
+         """
+        Tracks and catches the red ball
+        """
         self.trackObject(self.ballArea, self.ballX, self.ballClawsArea, True, 5)
 
     def trackObject(self, targetSize, targetX = resolution[0]/2.0, targetClawsSize = 0, mustCatch = False, eps = 5):
         """
-        ...
+        Tracks an object with the given parameters, tries to catch it with the claws when its close enough.
+        The robot spins at a constant rate while it doesnt detect the object
         """
         targetPositionReached = False
-        garrasAbiertas=False
+        # abrir garras, en paralelo:
+        garrasAbiertas=True
+        self.catch()
+        # inicializar detector:
         detector = init_detector()
         period = 0.05
-        
+
         vFin = self.vTarget / 2
 
         for img in self.cam.capture_continuous(self.rawCapture, format="bgr", use_video_port=True):# todo: sleep como antes
 
             tIni = time.perf_counter()
             frame = img.array
-            
+
             kp = search_blobs_detector(self.cam, frame, detector, verbose = False, show=False)
             self.rawCapture.truncate(0)
-            
-            
-            if kp is None:
+
+
+            if DEBUG_MODE and kp is None:
                 print("No se donde esta la bola")
-           
+
             if targetPositionReached:
                 if self.closeEnough(objetivo, 0):
-                    print("Closing claws")
                     self.setSpeed(0, 0)
                     if mustCatch:
                         self.moveClaws()
                     break
-                    
+
                 else:
                     #Decelerate
                     vFin=vFin/1.005
                     self.setSpeed(vFin,0)
-             
+
             elif kp is None:
-                self.setSpeed(0,self.wTarget/1.0)
-            
-                
-            else:
-                # get distance to the targetX
+                # target not detected, spin in place to find it
+                self.setSpeed(0,self.wTarget)
+            else: # we see the target and the target position hasnt been reached
                 d = horizontalDistance(kp, [targetX,0])
                 A = kp.size
-                #range is (targetX - resolution(x), targetX - 0)
-                #so if we targetX = middle of the screen -> range is (-middle of the screen, middle of the screen)
-                w = getMappedW(self.wTarget, d, targetX - resolution[0], targetX)
-                v = getMappedV(self.vTarget, A, targetSize)
-
+                w = self.getMappedW(d, targetX - resolution[0], targetX)
+                v = self.getMappedV(A, targetSize)
                 self.setSpeed(v,w)
-                    
-                #if targetClawsSize -eps < A < targetClawsSize + eps:
-                if targetClawsSize < A and not self.closing.value and not garrasAbiertas and mustCatch:
-                    garrasAbiertas=True
-                    self.catch()
-                    #abrir las garras 
-                
-                if targetSize-eps < A and not targetPositionReached:# < targetSize+eps:
+
+                if targetSize-eps < A and not targetPositionReached:
+                    # close enough to target, we set the objective from current position+some distance
                     targetPositionReached  = True
-                    objetivo=self.avanzarDistancia(0.21)
+                    objetivo=self.advanceDistance(0.21)
                     objetivo=[objetivo[0], objetivo[1], None]
                     self.setSpeed(vFin/2,0)
-                    print("Estoy delante", A)
-                    #return finished     
-                    
+
             tEnd = time.perf_counter()
-            
-            print(tEnd - tIni)
-            #cv2.waitKey(int(1000*period - (tEnd-tIni)))
-                    
+            #time.sleep(period-(tEnd-tIni))
+
+    ####################################################################################################
+    # CAMERA DEBUG FUNCTIONS
+
     def takePicture(self):
         #rawCapture = PiRGBArray(self.cam, size=(320, 240))
         
@@ -438,6 +427,9 @@ class Robot:
         #cv2.imwrite("photos/{:d}-{:d}-{:d}-{:02d}_{:02d}".format(now.year, now.month, now.day, now.hour, now.minute)+".png", img.array)
 
     def detect_continuous(self):
+        """
+        Debug function to test camera and detector
+        """
         period = 0.25 # 1 sec
         #rawCapture = PiRGBArray(self.cam, size=(320, 240))
         detector = init_detector()
@@ -465,6 +457,9 @@ class Robot:
     # CLAWS FUNCTIONS
 
     def catch(self):
+        """
+        Starts the process that closes or opens the claws
+        """
         self.catcher = Process(target=self.moveClaws, args=()) #additional_params?))
         self.catcher.start()
 
@@ -498,15 +493,23 @@ class Robot:
         self.lock_garras.release()
 
 
-    def avanzarDistancia(self, dist):
+    def advanceDistance(self, dist):
+        """
+        Devuelve la posicion global (con respecto al origen de la odometria)
+        resultante de avanzar dist desde la posicion actual.
+        """
         xLoc=np.array([dist, 0, 0])
         xRW=np.array(self.readOdometry())
         xWorld=loc(np.dot(hom(xRW), hom(xLoc)))
-        #print("Lo que queremos avanzar:  ", xLoc, "Las supuestas coordenadas en el mundo:  ", xWorld, "Nestor quiere esto: ", xRW, sep='\n')
         return xWorld 
 
+    ####################################################################################################
+    # MAP & MOVING FUNCTIONS
+
     def go(self, x_goal, y_goal):
-        
+        """
+        Moves the robot to x_goal, y_goal (first it turns, then it advances, for cell navigation)
+        """
         #xLoc=np.array([dist, 0, 0])
         #xRW=np.array(self.readOdometry())
         #xWorld = loc(np.dot(np.hom(xRW), hom(xLoc)))
@@ -544,7 +547,29 @@ class Robot:
             v = v / 1.05
             self.setSpeed(v, 0)
         self.setSpeed(0, 0)
-                
+
+    # ---------------------------------------------- p4:
+    def setMap(self, map, ini=None, end=None):
+        self.map = map
+        # TODO: que pasa si ini!=[0,0]
+        # pos = self.map.
+        if ini is not None and end is not None:
+            if ini[0]!=0 or ini[1]!=0:
+                print('TODO......')
+                exit(1)
+            if not self.map.findPath(ini[0], ini[1],end[0],end[1]):
+                print("ERROR en findPath")
+                self.stopOdometry()
+
+
+    def executePath(self):
+        for step in self.map.currentPath:
+            self.go(self.posFromCell(step[0], step[1]))
+
+    def posFromCell(self, x,y):
+        return x*self.map.sizeCell, y*self.map.sizeCell
+
+
     #def detectObstacle(self):
 
     #    obstacle,x,y=sensorDetection() #funcion que detecta obstaculo y por arte de magia te dice donde estan
