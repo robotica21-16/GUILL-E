@@ -118,7 +118,7 @@ class Robot:
         #################################################
         self.portSensorUltrasonic = self.BP.PORT_4
         self.BP.set_sensor_type(self.portSensorUltrasonic, self.BP.SENSOR_TYPE.NXT_ULTRASONIC)
-        self.min_distance_obstacle_detection = 30  # cm
+        self.min_celds=1  # cm
 
 
         ####################################################################################################
@@ -661,3 +661,12 @@ class Robot:
     #    obstacle,x,y=sensorDetection() #funcion que detecta obstaculo y por arte de magia te dice donde estan
     #    objectDetected(x,y)
     #    return obstacle
+
+
+
+    def detectObstacle(self):
+        dist=self.BP.get_sensor(self.portSensorUltrasonic)
+        if dist<=self.map.sizeCell*self.min_celds:
+            return True
+        else
+            return False
