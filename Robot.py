@@ -3,7 +3,13 @@
 from __future__ import print_function # use python 3 syntax but make it compatible with python 2
 from __future__ import division       #                           ''
 
+
 import brickpi3 # import the BrickPi3 drivers
+# except BaseException as e:
+#     print(e)
+
+
+
 import time     # import the time library for the sleep function
 import sys
 
@@ -580,9 +586,9 @@ class Robot:
                 time.sleep(period - (tEnd - tIni))
         self.setSpeed(0,0)
 
-    def fixGoal(self, goal, eps=0.02):
+    def fixGoal(self,odo, goal, eps=0.02):
         for i in range(len(goal)-1):
-            if -eps <= goal[i] <= eps:
+            if -eps <= odo[i]-goal[i] <= eps:
                 goal[i] = None
         return goal
 
@@ -602,7 +608,7 @@ class Robot:
         self.align(th_goal)
         goal = self.advanceDistance(self.map.sizeCell)
         goal=[goal[0], goal[1], None]
-        goal = self.fixGoal(goal)
+        goal = self.fixGoal(odo,goal)
         vFin = self.vTarget
         period = 0.02
         while True:
