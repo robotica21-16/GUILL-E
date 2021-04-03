@@ -46,7 +46,7 @@ class Robot:
         self.L = 0.140
         self.eje_rueda = self.L/2.0
 
-        self.offset_right = 0.9995 # The way the bot is built, the left tire spins slightly slower than right
+        self.offset_right = 1.0#0.9995 # The way the bot is built, the left tire spins slightly slower than right
 
         ##################################################
         # Camera initialization
@@ -220,7 +220,9 @@ class Robot:
     def closeEnough(self, target, w):
         odo = self.readOdometry()
         close = False
-        if target[0] == None and target[1] == None:
+        if target[0] == None and target[1] == None and target[2] == None:
+            close = True
+        elif target[0] == None and target[1] == None:
             #print(target[2], " ---- ", odo[2])
             #if abs(norm_pi(target[2]-norm_pi(odo[2]))) < eps[2]:
             if reachedAngle(odo[2], target[2], w):
@@ -235,9 +237,9 @@ class Robot:
             cond1 = True
             cond2 = True
             if target[0] != None:
-                cond1 = reached(odo[0],target[0], costh>0)
+                cond1 = reached(odo[0],target[0], costh>=0)
             if target[1] != None:
-                cond2 = reached(odo[1],target[1],sinth>0)
+                cond2 = reached(odo[1],target[1],sinth>=0)
             #print(target[0], " --x-- ", odo[0], "\n", target[1], "-------y------", odo[1])
             if cond1 and cond2:
             #if abs((target[0] - odo[0])) < eps[0] and abs((target[1] - odo[1])) < eps[1]:
@@ -512,8 +514,20 @@ class Robot:
 
     ####################################################################################################
     # MAP & MOVING FUNCTIONS
+    
+    def recalculateGoal(self, odo, dX, dY, x_goal, y_goal, eps):
+        if x_goal != None:
+            dX = x_goal - odo[0]
+        if y_goal != None:
+            dY = y_goal - odo[1]
+        if abs(dX) <= eps:
+            x_goal = None
+        if abs(dY) <= eps:
+            y_goal = None
+        th_goal = norm_pi(math.atan2(dY, dX))
+        return x_goal, y_goal, th_goal
 
-    def go(self, x_goal, y_goal):
+    def go(self, x_goal, y_goal, eps = 0.05):
         """
         Moves the robot to x_goal, y_goal (first it turns, then it advances, for cell navigation)
         """
@@ -529,7 +543,7 @@ class Robot:
         dY = y_goal - odo[1]
         th_goal = norm_pi(math.atan2(dY, dX))
 
-        if (th_goal < odo[2]):
+        if (norm_pi(th_goal - odo[2]) < 0):
         #if xLoc[1] < 0:
             w = -w
             #th_goal = -th_goal
@@ -540,22 +554,32 @@ class Robot:
         while not end:
             tIni = time.perf_counter()
             odo = self.readOdometry()
-            dX = x_goal - odo[0]
-            dY = y_goal - odo[1]
-            th_goal = norm_pi(math.atan2(dY, dX))
+            x_goal, y_goal, th_goal = self.recalculateGoal(odo, dX, dY, x_goal, y_goal, eps)
             end = self.closeEnough([None, None, th_goal], w)
             if not end:
                 self.setSpeed(0,w)
                 tEnd = time.perf_counter()
                 time.sleep(period - (tEnd - tIni))
-
-        end = False
-        v = self.vTarget
+                 
+        v = self.vTarget/2
         self.setSpeed(v,0)
+        end = False
         while not end:
             tIni = time.perf_counter()
+            odo = self.readOdometry()
+            #print("Before", x_goal, y_goal, th_goal)
+            x_goal, y_goal, th_goal = self.recalculateGoal(odo, dX, dY, x_goal, y_goal, eps)
+            #print("After", x_goal, y_goal, th_goal)
             end = self.closeEnough([x_goal, y_goal, None], w)
             if not end:
+                #if abs(th_goal - odo[2]) < eps:
+                #    w = 0
+                #elif th_goal > odo[2]:
+                #    w = 0.1
+                #elif th_goal < odo[2]:
+                #    w = -0.1
+                    
+                self.setSpeed(v,0)
                 tEnd = time.perf_counter()
                 time.sleep(period - (tEnd - tIni))
         self.setSpeed(0, 0)
