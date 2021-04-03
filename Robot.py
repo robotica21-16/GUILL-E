@@ -688,6 +688,8 @@ class Robot:
                 replan = self.go(x, y)
                 if replan:
                     break
+            end = not replan # end if there wasnt a replan
+
 
 
 
