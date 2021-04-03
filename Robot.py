@@ -313,6 +313,7 @@ class Robot:
 
             # compute updates
             # deltaTh += self.deltaTH()
+
             v, w = self.readSpeed(dT) # usar distancias de encoders directamente
             deltaTh = norm_pi(w*dT)
             eps = 0.01
@@ -534,9 +535,9 @@ class Robot:
             w = -w
             #th_goal = -th_goal
         print("X", dX, "Y", dY, "TH", th_goal, sep='\n')
-        
+
         end = False
-        
+
         while not end:
             tIni = time.perf_counter()
             odo = self.readOdometry()
@@ -552,10 +553,18 @@ class Robot:
         end = False
         v = self.vTarget
         self.setSpeed(v,0)
+        initial = np.array(self.readOdometry()[:-1])
+        vmin = self.vTarget/10.0
+        vmax = self.vTarget
         while not end:
             tIni = time.perf_counter()
             end = self.closeEnough([x_goal, y_goal, None], w)
             if not end:
+                # speed:
+                odo = np.array(self.readOdometry()[:-1])
+                v = vInTrajectory(odo, initial,
+                    np.array([x_goal, y_goal]), vmin, vmax)
+                self.setSpeed(v,0)
                 tEnd = time.perf_counter()
                 time.sleep(period - (tEnd - tIni))
         self.setSpeed(0, 0)
