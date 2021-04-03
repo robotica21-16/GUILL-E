@@ -144,6 +144,15 @@ def izqDchaFromVW(r, L, v, w):
         np.array([v, w]))
 
 
+def vInTrajectory(x_now, x_ini, x_end, vmin, vmax):
+    """
+    Returns the v for x_now of the linear trajectory between x_ini and x_end
+    min v: vmin, max v: vmax
+    """
+    distance_ini = np.linalg.norm(x_end-x_ini)
+    distance_now = np.linalg.norm(x_end-x_now)
+    return np.interp(distance_now, [0, distance_ini], [vmin, vmax])
+
 
 def horizontalDistance(kp, obj=[0,0]):
     return -kp.pt[0]+obj[0]

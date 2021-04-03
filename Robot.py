@@ -315,6 +315,7 @@ class Robot:
 
             # compute updates
             # deltaTh += self.deltaTH()
+
             v, w = self.readSpeed(dT) # usar distancias de encoders directamente
             deltaTh = norm_pi(w*dT)
             eps = 0.01
@@ -527,14 +528,15 @@ class Robot:
         th_goal = norm_pi(math.atan2(dY, dX))
         return x_goal, y_goal, th_goal
 
-    def go(self, x_goal, y_goal, eps = 0.05):
+    def go(self, x_goal_ini, y_goal_ini, eps = 0.05):
         """
         Moves the robot to x_goal, y_goal (first it turns, then it advances, for cell navigation)
         """
         #xLoc=np.array([dist, 0, 0])
         #xRW=np.array(self.readOdometry())
         #xWorld = loc(np.dot(np.hom(xRW), hom(xLoc)))
-
+        x_goal = x_goal_ini
+        y_goal = y_goal_ini
         odo = self.readOdometry()
         period = 0.02
         #if sine is negative (if dY is negative) then the rotation must be negative
@@ -548,13 +550,12 @@ class Robot:
             w = -w
             #th_goal = -th_goal
         print("X", dX, "Y", dY, "TH", th_goal, sep='\n')
-        
+
         end = False
-        
+
         while not end:
             tIni = time.perf_counter()
             odo = self.readOdometry()
-            x_goal, y_goal, th_goal = self.recalculateGoal(odo, dX, dY, x_goal, y_goal, eps)
             end = self.closeEnough([None, None, th_goal], w)
             if not end:
                 self.setSpeed(0,w)
@@ -564,12 +565,13 @@ class Robot:
         v = self.vTarget/2
         self.setSpeed(v,0)
         end = False
+        initial = np.array(self.readOdometry()[:-1])
+        vmin = self.vTarget/6
+        vmax = self.vTarget/1.5
+        x_goal, y_goal, th_goal = self.recalculateGoal(odo, dX, dY, x_goal, y_goal, eps)
         while not end:
             tIni = time.perf_counter()
             odo = self.readOdometry()
-            #print("Before", x_goal, y_goal, th_goal)
-            x_goal, y_goal, th_goal = self.recalculateGoal(odo, dX, dY, x_goal, y_goal, eps)
-            #print("After", x_goal, y_goal, th_goal)
             end = self.closeEnough([x_goal, y_goal, None], w)
             if not end:
                 #if abs(th_goal - odo[2]) < eps:
@@ -579,6 +581,10 @@ class Robot:
                 #elif th_goal < odo[2]:
                 #    w = -0.1
                     
+                # speed:
+                odo = np.array(self.readOdometry()[:-1])
+                v = vInTrajectory(odo, initial,
+                    np.array([x_goal_ini, y_goal_ini]), vmin, vmax)
                 self.setSpeed(v,0)
                 tEnd = time.perf_counter()
                 time.sleep(period - (tEnd - tIni))
