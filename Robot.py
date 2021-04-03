@@ -114,6 +114,13 @@ class Robot:
                 #print(posClawsIni)
         self.BP.set_motor_dps(self.motorGarras, 0)
 
+
+        #################################################
+        self.portSensorUltrasonic = self.BP.PORT_4
+        self.BP.set_sensor_type(self.portSensorUltrasonic, self.BP.SENSOR_TYPE.NXT_ULTRASONIC)
+        self.min_distance_obstacle_detection = 30  # cm
+
+
         ####################################################################################################
         # odometry shared memory values
         # usar parametro
