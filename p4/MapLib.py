@@ -538,11 +538,27 @@ class Map2D:
         # print(self.currentPath)
         return pathFound
 
+    def thToNeighbour(self, th):
+        th = int(4*th/math.pi)
+        n = 0
+
+        if th == 0:
+            n = 2
+        elif th == 1:
+            n = 1
+        elif th == 2:
+            n = 0
+        elif th == 3:
+            n = -1
 
 
-    def obstacleDetected(self,x_now, y_now, neighbour):
+        n = int((math.pi + th) / math.pi * 8)+2
+        return n
+
+    def obstacleDetected(self,x_now, y_now, x_2, y_2):
         x_now, y_now = self._pos2cell(x_now, y_now)
-        #celxObs,celyObs=self._pos2cell(x_ob,y_ob)
+        endx,endy=self._pos2cell(inix, iniy)
+        neighbour = self.neighbourFromCells([x_now, y_now],[x_2, y_2])
         self.deleteConnection(x_now, y_now, neighbour)
 
 

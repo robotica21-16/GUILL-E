@@ -517,6 +517,7 @@ class Robot:
     def go(self, x_goal, y_goal):
         """
         Moves the robot to x_goal, y_goal (first it turns, then it advances, for cell navigation)
+        returns True if it finds an obstacle
         """
         #xLoc=np.array([dist, 0, 0])
         #xRW=np.array(self.readOdometry())
@@ -550,6 +551,15 @@ class Robot:
                 tEnd = time.perf_counter()
                 time.sleep(period - (tEnd - tIni))
 
+        self.setSpeed(0,0)
+        if self.detectObstacle(): # obstacle in front of the robot
+            self.map.obstacleDetected(odo[0], odo[1], x_goal_ini, y_goal_ini)
+            self.map.replanPath(odo[0], odo[1])
+            # self.map.addObstacle(x_now, y_now, odo[2])
+            # self.map.findPath(x_now, y_now, self.map.goal[0], self.map.goal[1])
+            return True
+
+
         end = False
         v = self.vTarget
         self.setSpeed(v,0)
@@ -568,6 +578,7 @@ class Robot:
                 tEnd = time.perf_counter()
                 time.sleep(period - (tEnd - tIni))
         self.setSpeed(0, 0)
+        return False
 
     # ---------------------------------------------- p4:
     def setMap(self, map, ini=None, end=None):
@@ -640,10 +651,16 @@ class Robot:
             last = step
 
     def executePath(self):
-        for step in self.map.currentPath:
-            x, y = self.posFromCell(step[0], step[1])
-            #print(step, x, y)
-            self.go(x, y)
+        end = False
+        while not end:
+            for step in self.map.currentPath:
+                # Go to next cell
+                x, y = self.posFromCell(step[0], step[1])
+                replan = self.go(x, y)
+                if replan:
+                    break
+
+
 
     def posFromCell(self, x,y):
         return x*self.map.sizeCell/1000.0, y*self.map.sizeCell/1000.0

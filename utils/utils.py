@@ -9,7 +9,7 @@ import sys
 
 # import pandas as pd
 import matplotlib.pyplot as plt
- 
+
 """ def plotFile(fileName, sep="\t"):
     df  = pd.read_csv(fileName, sep=sep)
     print(df)
@@ -50,6 +50,7 @@ def getMappedV(vTarget, A, targetArea):
     #print(A, "A, target", targetArea, "Resta: ", targetArea-A)
     # A - targetArea: Domain (-targetArea, 0) -> Range (0, vTarget-0.1) -> (v, 0.1)
     return vTarget-np.interp(A-targetArea, [-targetArea, 0], [0, vTarget-0.1])
+
 
 def reached(x, target, greater):
     if greater:
