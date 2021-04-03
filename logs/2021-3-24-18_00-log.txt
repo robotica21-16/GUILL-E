@@ -1,3 +1,0 @@
-t	x	y	th	v*100	w	dTh	dSi
-0.21	0.00	0.00	0.00	0.00	0.00	0.00	0.00
-t	x	y	th	v*100	w	dTh	dSi
