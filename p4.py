@@ -12,6 +12,7 @@ matplotlib.use("TkAgg")
 
 from Robot import Robot
 from p4.MapLib import Map2D
+import math
 
 # NOTES ABOUT TASKS to DO in P4:
 # 1)findPath(x1,y1, x2,y2),   fillCostMatrix(), replanPath () --> should be methods from the new Map2D class
@@ -76,11 +77,11 @@ def main(args):
         matplotlib.pyplot.close('all')
 
 
-        x1,y1 = 0,1
+        x1,y1,th1 = 0,2,math.pi/2.0
         x2,y2 = 1,0
 
         robot = Robot()
-        robot.setMap(myMap, [x1,y1], [x2,y2])
+        robot.setMap(myMap, [x1,y1,th1], [x2,y2])
         robot.startOdometry()
         robot.executePath()
         #robot.executePath_neigh()

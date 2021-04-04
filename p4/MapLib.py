@@ -585,6 +585,7 @@ class Map2D:
     def neighbourFromCells(self, cell1, cell2):
         dif1 = cell2[0]-cell1[0]
         dif2 = cell2[1]-cell1[1]
+        print("Dif", dif1, dif2)
         res=None
         if dif1==0 and dif2==1:
             res=0
