@@ -4,6 +4,7 @@ import argparse
 import os
 import numpy as np
 import time
+import traceback
 
 import matplotlib
 matplotlib.use("TkAgg")
@@ -75,14 +76,14 @@ def main(args):
         matplotlib.pyplot.close('all')
 
 
-        x1,y1 = 0,0
-        x2,y2 = 5,3
+        x1,y1 = 0,1
+        x2,y2 = 1,0
 
         robot = Robot()
         robot.setMap(myMap, [x1,y1], [x2,y2])
         robot.startOdometry()
-        #robot.executePath()
-        robot.executePath_neigh()
+        robot.executePath()
+        #robot.executePath_neigh()
         robot.stopOdometry()
         # if myMap.findPath(x1,y1,x2,y2):
         #     print("camino encontrado")
@@ -118,6 +119,7 @@ def main(args):
         robot.stopOdometry()
     except BaseException as e:
         print(e)
+        traceback.print_exc()
         robot.stopOdometry()
 
 
