@@ -33,6 +33,10 @@ def main(args):
             robot.go(0,0)
             robot.stopOdometry()
             exit(0)
+        if args.test_ultrasound:
+            robot = Robot()
+            robot.testDistance()
+            exit(0)
 
         if not os.path.isfile(args.mapfile):
             print('Map file %s does not exist' % args.mapfile)
@@ -127,5 +131,7 @@ if __name__ == "__main__":
                         default="mapa1.txt")
     parser.add_argument("-g", "--test_go", help="test go function",
                         default="")
+    parser.add_argument("-u", "--test_ultrasound", help="test ultrasound sensor",
+                        default=False)
     args = parser.parse_args()
     main(args)

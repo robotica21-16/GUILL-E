@@ -700,3 +700,9 @@ class Robot:
     def detectObstacle(self):
         dist=self.BP.get_sensor(self.portSensorUltrasonic)
         return dist<=self.map.sizeCell*self.min_cells
+
+    def testDistance(self, period=0.5):
+        while True:
+            dist = self.BP.get_sensor(self.portSensorUltrasonic)
+            print("dist: ", dist)
+            time.sleep(period)
