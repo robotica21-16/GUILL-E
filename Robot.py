@@ -352,6 +352,16 @@ class Robot:
         sys.stdout.write("Stopping odometry ... X=  %.2f, \
                 Y=  %.2f, th=  %.2f \n" % (self.x.value, self.y.value, self.th.value))
 
+    def setOdometry(self, value):
+        """
+        Sets the odometry to any value [x,y,th] (in m,m,rad)
+        """
+        self.lock_odometry.acquire()
+        self.x.value = value[0]
+        self.y.value = value[1]
+        self.th.value = value[2]
+        self.lock_odometry.release()
+
     # Stop the odometry thread.
     def stopOdometry(self):
         """
@@ -615,9 +625,8 @@ class Robot:
         # TODO: que pasa si ini!=[0,0]
         # pos = self.map.
         if ini is not None and end is not None:
-            if ini[0]!=0 or ini[1]!=0:
-                print('TODO......')
-                exit(1)
+            x, y = posFromCell(ini[0], ini[1])
+            self.setOdometry(ini[0], ini[1], ini[2])
             if not self.map.findPath(ini[0], ini[1],end[0],end[1]):
                 print("ERROR en findPath")
                 self.stopOdometry()
