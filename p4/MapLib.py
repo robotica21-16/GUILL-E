@@ -441,7 +441,7 @@ class Map2D:
         Fills the cost matrix with the costs of getting to goal=[x,y].
         If any cells are unreachable they keep cost -2
         """
-
+        self._initCostMatrix()
         end = False
         cost = 0
         frontier = [self.goal]
@@ -453,6 +453,8 @@ class Map2D:
             if not frontier: # is empty
                 print('EMPTY FRONTIER')
                 end = True
+                self.drawMap(saveSnapshot=False)
+                return False
             # print("FRontier:", frontier, "===============================================")
             for cell in frontier:
                 # print("in cell ", cell, " cost: ", cost, "------------------------------")
@@ -478,6 +480,7 @@ class Map2D:
         self.printCostMatrix()
         # self.drawMap(saveSnapshot=False)
         # exit(1)
+        return True
 
 
 
@@ -491,7 +494,8 @@ class Map2D:
         ...  TO-DO  ....
         """
         self.goal = [x_end,y_end]
-        self.fillCostMatrix()
+        if not self.fillCostMatrix():
+            return False
 
         # FAKE sample path: [ [0,0], [0,0], [0,0], ...., [0,0]  ]
         self.currentPath = []
@@ -526,7 +530,7 @@ class Map2D:
             if math.isinf(min_cost):
                 print("Blocked path in ", current_x, current_y)
                 print("Current path:",self.currentPath )
-                exit(1)
+                return False
             # else:
             #     print(min_cost)
             current_x=x_min
@@ -556,20 +560,26 @@ class Map2D:
         return n
 
     def obstacleDetected(self,x_now, y_now, x_2, y_2):
-        x_now, y_now = self._pos2cell(x_now, y_now)
-        endx,endy=self._pos2cell(inix, iniy)
-        neighbour = self.neighbourFromCells([x_now, y_now],[x_2, y_2])
+        x_milli = max(x_now*1000.0, 0)
+        y_milli = max(y_now*1000.0, 0)
+        x_now, y_now = self._pos2cell(x_milli, y_milli)
+        endx,endy=self._pos2cell(x_2*1000.0, y_2*1000.0)
+        neighbour = self.neighbourFromCells([x_now, y_now],[endx, endy])
+        print("TODO", x_now, y_now, neighbour)
         self.deleteConnection(x_now, y_now, neighbour)
 
 
     def replanPath(self, x, y, x_end=-1, y_end=-1):
     #""" TO-DO """
-        inix,iniy=self._pos2cell(inix, iniy)
-        if(x_end != -1 and y_end != -1):
-            self.findPath(inix, iniy, self.endx, self.endy)
+        x_milli = max(x*1000.0, 0)
+        y_milli = max(y*1000.0, 0)
+        inix,iniy=self._pos2cell(x_milli, y_milli)
+        if(x_end == -1 or y_end == -1):
+            print("SDFOAJDGASG", inix, iniy, self.endx, self.endy)
+            return self.findPath(inix, iniy, self.endx, self.endy)
         else:
-            inix,iniy=self._pos2cell(x_end, y_end)
-            self.findPath(inix, iniy, x_end, y_end)
+            inix,iniy=self._pos2cell(x_end*1000.0, y_end*1000.0)
+            return self.findPath(inix, iniy, x_end, y_end)
 
 
     def neighbourFromCells(self, cell1, cell2):

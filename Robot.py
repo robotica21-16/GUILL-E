@@ -117,7 +117,7 @@ class Robot:
 
         #################################################
         self.portSensorUltrasonic = self.BP.PORT_4
-        self.BP.set_sensor_type(self.portSensorUltrasonic, self.BP.SENSOR_TYPE.NXT_ULTRASONIC)
+        self.BP.set_sensor_type(self.portSensorUltrasonic, self.BP.SENSOR_TYPE.EV3_ULTRASONIC_CM)
         self.min_cells=1  # cm
 
 
@@ -145,7 +145,7 @@ class Robot:
         self.f_log = open("logs/{:d}-{:d}-{:d}-{:02d}_{:02d}".format(now.year, now.month, now.day, now.hour, now.minute)+"-log.txt","a")#append
         fila = ["t", "x", "y", "th", "v", "w", "dTh", "dSi"]
         self.f_log.write("\t".join([str(e) for e in fila]) + "\n")
-        time.sleep(0.2)
+        time.sleep(2)
 
     ####################################################################################################
     # SPEED FUNCTIONS
@@ -361,7 +361,7 @@ class Robot:
         self.f_log.close()
         self.setSpeed(0,0)
         self.BP.set_motor_dps(self.motorGarras, 0)
-        #self.BP.reset_all()
+        self.BP.reset_all()
 
     ####################################################################################################
     # TRACKING FUNCTIONS
@@ -573,7 +573,10 @@ class Robot:
         self.setSpeed(0,0)
         if self.detectObstacle(): # obstacle in front of the robot
             self.map.obstacleDetected(odo[0], odo[1], x_goal_ini, y_goal_ini)
-            self.map.replanPath(odo[0], odo[1])
+            if not self.map.replanPath(odo[0], odo[1]):
+                print("Unable to find a path")
+                self.stopOdometry()
+                exit(0)
             # self.map.addObstacle(x_now, y_now, odo[2])
             # self.map.findPath(x_now, y_now, self.map.goal[0], self.map.goal[1])
             return True
@@ -584,7 +587,7 @@ class Robot:
         self.setSpeed(v,0)
         end = False
         initial = np.array(self.readOdometry()[:-1])
-        vmin = self.vTarget/6
+        vmin = self.vTarget/4
         vmax = self.vTarget/1.5
         x_goal, y_goal, th_goal = self.recalculateGoal(odo, dX, dY, x_goal, y_goal, eps)
         while not end:
@@ -615,9 +618,6 @@ class Robot:
         # TODO: que pasa si ini!=[0,0]
         # pos = self.map.
         if ini is not None and end is not None:
-            if ini[0]!=0 or ini[1]!=0:
-                print('TODO......')
-                exit(1)
             if not self.map.findPath(ini[0], ini[1],end[0],end[1]):
                 print("ERROR en findPath")
                 self.stopOdometry()
@@ -698,5 +698,10 @@ class Robot:
 
 
     def detectObstacle(self):
-        dist=self.BP.get_sensor(self.portSensorUltrasonic)
-        return dist<=self.map.sizeCell*self.min_cells
+        try:
+            dist=self.BP.get_sensor(self.portSensorUltrasonic)
+            print("DISTANSIA", dist)
+            return dist<=self.map.sizeCell/10.0*self.min_cells
+        except brickpi3.SensorError as error:
+            print(error)
+            return False
