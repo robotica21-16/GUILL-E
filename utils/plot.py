@@ -1,5 +1,5 @@
 """
-Plot de la odometría a partir de un log:
+Plot de la odometría a partir de un log
 (hay que cambiar titulo, rangos de los ejes, etc en plotFile())
 (Si no funciona, revisar que no haya una fila de mas al final del log)
     python plot.py logs/log___.txt

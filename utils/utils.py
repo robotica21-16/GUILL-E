@@ -13,7 +13,6 @@ def writeLog(f_log, data, sep="\t"):
     (each with 2 decimal positions, v multiplied by 100 to gain precision)
     """
     data = "\t".join(['{0:.3f}'.format(e) for e in data])+"\n"
-    #print(fila)
     f_log.write(data)
     f_log.flush()
 
@@ -31,18 +30,24 @@ def getMappedV(vTarget, A, targetArea):
     """
     # cuando A=0 (en el infinito) -> targetArea-A = targetArea -> v=vmax
     # cuando A=a (en el objetivo) -> targetArea-A = 0 -> v = 0
-    #print(A, "A, target", targetArea, "Resta: ", targetArea-A)
     # A - targetArea: Domain (-targetArea, 0) -> Range (0, vTarget-0.1) -> (v, 0.1)
     return vTarget-np.interp(A-targetArea, [-targetArea, 0], [0, vTarget-0.1])
 
 
 def reached(x, target, greater):
+    """
+    Returns true if x has reached the target according to greater
+    """
     if greater:
         return x>=target
     else:
         return x<=target
 
 def reachedAngle(th, target, w):
+    """
+    Returns true if th has reached the target angle (both in rad),
+    taking into account the sign of w
+    """
     if w > 0:
         if target < 0 and th > 0:
             return th >= (2*math.pi + target)
