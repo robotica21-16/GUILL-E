@@ -53,10 +53,3 @@ def reachedAngle(th, target, w):
             return (2*math.pi+th) <= target
         else:
             return th <= target
-
-
-if __name__ == '__main__':
-    if len(sys.argv) != 2:
-        print("necesito el csv")
-        exit(1)
-    plotFile(sys.argv[1])

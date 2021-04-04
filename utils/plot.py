@@ -1,3 +1,10 @@
+"""
+Plot de la odometría a partir de un log:
+(hay que cambiar titulo, rangos de los ejes, etc en plotFile())
+(Si no funciona, revisar que no haya una fila de mas al final del log)
+    python plot.py logs/log___.txt
+"""
+
 import pandas as pd
 import matplotlib.pyplot as plt
 
@@ -14,3 +21,9 @@ def plotFile(fileName, sep="\t"):
     ax.set_aspect('equal')
     #df.plot(kind='density')  # estimate density function
     plt.show()
+
+if __name__ == '__main__':
+    if len(sys.argv) != 2:
+        print("necesito el csv")
+        exit(1)
+    plotFile(sys.argv[1])
