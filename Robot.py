@@ -118,7 +118,7 @@ class Robot:
         #################################################
         self.portSensorUltrasonic = self.BP.PORT_4
         self.BP.set_sensor_type(self.portSensorUltrasonic, self.BP.SENSOR_TYPE.NXT_ULTRASONIC)
-        self.min_celds=1  # cm
+        self.min_cells=1  # cm
 
 
         ####################################################################################################
@@ -682,6 +682,7 @@ class Robot:
     def executePath(self):
         end = False
         while not end:
+            replan = False
             for step in self.map.currentPath:
                 # Go to next cell
                 x, y = self.posFromCell(step[0], step[1])
@@ -692,22 +693,10 @@ class Robot:
 
 
 
-
     def posFromCell(self, x,y):
         return x*self.map.sizeCell/1000.0, y*self.map.sizeCell/1000.0
 
 
-    #def detectObstacle(self):
-
-    #    obstacle,x,y=sensorDetection() #funcion que detecta obstaculo y por arte de magia te dice donde estan
-    #    objectDetected(x,y)
-    #    return obstacle
-
-
-
     def detectObstacle(self):
         dist=self.BP.get_sensor(self.portSensorUltrasonic)
-        if dist<=self.map.sizeCell*self.min_celds:
-            return True
-        else
-            return False
+        return dist<=self.map.sizeCell*self.min_cells
