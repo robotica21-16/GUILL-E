@@ -705,3 +705,9 @@ class Robot:
         except brickpi3.SensorError as error:
             print(error)
             return False
+
+    def testDistance(self, period=0.5):
+        while True:
+            dist = self.BP.get_sensor(self.portSensorUltrasonic)
+            print("dist: ", dist)
+            time.sleep(period)
