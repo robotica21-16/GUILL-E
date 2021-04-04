@@ -145,7 +145,7 @@ class Robot:
         self.f_log = open("logs/{:d}-{:d}-{:d}-{:02d}_{:02d}".format(now.year, now.month, now.day, now.hour, now.minute)+"-log.txt","a")#append
         fila = ["t", "x", "y", "th", "v", "w", "dTh", "dSi"]
         self.f_log.write("\t".join([str(e) for e in fila]) + "\n")
-        time.sleep(2)
+        time.sleep(3)
 
     ####################################################################################################
     # SPEED FUNCTIONS
@@ -564,10 +564,7 @@ class Robot:
         th_goal = norm_pi(math.atan2(dY, dX))
 
         if (norm_pi(th_goal - odo[2]) < 0):
-        #if xLoc[1] < 0:
             w = -w
-            #th_goal = -th_goal
-        print("X", dX, "Y", dY, "TH", th_goal, sep='\n')
 
         end = False
 
@@ -628,8 +625,8 @@ class Robot:
         # TODO: que pasa si ini!=[0,0]
         # pos = self.map.
         if ini is not None and end is not None:
-            x, y = posFromCell(ini[0], ini[1])
-            self.setOdometry(ini[0], ini[1], ini[2])
+            x, y = self.posFromCell(ini[0], ini[1])
+            self.setOdometry([x, y, ini[2]])
             if not self.map.findPath(ini[0], ini[1],end[0],end[1]):
                 print("ERROR en findPath")
                 self.stopOdometry()
@@ -706,13 +703,12 @@ class Robot:
 
 
     def posFromCell(self, x,y):
-        return x*self.map.sizeCell/1000.0, y*self.map.sizeCell/1000.0
+        return (x+0.5)*self.map.sizeCell/1000.0, (y+0.5)*self.map.sizeCell/1000.0
 
 
     def detectObstacle(self):
         try:
             dist=self.BP.get_sensor(self.portSensorUltrasonic)
-            print("DISTANSIA", dist)
             return dist<=self.map.sizeCell/10.0*self.min_cells
         except brickpi3.SensorError as error:
             print(error)
