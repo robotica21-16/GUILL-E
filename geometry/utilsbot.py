@@ -52,7 +52,7 @@ def dibrobot(loc_eje,c='r',tamano='p'):
 
   # plt.show()
 
-def animarBot(wxr, vc, t, fps, playSpeed=1, last=True):
+def animarBot(wxr, vc, t, fps=10, playSpeed=1, last=True):
     """
     Dibuja el robot en distintas posiciones a partir de wxr (global) en f de
     vc=[v,w], en t segundos con fps.

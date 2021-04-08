@@ -180,6 +180,9 @@ class Map2D:
         x_cell = int(np.floor(x_mm/self.sizeCell))
         y_cell = int(np.floor(y_mm/self.sizeCell))
         return [x_cell, y_cell]
+    #
+    # def _pos2cell_m(self, x_m, y_m):
+    #
 
 
     # ############################################################

@@ -156,3 +156,46 @@ def vInTrajectory(x_now, x_ini, x_end, vmin, vmax):
 
 def horizontalDistance(kp, obj=[0,0]):
     return -kp.pt[0]+obj[0]
+
+def toPolares(x):
+    """
+    Devuelve p,a,b a partir de x
+    """
+    dx = x[0]
+    dy = x[1]
+    p = math.sqrt(dx**2 + dy**2)
+    beta = norm_pi(math.atan2(dy,dx)+math.pi)
+    alfa = norm_pi(beta-x[2])
+    return np.array([p, alfa, beta])
+
+
+def toPolaresUpdateK(x, vmax, wmax):
+    """
+    Devuelve p,a,b a partir de x
+    """
+    dx = x[0]
+    dy = x[1]
+    p = math.sqrt(dx**2 + dy**2)
+    beta = norm_pi(math.atan2(dy,dx)+math.pi)
+    alfa = norm_pi(beta-x[2])
+
+    kp = vmax/p
+
+    ka = kp+0.1 # ka - kp > 0 -> ka>kp
+    kb = (wmax-ka*alfa)/beta
+    if kp <= 0:
+        print("EEEEEEEe1")
+    if kb <= 0:
+        print("EEEEEEEe2")
+
+    K = np.array([
+        [kp, 0.0, 0.0],
+        [0.0,ka, kb]
+    ])
+    return np.array([p, alfa, beta]), K
+
+
+# def limitarVC(vc, vmax=3.0, wmax):
+#     v = vc[0]
+#     w = vc[1]
+#     if v > vmax:
