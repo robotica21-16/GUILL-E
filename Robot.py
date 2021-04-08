@@ -145,7 +145,7 @@ class Robot:
         self.f_log = open("logs/{:d}-{:d}-{:d}-{:02d}_{:02d}".format(now.year, now.month, now.day, now.hour, now.minute)+"-log.txt","a")#append
         fila = ["t", "x", "y", "th", "v", "w", "dTh", "dSi"]
         self.f_log.write("\t".join([str(e) for e in fila]) + "\n")
-        time.sleep(3)
+        time.sleep(6)
 
     ####################################################################################################
     # SPEED FUNCTIONS
@@ -550,9 +550,7 @@ class Robot:
         Moves the robot to x_goal, y_goal (first it turns, then it advances, for cell navigation)
         returns True if it finds an obstacle
         """
-        #xLoc=np.array([dist, 0, 0])
-        #xRW=np.array(self.readOdometry())
-        #xWorld = loc(np.dot(np.hom(xRW), hom(xLoc)))
+        
         x_goal = x_goal_ini
         y_goal = y_goal_ini
         odo = self.readOdometry()
@@ -584,8 +582,7 @@ class Robot:
                 print("Unable to find a path")
                 self.stopOdometry()
                 exit(0)
-            # self.map.addObstacle(x_now, y_now, odo[2])
-            # self.map.findPath(x_now, y_now, self.map.goal[0], self.map.goal[1])
+                
             return True
 
 
@@ -597,33 +594,28 @@ class Robot:
         vmin = self.vTarget/4
         vmax = self.vTarget/1.5
         x_goal, y_goal, th_goal = self.recalculateGoal(odo, dX, dY, x_goal, y_goal, eps)
-        while not end:
+        while not end: # until we reach the goal
             tIni = time.perf_counter()
             odo = self.readOdometry()
             end = self.closeEnough([x_goal, y_goal, None], w)
             if not end:
-                #if abs(th_goal - odo[2]) < eps:
-                #    w = 0
-                #elif th_goal > odo[2]:
-                #    w = 0.1
-                #elif th_goal < odo[2]:
-                #    w = -0.1
-
-                # speed:
                 odo = np.array(self.readOdometry()[:-1])
                 v = vInTrajectory(odo, initial,
-                    np.array([x_goal_ini, y_goal_ini]), vmin, vmax)
+                    np.array([x_goal_ini, y_goal_ini]), vmin, vmax) # variable speed
                 self.setSpeed(v,0)
                 tEnd = time.perf_counter()
-                time.sleep(period - (tEnd - tIni))
+                time.sleep(max(period - (tEnd - tIni),0))
         self.setSpeed(0, 0)
         return False
 
     # ---------------------------------------------- p4:
     def setMap(self, map, ini=None, end=None):
+        """
+        sets the map and the initial positions for the odometry (ini, end in cells)
+        Finds the shortest path from ini to end
+        """
         self.map = map
-        # TODO: que pasa si ini!=[0,0]
-        # pos = self.map.
+        
         if ini is not None and end is not None:
             x, y = self.posFromCell(ini[0], ini[1])
             self.setOdometry([x, y, ini[2]])
@@ -631,67 +623,17 @@ class Robot:
                 print("ERROR en findPath")
                 self.stopOdometry()
 
-    def align(self, th_goal):
-        period = 0.02
-        w = self.wTarget / 2
-        end = False
-        self.setSpeed(0,w)
-        while not end:
-            tIni = time.perf_counter()
-            end = self.closeEnough([None, None, th_goal], w)
-            if not end:
-                tEnd = time.perf_counter()
-                time.sleep(period - (tEnd - tIni))
-        self.setSpeed(0,0)
 
-    def fixGoal(self,odo, goal, eps=0.02):
-        for i in range(len(goal)-1):
-            if -eps <= odo[i]-goal[i] <= eps:
-                goal[i] = None
-        return goal
 
-    def goToNeighbour(self, neighbour):
-        th_goal = math.pi/2
-        if neighbour == 2:
-            th_goal = 0
-        elif neighbour == 4:
-            th_goal = -math.pi/2
-        elif neighbour == 6:
-            th_goal = math.pi
-        odo = self.readOdometry()
-        dif = norm_pi(2*math.pi+th_goal-odo[2])
-        w=self.wTarget
-        if dif>0: # TODO: IGUAL AL REVES
-            w=-w
-        self.align(th_goal)
-        goal = self.advanceDistance(self.map.sizeCell)
-        goal=[goal[0], goal[1], None]
-        goal = self.fixGoal(odo,goal)
-        vFin = self.vTarget
-        period = 0.02
-        while True:
-            tIni = time.perf_counter()
-            if self.closeEnough(goal, 0):
-                self.setSpeed(0, 0)
-                break
-            else:
-                #Decelerate
-                #vFin=vFin/1.005
-                self.setSpeed(vFin,0)
-                tEnd = time.perf_counter()
-                time.sleep(period-(tEnd-tIni))
-
-    def executePath_neigh(self):
-        last = [0.,0.]
-        for step in self.map.currentPath:
-            neigh = self.map.neighbourFromCells(last,step)
-            self.goToNeighbour(neigh)
-            last = step
 
     def executePath(self):
+        """
+        Executes the path in the current map, moving from cell to cell
+        """
         end = False
         while not end:
             replan = False
+            print(self.map.currentPath)
             for step in self.map.currentPath:
                 # Go to next cell
                 x, y = self.posFromCell(step[0], step[1])
@@ -703,10 +645,18 @@ class Robot:
 
 
     def posFromCell(self, x,y):
+        """
+        Returns the real position (in m) from the given cell coordinates
+        (center of the cell)
+        """
         return (x+0.5)*self.map.sizeCell/1000.0, (y+0.5)*self.map.sizeCell/1000.0
 
 
     def detectObstacle(self):
+        """
+        Returns true if the ultrasonic sensor returns a distance less than the size of a cell
+        False otherwise (or if there is a sensor error)
+        """
         try:
             dist=self.BP.get_sensor(self.portSensorUltrasonic)
             return dist<=self.map.sizeCell/10.0*self.min_cells
