@@ -112,10 +112,10 @@ def fixVC(vc, maxv, maxw):
     return vc
 
 def main(args):
-    if args.plotlog=="":
+    if args.plotlog=="": # no se hace el plot de las variables
         # Matriz de control:
         kp =0.5
-        ka = kb = 2.0
+        ka = kb = 4.0
         K = np.array([
             [kp, 0.0, 0.0],
             [0.0,  ka, kb]
