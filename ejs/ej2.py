@@ -9,14 +9,21 @@ from geometry.geometry import *
 
 # from simubot import *
 
-def writeLog(f_log, data, sep="\t"):
-    """
-    Writes a row of the log (t, x, y, th, v, w, deltaTh, deltaSi)
-    (each with 2 decimal positions, v multiplied by 100 to gain precision)
-    """
-    data = "\t".join(['{0:.3f}'.format(e) for e in data])+"\n"
-    f_log.write(data)
-    f_log.flush()
+def plotVariables(log):
+    df  = pd.read_csv(log, sep="\t")
+    print(df)
+    ax = df.plot(x = 't', y = 'v', marker='o')
+    ax.set_xlabel("t (s)")
+    ax.set_ylabel("v (m/s)")
+    ax = df.plot(x = 't', y = 'w', marker='o')
+    ax.set_xlabel("t (s)")
+    ax.set_ylabel("w (rad/s)")
+
+    ax = df.plot(x = 't', y = ["x", "y", "th"], marker='o')
+    ax.set_xlabel("t (s)")
+    ax.set_ylabel("x,y(m); th(rad)")
+    plt.show()
+
 
 def printsep(s, sep="------------"):
     print(sep, s, sep)
@@ -152,25 +159,8 @@ def main(args):
         if args.plot_trajectory:
             plt.show()
     else: # plot log
-        df  = pd.read_csv(args.plotlog, sep="\t")
-        print(df)
-        #df.plot()  # plots all columns against index
-        # ax = df.plot(kind='scatter',x='v',y='w',
-        #     xlim=[-1.5,0.2], ylim=[-0.3,0.3], title="Odometría - video 1",
-        #     grid=True) # scatter plot
-        ax = df.plot(x = 't', y = 'v', marker='o')
-        ax.set_xlabel("t (s)")
-        ax.set_ylabel("v (m/s)")
-        ax = df.plot(x = 't', y = 'w', marker='o')
-        ax.set_xlabel("t (s)")
-        ax.set_ylabel("w (rad/s)")
+        plotVariables(args.plotlog)
 
-        ax = df.plot(x = 't', y = ["x", "y", "th"], marker='o')
-        ax.set_xlabel("t (s)")
-        ax.set_ylabel("x,y(m); th(rad)")
-        # ax.set_aspect('equal')
-        #df.plot(kind='density')  # estimate density function
-        plt.show()
 
 
 
