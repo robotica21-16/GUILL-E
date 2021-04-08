@@ -145,7 +145,7 @@ class Robot:
         self.f_log = open("logs/{:d}-{:d}-{:d}-{:02d}_{:02d}".format(now.year, now.month, now.day, now.hour, now.minute)+"-log.txt","a")#append
         fila = ["t", "x", "y", "th", "v", "w", "dTh", "dSi"]
         self.f_log.write("\t".join([str(e) for e in fila]) + "\n")
-        time.sleep(3)
+        time.sleep(6)
 
     ####################################################################################################
     # SPEED FUNCTIONS
@@ -615,7 +615,7 @@ class Robot:
                     np.array([x_goal_ini, y_goal_ini]), vmin, vmax)
                 self.setSpeed(v,0)
                 tEnd = time.perf_counter()
-                time.sleep(period - (tEnd - tIni))
+                time.sleep(max(period - (tEnd - tIni),0))
         self.setSpeed(0, 0)
         return False
 
@@ -692,6 +692,7 @@ class Robot:
         end = False
         while not end:
             replan = False
+            print(self.map.currentPath)
             for step in self.map.currentPath:
                 # Go to next cell
                 x, y = self.posFromCell(step[0], step[1])

@@ -77,8 +77,8 @@ def main(args):
         matplotlib.pyplot.close('all')
 
 
-        x1,y1,th1 = 0,2,math.pi/2.0
-        x2,y2 = 1,0
+        x1,y1,th1 = 0,0,math.pi/2.0
+        x2,y2 = 2,0
 
         robot = Robot()
         robot.setMap(myMap, [x1,y1,th1], [x2,y2])
@@ -86,33 +86,7 @@ def main(args):
         robot.executePath()
         #robot.executePath_neigh()
         robot.stopOdometry()
-        # if myMap.findPath(x1,y1,x2,y2):
-        #     print("camino encontrado")
-        #     print(myMap.currentPath)
-        #     myMap.drawMap(saveSnapshot=False)
-
-        # 2. launch updateOdometry thread()
-
-        # ...
-
-
-
-        # 3. perform trajectory
-        # robot.setSpeed(1,1) ...
-        # while (notfinished){
-
-            # robot.go(pathX[i],pathY[i]);
-            # check if there are close obstacles
-            # deal with them...
-            # Avoid_obstacle(...) OR RePlanPath(...)
-
-
-
-
-        # 4. wrap up and close stuff ...
-        # This currently unconfigure the sensors, disable the motors,
-        # and restore the LED to the control of the BrickPi3 firmware.
-        # robot.stopOdometry()
+        myMap.drawMap(saveSnapshot=False)
 
     except KeyboardInterrupt:
     # except the program gets interrupted by Ctrl+C on the keyboard.

@@ -62,8 +62,25 @@ def reachedAngle(th, target, w):
     if w > 0:
         if target < 0 and th > 0:
             return th >= (2*math.pi + target)
+        elif target==math.pi or target==-math.pi:
+            return th<0
         else:
             return th >= target
+    elif w < 0:
+        if target > 0 and th < 0:
+            return (2*math.pi+th) <= target
+        elif target==math.pi or target==-math.pi:
+            return th>0
+        else:
+            return th <= target
+
+def reachedAngle_2(th, target, w):
+    #if (th > math.pi/2 or th<-math.pi/2 and 
+    if w > 0:
+        if target < 0 and th > 0:
+            return th >= (2*math.pi + target)
+        else:
+            return 2*math.pi+th >= target
     elif w < 0:
         if target > 0 and th < 0:
             return (2*math.pi+th) <= target
