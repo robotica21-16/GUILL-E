@@ -38,12 +38,24 @@ def main(args):
     myMap.deleteConnection(0,1,2)
 
     myMap.deleteConnection(2,1,4)
+    myMap.deleteConnection(2,1,6)
     myMap.findPath(0,0,2,0)
-    myMap.drawMap(saveSnapshot=False)
+    # myMap.drawMap(saveSnapshot=False)
 
     df  = pd.read_csv(args.log, sep="\t")
     robotLocations = df.values.tolist()
+    robotLocations = [e[1:-4] for e in robotLocations]
+    robotLocations = [[float(ee) for ee in e] for e in robotLocations[1:]]
+    for i in range(len(robotLocations)):
+        robotLocations[i][0] *= 1000.0
+        robotLocations[i][1] *= 1000.0
+
+
     print(robotLocations)
+    robotLocations = robotLocations[::10]
+    myMap.drawMapWithRobotLocations( robotLocations, saveSnapshot=False )
+
+
     #myMap.verbose = True
     #myMap.drawMap(saveSnapshot=False)
 

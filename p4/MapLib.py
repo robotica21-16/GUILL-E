@@ -446,8 +446,7 @@ class Map2D:
         cost = 0
         frontier = [self.goal]
         procesadas = 0
-        # num_rows, num_cols = self.costMatrix.shape
-        # todo_cells = [[True for i in range(num_rows)] for j in range(num_cols)]
+        
         while not end:
             newFront = []
             if not frontier: # is empty
@@ -455,7 +454,7 @@ class Map2D:
                 end = True
                 self.drawMap(saveSnapshot=False)
                 return False
-                
+
             for cell in frontier:
                 self.costMatrix[cell[0], cell[1]] = cost
                 for i in range(4): # for each neighbour
@@ -478,15 +477,12 @@ class Map2D:
         """
         x_ini, y_ini, x_end, y_end: integer values that indicate \
             the x and y coordinates of the starting (ini) and ending (end) cell
-
-        NOTE: Make sure self.currentPath is a 2D numpy array
-        ...  TO-DO  ....
+        Finds the path between ini and end
         """
         self.goal = [x_end,y_end]
         if not self.fillCostMatrix():
             return False
 
-        # FAKE sample path: [ [0,0], [0,0], [0,0], ...., [0,0]  ]
         self.currentPath = []
         pathFound = False
         current_x=x_ini
@@ -543,6 +539,9 @@ class Map2D:
         return n
 
     def obstacleDetected(self,x_now, y_now, x_2, y_2):
+        """
+        Adds the obstacle between the cells to the map
+        """
         x_milli = max(x_now*1000.0, 0)
         y_milli = max(y_now*1000.0, 0)
         x_now, y_now = self._pos2cell(x_milli, y_milli)
@@ -552,7 +551,10 @@ class Map2D:
 
 
     def replanPath(self, x, y, x_end=-1, y_end=-1):
-    #""" TO-DO """
+        """
+        replans the path from x, y to the new goal or the previous one if
+        none is provided
+        """
         x_milli = max(x*1000.0, 0)
         y_milli = max(y*1000.0, 0)
         inix,iniy=self._pos2cell(x_milli, y_milli)
@@ -564,6 +566,7 @@ class Map2D:
 
 
     def neighbourFromCells(self, cell1, cell2):
+
         dif1 = cell2[0]-cell1[0]
         dif2 = cell2[1]-cell1[1]
         res=None
