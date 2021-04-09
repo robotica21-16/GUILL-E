@@ -53,8 +53,8 @@ class Movil:
         fig = plt.figure()
         self.ax = fig.add_subplot(111)
         if fijarEjes:
-            self.ax.set_xlim(-15,15)
-            self.ax.set_ylim(-15,15)
+            self.ax.set_xlim(-11,11)
+            self.ax.set_ylim(-11,11)
             self.ax.set_aspect('equal')
         self.ax.grid(True)
         self.lastFrame = None
@@ -62,8 +62,8 @@ class Movil:
     def simular(self, t):
         self.x, _ = simubot(self.vc,self.x,t)
 
-    def plot(self):
-        if self.lastFrame is not None:
+    def plot(self, animar):
+        if animar and self.lastFrame is not None:
             self.lastFrame.remove()
         self.lastFrame = dibrobot(self.x, tamano='g', c='b')
         # self.last = self.ax.plot(self.x[0], self.x[1], 'o')
@@ -76,13 +76,15 @@ class RobotSim:
         self.K = K
         self.f = open('log.txt', 'w')
         self.f.write("\t".join(['t', 'v', 'w', 'x', 'y', 'th'])+"\n")
+        self.lastFrame = None
 
     def plot(self, args):
         if args.animate or args.plot_trajectory:
-            pltbot = dibrobot(self.x, tamano='g')
-            if args.animate:
-                plt.pause(0.05) # borrar pause y remove para tener directamente el final
-                pltbot.remove()
+            if args.animate and self.lastFrame is not None:
+                # plt.pause(0.05) # borrar pause y remove para tener directamente el final
+                self.lastFrame.remove()
+            self.lastFrame = dibrobot(self.x, tamano='g')
+
 
     def setObjetivo(self, goal, updateK=False):
         if updateK:
@@ -147,7 +149,9 @@ def main(args):
             [kp, 0.0, 0.0],
             [0.0,  ka, kb]
         ])
-
+        # Plot:
+        fijarEjes = True
+        animar = args.animate
 
         # Robot:
         rbt = RobotSim(K)
@@ -156,7 +160,7 @@ def main(args):
         rmovil = 10 # 10 m radio
         wmovil = vmovil/rmovil
         xmovil = np.array([0,-10,0])
-        movil = Movil(np.array([vmovil, wmovil]), xmovil)
+        movil = Movil(np.array([vmovil, wmovil]), xmovil, fijarEjes)
         periodo = 0.5
         t = 0.0
         eps = 0.01
@@ -164,28 +168,33 @@ def main(args):
         first = False # poner a True para actualizar K para cada goal (sale mal)
         reached = False
         while not reached:
+            # actualizar movil:
             movil.simular(periodo)
-            movil.plot()
-            plt.pause(periodo*0.05)
-    #         G_X_R = loc(np.dot(np.linalg.inv(hom(goal)), hom(rbt.x)))
-    #         # print("-------------------")
-    #         # print(goal, rbt.x, G_X_R, sep="\n")
-    #         # print("-------------------")
-    #         reached = abs(G_X_R[0]) < eps and abs(G_X_R[1]) < eps
-    #         if not reached:
-    #             rbt.setObjetivo(G_X_R, first)
-    #             vc = rbt.control()
-    #             vc = fixVC(vc, MAXV, MAXW)
-    #             x, xr = simubot(vc,rbt.x,periodo)
-    #             rbt.setPos(x)
-    #             rbt.plot(args) #plot position
-    #             rbt.log(vc, t)
-    #             t+=periodo
-    #             first = False
-    #     if args.plot_trajectory:
-    #         plt.show()
-    # else: # plot log
-    #     plotVariables(args.plotlog)
+            # pos robot relativa a movil:
+            M_X_R = loc(np.dot(np.linalg.inv(hom(movil.x)), hom(rbt.x)))
+
+            # condicion de fin:
+            reached = abs(M_X_R[0]) < eps and abs(M_X_R[1]) < eps
+            if not reached:
+                # nuevas velocidades:
+                rbt.setObjetivo(M_X_R)
+                vc = rbt.control()
+                vc = fixVC(vc, MAXV, MAXW)
+                # Actualizar bot:
+                x, xr = simubot(vc,rbt.x,periodo)
+                rbt.setPos(x)
+                rbt.plot(args) #plot position
+                rbt.log(vc, t)
+                t+=periodo
+                # plot
+                movil.plot(animar)
+                if animar:
+                    plt.pause(periodo*0.1)
+
+        if args.plot_trajectory:
+            plt.show()
+    else: # plot log
+        plotVariables(args.plotlog)
 
 
 
