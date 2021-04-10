@@ -55,8 +55,6 @@ def main(args):
             d,reached  = rbt.sensorSim(yPared)
             if not reached:
                 vc = rbt.vcFromD(d)
-
-                # vc = rbt.fixVC(vc)
                 checkVC(vc)
                 # Actualizar bot:
                 x, xr = simubot(vc,rbt.x,periodo)
