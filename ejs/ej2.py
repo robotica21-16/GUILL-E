@@ -22,7 +22,14 @@ def plotVariables(log):
     ax = df.plot(x = 't', y = ["x", "y", "th"], marker='o')
     ax.set_xlabel("t (s)")
     ax.set_ylabel("x,y(m); th(rad)")
+
+    ax = df.plot(x = 't', y = ["xr", "yr", "thr"], marker='o', title='relativas')
+    ax.set_xlabel("t (s)")
+    ax.set_ylabel("x,y(m); th(rad)")
     plt.show()
+    plt.show()
+
+
 
 
 def printsep(s, sep="------------"):
@@ -48,7 +55,7 @@ class RobotSim:
         self.x = x
         self.K = K
         self.f = open('log.txt', 'w')
-        self.f.write("\t".join(['t', 'v', 'w', 'x', 'y', 'th'])+"\n")
+        self.f.write("\t".join(['t', 'v', 'w', 'x', 'y', 'th', 'xr', 'yr', 'thr'])+"\n")
 
     def plot(self, args):
         if args.animate or args.plot_trajectory:
@@ -85,8 +92,8 @@ class RobotSim:
     def setPos(self,x):
         self.x=x
 
-    def log(self, vc, t):
-        l = [t, vc[0], vc[1], self.x[0], self.x[1],self.x[2]]
+    def log(self, vc, t, rels):
+        l = [t, vc[0], vc[1], self.x[0], self.x[1],self.x[2],rels[0], rels[1],rels[2]]
         l = ['{0:.3f}'.format(s) for s in l]
 
         l = "\t".join(l)
@@ -100,22 +107,29 @@ def checkVC(vc):
 
 def fixVC(vc, maxv, maxw):
     if vc[0] > maxv:
+        # print("v mal: ", vc[0], ">=", MAXV, "!!!!!")
+
         rel = vc[1]/vc[0] # relacion entre v y w, se debe mantener
         vc[0] = maxv
         vc[1] = vc[0]*rel
-        #print("v mal: ", vc[0], ">=", MAXV, "!!!!!")
     if abs(vc[1]) > maxw:
+        # print("w mal: ", vc[1], ">=", MAXW, "!!!!!")
+
         rel = vc[0]/vc[1] # relacion entre v y w, se debe mantener
         vc[1] = maxw if vc[1] > 0 else -maxw
         vc[0] = vc[1]*rel
-        # print("w mal: ", vc[1], ">=", MAXW, "!!!!!")
     return vc
 
 def main(args):
     if args.plotlog=="": # no se hace el plot de las variables
         # Matriz de control:
-        kp =0.5
-        ka = kb = 4.0
+        kp =0.3
+        ka = 2.0
+        kb = 0.5
+        # if args.vcte:
+        #     kp = 0.3
+        #     ka = 1.5
+        #     kb = 0.2
         K = np.array([
             [kp, 0.0, 0.0],
             [0.0,  ka, kb]
@@ -150,10 +164,14 @@ def main(args):
                     rbt.setObjetivo(G_X_R, first)
                     vc = rbt.control()
                     vc = fixVC(vc, MAXV, MAXW)
+                    # if args.vcte:
+                    #     # rel = vc[1]/vc[0]
+                    #     vc[0] = 0.1
+                        # vc[1] = vc[0]*rel
                     x, xr = simubot(vc,rbt.x,periodo)
                     rbt.setPos(x)
                     rbt.plot(args) #plot position
-                    rbt.log(vc, t)
+                    rbt.log(vc, t, G_X_R)
                     t+=periodo
                     first = False
         if args.plot_trajectory:
@@ -172,6 +190,9 @@ if __name__ == "__main__":
     parser.add_argument('-a','--animatebot', help="animates the trajectory", dest='animate', action='store_true')
     # parser.add_argument('-na', '--no-animatebot', dest='animate', action='store_false')
     parser.set_defaults(animate=False)
+    parser.add_argument('-vcte','--vcte', help="keeps v constant", dest='vcte', action='store_true')
+    # parser.add_argument('-na', '--no-animatebot', dest='animate', action='store_false')
+    parser.set_defaults(vcte=False)
     parser.add_argument('-pt','--plottrajectory', help="shows the whole trajectory (no animation)", dest='plot_trajectory', action='store_true')
     # parser.add_argument('-npt', '--no-plottrajectory', dest='plot_trajectory', action='store_false')
     parser.set_defaults(plot_trajectory=False)

@@ -64,7 +64,8 @@ class Movil:
 
     def plot(self, animar):
         if animar and self.lastFrame is not None:
-            self.lastFrame.remove()
+            # self.lastFrame.remove()
+            pass
         self.lastFrame = dibrobot(self.x, tamano='g', c='b')
         # self.last = self.ax.plot(self.x[0], self.x[1], 'o')
 
@@ -82,7 +83,8 @@ class RobotSim:
         if args.animate or args.plot_trajectory:
             if args.animate and self.lastFrame is not None:
                 # plt.pause(0.05) # borrar pause y remove para tener directamente el final
-                self.lastFrame.remove()
+                # self.lastFrame.remove()
+                pass
             self.lastFrame = dibrobot(self.x, tamano='g')
 
 
@@ -132,19 +134,22 @@ def fixVC(vc, maxv, maxw):
         rel = vc[1]/vc[0] # relacion entre v y w, se debe mantener
         vc[0] = maxv
         vc[1] = vc[0]*rel
-        #print("v mal: ", vc[0], ">=", MAXV, "!!!!!")
+        print("v mal: ", vc[0], ">=", MAXV, "!!!!!")
     if abs(vc[1]) > maxw:
         rel = vc[0]/vc[1] # relacion entre v y w, se debe mantener
         vc[1] = maxw if vc[1] > 0 else -maxw
         vc[0] = vc[1]*rel
-        # print("w mal: ", vc[1], ">=", MAXW, "!!!!!")
+        print("w mal: ", vc[1], ">=", MAXW, "!!!!!")
     return vc
 
 def main(args):
     if args.plotlog=="": # no se hace el plot de las variables
         # Matriz de control:
-        kp =0.5
-        ka = kb = 4.0
+        # kp =0.3
+        # ka = kb = 4.0
+        kp = 7.4#0.3
+        ka = 6.5
+        kb = 0.5
         K = np.array([
             [kp, 0.0, 0.0],
             [0.0,  ka, kb]
@@ -161,35 +166,37 @@ def main(args):
         wmovil = vmovil/rmovil
         xmovil = np.array([0,-10,0])
         movil = Movil(np.array([vmovil, wmovil]), xmovil, fijarEjes)
-        periodo = 0.5
+        periodo = 0.05
         t = 0.0
-        eps = 0.01
+        eps = 0.25
         # first = True
         first = False # poner a True para actualizar K para cada goal (sale mal)
         reached = False
         while not reached:
+            # plot
+            rbt.plot(args) #plot position
             # actualizar movil:
             movil.simular(periodo)
             # pos robot relativa a movil:
             M_X_R = loc(np.dot(np.linalg.inv(hom(movil.x)), hom(rbt.x)))
 
+            movil.plot(animar)
+            # nuevas velocidades:
+            rbt.setObjetivo(M_X_R)
+            vc = rbt.control()
+            vc = fixVC(vc, MAXV, MAXW)
+            # Actualizar bot:
+            x, xr = simubot(vc,rbt.x,periodo)
+            rbt.setPos(x)
+            rbt.log(vc, t)
+            t+=periodo
+            if animar:
+                plt.pause(periodo*0.1)
+
             # condicion de fin:
+            M_X_R = loc(np.dot(np.linalg.inv(hom(movil.x)), hom(rbt.x)))
+            print(M_X_R)
             reached = abs(M_X_R[0]) < eps and abs(M_X_R[1]) < eps
-            if not reached:
-                # nuevas velocidades:
-                rbt.setObjetivo(M_X_R)
-                vc = rbt.control()
-                vc = fixVC(vc, MAXV, MAXW)
-                # Actualizar bot:
-                x, xr = simubot(vc,rbt.x,periodo)
-                rbt.setPos(x)
-                rbt.plot(args) #plot position
-                rbt.log(vc, t)
-                t+=periodo
-                # plot
-                movil.plot(animar)
-                if animar:
-                    plt.pause(periodo*0.1)
 
         if args.plot_trajectory:
             plt.show()
