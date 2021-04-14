@@ -7,7 +7,7 @@ import pandas as pd
 from geometry.utilsbot import *
 from geometry.geometry import *
 
-from robotsim import RobotSim
+from robotsim import RobotSim, plotVariables
 
 
 
