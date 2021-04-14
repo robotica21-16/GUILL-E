@@ -28,8 +28,8 @@ def main(args):
         # kp =0.3
         # ka = kb = 4.0
         kp = 3.0#0.3
-        ka = 0.02
-        kb = -2.2
+        ka = 0.01
+        kb = -2.1
         K = np.array([
             [kp, 0.0, 0.0],
             [0.0,  ka, kb]
@@ -40,12 +40,12 @@ def main(args):
         plt.axhline(y=yPared, color='b', linestyle='-')
 
         # Robot:
-        rbt = RobotSim(K, x=np.array([0.0,1.5,math.pi/4]), dc = dConsigna)
+        rbt = RobotSim(K, x=np.array([0.0,1.5,math.pi/7]), dc = dConsigna)
 
 
         periodo = 0.05
         t = 0.0
-        eps = 0.25
+        eps = 0.05
 
         reached = False
         while not reached:
