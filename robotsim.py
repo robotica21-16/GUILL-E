@@ -14,9 +14,9 @@ class RobotSim:
         self.dc = dc
         self.lastd = 0 #TODO: Revisar
 
-    def plot(self, args):
+    def plot(self, args, c='r'):
         if args.animate or args.plot_trajectory:
-            pltbot = dibrobot(self.x, tamano='g')
+            pltbot = dibrobot(self.x, c=c, tamano='g')
             if args.animate:
                 plt.pause(0.002) # borrar pause y remove para tener directamente el final
                 pltbot.remove()
@@ -63,12 +63,10 @@ class RobotSim:
             rel = vc[1]/vc[0] # relacion entre v y w, se debe mantener
             vc[0] = self.MAXV
             vc[1] = vc[0]*rel
-            print("v mal: ", vc[0], ">=", self.MAXV, "!!!!!")
         if abs(vc[1]) > self.MAXW:
             rel = vc[0]/vc[1] # relacion entre v y w, se debe mantener
             vc[1] = self.MAXW if vc[1] > 0 else -self.MAXW
             vc[0] = vc[1]*rel
-            print("w mal: ", vc[1], ">=", self.MAXW, "!!!!!")
         return vc
 
 
@@ -97,13 +95,13 @@ class RobotSim:
             # print("dc: ", self.dc, "d: ", d, "w: ", w)
         return np.array([v,w])
 
-    def sensorSim(self, yPared, eps=math.pi/40, epsd=0.005):
+    def sensorSim(self, yPared, eps=0.002, epsd=0.002):
         """
         Devuelve la distancia a la pared en yPared en el eje y del robot
         """
         d = (self.x[1]-yPared)/np.cos(self.x[2])
-        reached = abs(self.deltad) < epsd and abs(d-self.dc) < epsd
-        print("Distancia = ", d, "angulo = ", self.x[2])
+        reached = abs(self.deltad) < epsd and abs(d-self.dc) < eps
+
         if d > 10 or np.sin(self.x[2]) > 0.15:
             ret = -2
         elif d < 0.5 or np.sin(self.x[2]) < -0.15:

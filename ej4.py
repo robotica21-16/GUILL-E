@@ -28,8 +28,8 @@ def main(args):
         # kp =0.3
         # ka = kb = 4.0
         kp = 3.0#0.3
-        ka = 0.15
-        kb = -2.0
+        ka = 0.05
+        kb = -2.1
         K = np.array([
             [kp, 0.0, 0.0],
             [0.0,  ka, kb]
@@ -37,16 +37,23 @@ def main(args):
         # Pared:
         yPared = 0
         dConsigna = 1
+        fig = plt.figure(figsize=(40,5))
+
+        ax = fig.add_subplot(111)
+        ax.set_xlim(-2,40)
+        ax.set_ylim(-5,5)
+        ax.set_aspect('equal')
+        ax.grid(True)
         plt.axhline(y=yPared, color='b', linestyle='-')
 
         # Robot:
-        rbt = RobotSim(K, x=np.array([0.0,3.0,math.pi/4]), dc = dConsigna)
+        rbt = RobotSim(K, x=np.array([0.0,1.5,math.pi/7]), dc = dConsigna)
 
 
         periodo = 0.05
         t = 0.0
-        eps = 0.25
         rotateSpeed = np.array([0, 0.5])
+        eps = 0.05
 
         reached = 0
         while reached <= 0:
@@ -67,6 +74,17 @@ def main(args):
             rbt.log(vc, t)
             t+=periodo
             # TODO: lo de la pared "frontal"
+
+        t0 = t
+
+        while reached == 1 and t - t0 < 2:
+            rbt.sensorSim(yPared)
+            # plot
+            rbt.plot(args, c='b') #plot position
+            x, xr = simubot(vc,rbt.x,periodo)
+            rbt.setPos(x)
+            rbt.log(vc, t)
+            t+=periodo
 
 
         if args.plot_trajectory:
