@@ -29,7 +29,7 @@ def main(args):
         # ka = kb = 4.0
         kp = 3.0#0.3
         ka = 0.05
-        kb = -2.1
+        kb = -5.0
         K = np.array([
             [kp, 0.0, 0.0],
             [0.0,  ka, kb]
@@ -37,10 +37,10 @@ def main(args):
         # Pared:
         yPared = 0
         dConsigna = 1
-        fig = plt.figure(figsize=(40,5))
+        fig = plt.figure(figsize=(30,20))
 
         ax = fig.add_subplot(111)
-        ax.set_xlim(-2,40)
+        ax.set_xlim(-2,30)
         ax.set_ylim(-5,5)
         ax.set_aspect('equal')
         ax.grid(True)
@@ -67,7 +67,6 @@ def main(args):
                 vc = -rotateSpeed
             elif reached == 0:
                 vc = rbt.vcFromD(d)
-                checkVC(vc)
             # Actualizar bot:
             x, xr = simubot(vc,rbt.x,periodo)
             rbt.setPos(x)
