@@ -2,102 +2,18 @@ import numpy as np
 import matplotlib.pyplot as plt
 import argparse
 
-import pandas as pd
 
 from geometry.utilsbot import *
 from geometry.geometry import *
 
+from robotsim import RobotSim, plotVariables
+
 # from simubot import *
-
-def plotVariables(log):
-    df  = pd.read_csv(log, sep="\t")
-    print(df)
-    ax = df.plot(x = 't', y = 'v', marker='o')
-    ax.set_xlabel("t (s)")
-    ax.set_ylabel("v (m/s)")
-    ax = df.plot(x = 't', y = 'w', marker='o')
-    ax.set_xlabel("t (s)")
-    ax.set_ylabel("w (rad/s)")
-
-    ax = df.plot(x = 't', y = ["x", "y", "th"], marker='o')
-    ax.set_xlabel("t (s)")
-    ax.set_ylabel("x,y(m); th(rad)")
-
-    ax = df.plot(x = 't', y = ["xr", "yr", "thr"], marker='o', title='relativas')
-    ax.set_xlabel("t (s)")
-    ax.set_ylabel("x,y(m); th(rad)")
-    plt.show()
-    plt.show()
-
-
-
-
-def printsep(s, sep="------------"):
-    print(sep, s, sep)
-
-def robotFromPuerta(rxp, wxp):
-    """
-    Devuelve wxr (pos del robot global) a partir de la pos global de la puerta
-    (wxp) y su pos relativa respecto al robot (rxp)
-    """
-    # return wxp-np.linalg.inv(hom(rxp))
-    return loc(np.dot(hom(wxp), np.linalg.inv(hom(rxp))))
-    #return loc(np.dot(hom(rxp),wxp))
 
 MAXV = MAXW = 3.0
 
 def dibPunto(w_x_p):
     plt.plot(w_x_p[0], w_x_p[1], 'o')
-    #plt.plot(w_x_p[1], w_x_p[0], 'o')
-
-class RobotSim:
-    def __init__(self,K,x=np.array([0.0,0.0,0.0])):
-        self.x = x
-        self.K = K
-        self.f = open('log.txt', 'w')
-        self.f.write("\t".join(['t', 'v', 'w', 'x', 'y', 'th', 'xr', 'yr', 'thr'])+"\n")
-
-    def plot(self, args):
-        if args.animate or args.plot_trajectory:
-            pltbot = dibrobot(self.x, tamano='g')
-            if args.animate:
-                plt.pause(0.05) # borrar pause y remove para tener directamente el final
-                pltbot.remove()
-
-    def setObjetivo(self, goal, updateK=False):
-        if updateK:
-            self.objetivo, self.K = toPolaresUpdateK(goal, MAXV, MAXW)
-        else:
-            self.objetivo = toPolares(goal)
-    # def updatePos(vw):
-    #     M = np.array([np.cos(th), 0],
-    #                 [np.sin(th), 0],
-    #                 [0, 1])
-    #     self.x =
-
-    def updateObjetivo(self,vw):
-        alfa = self.objetivo[1]
-        p = self.objetivo[0]
-        M = np.array([-np.cos(alfa), 0],
-                    [np.sin(alfa)/p, -1],
-                    [np.sin(alfa)/p, 0])
-        self.objetivo = np.dot(M, vw)
-
-    def control(self):
-        """
-        Devuelve [v,w]
-        """
-        return np.dot(self.K, self.objetivo)
-
-    def setPos(self,x):
-        self.x=x
-
-    def log(self, vc, t, rels):
-        l = [t, vc[0], vc[1], self.x[0], self.x[1],self.x[2],rels[0], rels[1],rels[2]]
-        l = ['{0:.3f}'.format(s) for s in l]
-
-        l = "\t".join(l)
-        self.f.write(l+"\n")
 
 def checkVC(vc):
     if vc[0] >= MAXV:
@@ -123,13 +39,9 @@ def fixVC(vc, maxv, maxw):
 def main(args):
     if args.plotlog=="": # no se hace el plot de las variables
         # Matriz de control:
-        kp =0.3
+        kp = 0.3
         ka = 2.0
         kb = 0.5
-        # if args.vcte:
-        #     kp = 0.3
-        #     ka = 1.5
-        #     kb = 0.2
         K = np.array([
             [kp, 0.0, 0.0],
             [0.0,  ka, kb]
@@ -174,8 +86,10 @@ def main(args):
                     rbt.log(vc, t, G_X_R)
                     t+=periodo
                     first = False
+                    # plt.show()
         if args.plot_trajectory:
             plt.show()
+
     else: # plot log
         plotVariables(args.plotlog)
 

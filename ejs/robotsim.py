@@ -1,5 +1,6 @@
 import numpy as np
 import math
+import pandas as pd
 
 from geometry.utilsbot import *
 class RobotSim:
@@ -18,7 +19,7 @@ class RobotSim:
         if args.animate or args.plot_trajectory:
             pltbot = dibrobot(self.x, tamano='g')
             if args.animate:
-                plt.pause(0.05) # borrar pause y remove para tener directamente el final
+                plt.pause(0.005) # borrar pause y remove para tener directamente el final
                 pltbot.remove()
 
     def setObjetivo(self, goal, updateK=False):
@@ -94,3 +95,24 @@ class RobotSim:
         reached = abs(self.x[2]) < eps and abs(d-self.dc) < epsd
         # TODO: maximos y minimos de sensores
         return d, reached
+
+
+
+def plotVariables(log):
+    df  = pd.read_csv(log, sep="\t")
+    print(df)
+    ax = df.plot(x = 't', y = 'v', marker='o')
+    ax.set_xlabel("t (s)")
+    ax.set_ylabel("v (m/s)")
+    ax = df.plot(x = 't', y = 'w', marker='o')
+    ax.set_xlabel("t (s)")
+    ax.set_ylabel("w (rad/s)")
+
+    ax = df.plot(x = 't', y = ["x", "y", "th"], marker='o')
+    ax.set_xlabel("t (s)")
+    ax.set_ylabel("x,y(m); th(rad)")
+
+    ax = df.plot(x = 't', y = ["xr", "yr", "thr"], marker='o')
+    ax.set_xlabel("t (s)")
+    ax.set_ylabel("x,y(m); th(rad)")
+    plt.show()

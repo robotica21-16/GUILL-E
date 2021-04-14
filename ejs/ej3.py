@@ -2,46 +2,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 import argparse
 
-import pandas as pd
 
 from geometry.utilsbot import *
 from geometry.geometry import *
 
+from robotsim import RobotSim, plotVariables
+
 # from simubot import *
 
-def plotVariables(log):
-    df  = pd.read_csv(log, sep="\t")
-    print(df)
-    ax = df.plot(x = 't', y = 'v', marker='o')
-    ax.set_xlabel("t (s)")
-    ax.set_ylabel("v (m/s)")
-    ax = df.plot(x = 't', y = 'w', marker='o')
-    ax.set_xlabel("t (s)")
-    ax.set_ylabel("w (rad/s)")
-
-    ax = df.plot(x = 't', y = ["x", "y", "th"], marker='o')
-    ax.set_xlabel("t (s)")
-    ax.set_ylabel("x,y(m); th(rad)")
-    plt.show()
-
-
-def printsep(s, sep="------------"):
-    print(sep, s, sep)
-
-def robotFromPuerta(rxp, wxp):
-    """
-    Devuelve wxr (pos del robot global) a partir de la pos global de la puerta
-    (wxp) y su pos relativa respecto al robot (rxp)
-    """
-    # return wxp-np.linalg.inv(hom(rxp))
-    return loc(np.dot(hom(wxp), np.linalg.inv(hom(rxp))))
-    #return loc(np.dot(hom(rxp),wxp))
 
 MAXV = MAXW = 3.0
-
-def dibPunto(w_x_p):
-    plt.plot(w_x_p[0], w_x_p[1], 'o')
-    #plt.plot(w_x_p[1], w_x_p[0], 'o')
 
 class Movil:
     """
@@ -64,64 +34,13 @@ class Movil:
 
     def plot(self, animar):
         if animar and self.lastFrame is not None:
-            # self.lastFrame.remove()
-            pass
+            self.lastFrame.remove()
+            # pass
         self.lastFrame = dibrobot(self.x, tamano='g', c='b')
         # self.last = self.ax.plot(self.x[0], self.x[1], 'o')
 
         # ax.set_aspect('equal')
 
-class RobotSim:
-    def __init__(self,K,x=np.array([0.0,0.0,0.0])):
-        self.x = x
-        self.K = K
-        self.f = open('log.txt', 'w')
-        self.f.write("\t".join(['t', 'v', 'w', 'x', 'y', 'th'])+"\n")
-        self.lastFrame = None
-
-    def plot(self, args):
-        if args.animate or args.plot_trajectory:
-            if args.animate and self.lastFrame is not None:
-                # plt.pause(0.05) # borrar pause y remove para tener directamente el final
-                # self.lastFrame.remove()
-                pass
-            self.lastFrame = dibrobot(self.x, tamano='g')
-
-
-    def setObjetivo(self, goal, updateK=False):
-        if updateK:
-            self.objetivo, self.K = toPolaresUpdateK(goal, MAXV, MAXW)
-        else:
-            self.objetivo = toPolares(goal)
-    # def updatePos(vw):
-    #     M = np.array([np.cos(th), 0],
-    #                 [np.sin(th), 0],
-    #                 [0, 1])
-    #     self.x =
-
-    def updateObjetivo(self,vw):
-        alfa = self.objetivo[1]
-        p = self.objetivo[0]
-        M = np.array([-np.cos(alfa), 0],
-                    [np.sin(alfa)/p, -1],
-                    [np.sin(alfa)/p, 0])
-        self.objetivo = np.dot(M, vw)
-
-    def control(self):
-        """
-        Devuelve [v,w]
-        """
-        return np.dot(self.K, self.objetivo)
-
-    def setPos(self,x):
-        self.x=x
-
-    def log(self, vc, t):
-        l = [t, vc[0], vc[1], self.x[0], self.x[1],self.x[2]]
-        l = ['{0:.3f}'.format(s) for s in l]
-
-        l = "\t".join(l)
-        self.f.write(l+"\n")
 
 def checkVC(vc):
     if vc[0] >= MAXV:
@@ -131,24 +50,23 @@ def checkVC(vc):
 
 def fixVC(vc, maxv, maxw):
     if vc[0] > maxv:
+        print("v mal: ", vc[0], ">=", MAXV, "!!!!!")
         rel = vc[1]/vc[0] # relacion entre v y w, se debe mantener
         vc[0] = maxv
         vc[1] = vc[0]*rel
-        print("v mal: ", vc[0], ">=", MAXV, "!!!!!")
     if abs(vc[1]) > maxw:
+        print("w mal: ", vc[1], ">=", MAXW, "!!!!!")
         rel = vc[0]/vc[1] # relacion entre v y w, se debe mantener
         vc[1] = maxw if vc[1] > 0 else -maxw
         vc[0] = vc[1]*rel
-        print("w mal: ", vc[1], ">=", MAXW, "!!!!!")
     return vc
 
 def main(args):
     if args.plotlog=="": # no se hace el plot de las variables
         # Matriz de control:
-        # kp =0.3
-        # ka = kb = 4.0
-        kp = 7.4#0.3
-        ka = 6.5
+
+        kp = 0.5#0.3
+        ka = 2.0
         kb = 0.5
         K = np.array([
             [kp, 0.0, 0.0],
@@ -159,14 +77,16 @@ def main(args):
         animar = args.animate
 
         # Robot:
-        rbt = RobotSim(K)
+
+        xBot = np.array([0.0,-5.0,-math.pi/2.0])
+        rbt = RobotSim(K, x=xBot)
         # movil:
         vmovil = 2 # 2 m/s
         rmovil = 10 # 10 m radio
         wmovil = vmovil/rmovil
         xmovil = np.array([0,-10,0])
         movil = Movil(np.array([vmovil, wmovil]), xmovil, fijarEjes)
-        periodo = 0.05
+        periodo = 0.5
         t = 0.0
         eps = 0.25
         # first = True
@@ -188,21 +108,20 @@ def main(args):
             # Actualizar bot:
             x, xr = simubot(vc,rbt.x,periodo)
             rbt.setPos(x)
-            rbt.log(vc, t)
+            rbt.log(vc, t, M_X_R)
             t+=periodo
-            if animar:
-                plt.pause(periodo*0.1)
+            # if animar:
+            #     plt.pause(periodo*0.01)
 
             # condicion de fin:
             M_X_R = loc(np.dot(np.linalg.inv(hom(movil.x)), hom(rbt.x)))
-            print(M_X_R)
+            # print(M_X_R)
             reached = abs(M_X_R[0]) < eps and abs(M_X_R[1]) < eps
 
         if args.plot_trajectory:
             plt.show()
     else: # plot log
         plotVariables(args.plotlog)
-
 
 
 
