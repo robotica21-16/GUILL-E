@@ -1,5 +1,6 @@
 import numpy as np
 import math
+import pandas as pd
 
 import pandas as pd
 
@@ -9,12 +10,12 @@ class RobotSim:
         self.x = x
         self.K = K
         self.f = open('log.txt', 'w')
-        self.f.write("\t".join(['t', 'v', 'w', 'x', 'y', 'th', 'xr', 'yr', 'thr'])+"\n")
+        self.f.write("\t".join(['t', 'v', 'w', 'Δd'])+"\n")
         self.MAXV = self.MAXW = 3.0
         # ej4:
         self.deltad = 0
         self.dc = dc
-        self.lastd = 0 #TODO: Revisar
+        self.lastd = None #integer. initialized to None
 
     def plot(self, args, c='r'):
         if args.animate or args.plot_trajectory:
@@ -52,10 +53,10 @@ class RobotSim:
         self.x=x
 
     def log(self, vc, t, rels=None):
-        l = [t, vc[0], vc[1], self.x[0], self.x[1],self.x[2]]
+        l = [t, vc[0], vc[1], self.deltad]
         if rels is not None:
             l += [rels[0], rels[1],rels[2]]
-        l = ['{0:.3f}'.format(s) for s in l]
+        l = ['{0:.6f}'.format(s) for s in l]
 
         l = "\t".join(l)
         self.f.write(l+"\n")
@@ -77,7 +78,10 @@ class RobotSim:
         v = self.MAXV/2
         k1 = self.K[1,1]
         k2 = self.K[1,2]
-        self.deltad = d-self.lastd
+        if self.lastd == None:
+            self.deltad = 0
+        else:
+            self.deltad = d-self.lastd
         # print("Deltad: ", self.deltad)
         # print("Ant.d: ", self.lastd)
         w = k1*(self.dc-d)+k2*self.deltad
@@ -114,22 +118,20 @@ class RobotSim:
             ret = 0
         return d, ret
 
-
 def plotVariables(log):
     df  = pd.read_csv(log, sep="\t")
     print(df)
-    ax = df.plot(x = 't', y = 'v', marker='o')
+    ax = df.plot(x = 't', y = 'v', marker='*')
     ax.set_xlabel("t (s)")
     ax.set_ylabel("v (m/s)")
-    ax = df.plot(x = 't', y = 'w', marker='o')
+
+    ax = df.plot(x = 't', y = 'w', marker='*')
     ax.set_xlabel("t (s)")
+    ax.set_ylim(-0.5, 0.05)
     ax.set_ylabel("w (rad/s)")
 
-    ax = df.plot(x = 't', y = ["x", "y", "th"], marker='o')
+    ax = df.plot(x = 't', y = 'Δd', marker='*')
     ax.set_xlabel("t (s)")
-    ax.set_ylabel("x,y(m); th(rad)")
+    ax.set_ylabel("Δd(m)")
 
-    ax = df.plot(x = 't', y = ["xr", "yr", "thr"], marker='o')
-    ax.set_xlabel("t (s)")
-    ax.set_ylabel("x,y(m); th(rad)")
     plt.show()
