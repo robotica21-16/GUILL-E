@@ -72,7 +72,6 @@ def main(args):
             rbt.setPos(x)
             rbt.log(vc, t)
             t+=periodo
-            # TODO: lo de la pared "frontal"
 
         t0 = t
 
