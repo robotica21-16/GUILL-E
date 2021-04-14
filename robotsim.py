@@ -1,6 +1,5 @@
 import numpy as np
 import math
-import pandas as pd
 
 from geometry.utilsbot import *
 class RobotSim:
@@ -15,11 +14,11 @@ class RobotSim:
         self.dc = dc
         self.lastd = 0 #TODO: Revisar
 
-    def plot(self, args):
+    def plot(self, args, c='r'):
         if args.animate or args.plot_trajectory:
-            pltbot = dibrobot(self.x, tamano='g')
+            pltbot = dibrobot(self.x, c=c, tamano='g')
             if args.animate:
-                plt.pause(0.005) # borrar pause y remove para tener directamente el final
+                plt.pause(0.002) # borrar pause y remove para tener directamente el final
                 pltbot.remove()
 
     def setObjetivo(self, goal, updateK=False):
@@ -64,12 +63,10 @@ class RobotSim:
             rel = vc[1]/vc[0] # relacion entre v y w, se debe mantener
             vc[0] = self.MAXV
             vc[1] = vc[0]*rel
-            print("v mal: ", vc[0], ">=", self.MAXV, "!!!!!")
         if abs(vc[1]) > self.MAXW:
             rel = vc[0]/vc[1] # relacion entre v y w, se debe mantener
             vc[1] = self.MAXW if vc[1] > 0 else -self.MAXW
             vc[0] = vc[1]*rel
-            print("w mal: ", vc[1], ">=", self.MAXW, "!!!!!")
         return vc
 
 
@@ -79,43 +76,38 @@ class RobotSim:
         k1 = self.K[1,1]
         k2 = self.K[1,2]
         self.deltad = d-self.lastd
+        # print("Deltad: ", self.deltad)
+        # print("Ant.d: ", self.lastd)
         w = k1*(self.dc-d)+k2*self.deltad
+        # self.deltad = d-self.lastd
         self.lastd = d
-        if w>self.MAXW and w > 0:
+        if w>self.MAXW:
             w= self.MAXW
-        elif w<-self.MAXW and w < 0:
+        elif w<-self.MAXW:
             w = -self.MAXW
+
+
+        # if self.dc-d<0 and not w<0:
+            # print("Ley mal")
+            # print("dc-d: ", self.dc-d, "d: ", d, "w: ", w)
+        # if self.dc-d>0 and not w>0:
+            # print("Ley mal")
+            # print("dc: ", self.dc, "d: ", d, "w: ", w)
         return np.array([v,w])
 
-    def sensorSim(self, yPared, eps=math.pi/30, epsd=0.05):
+    def sensorSim(self, yPared, eps=0.002, epsd=0.002):
         """
         Devuelve la distancia a la pared en yPared en el eje y del robot
         """
         d = (self.x[1]-yPared)/np.cos(self.x[2])
-        reached = abs(self.x[2]) < eps and abs(d-self.dc) < epsd
-        
-        if (d > 10 or d < 1) or (np.sin(self.x[2]) > 0.4):
-            reached = None
-            print("d=", d)
-        return d, reached
+        reached = abs(self.deltad) < epsd and abs(d-self.dc) < eps
 
-
-
-def plotVariables(log):
-    df  = pd.read_csv(log, sep="\t")
-    print(df)
-    ax = df.plot(x = 't', y = 'v', marker='o')
-    ax.set_xlabel("t (s)")
-    ax.set_ylabel("v (m/s)")
-    ax = df.plot(x = 't', y = 'w', marker='o')
-    ax.set_xlabel("t (s)")
-    ax.set_ylabel("w (rad/s)")
-
-    ax = df.plot(x = 't', y = ["x", "y", "th"], marker='o')
-    ax.set_xlabel("t (s)")
-    ax.set_ylabel("x,y(m); th(rad)")
-
-    ax = df.plot(x = 't', y = ["xr", "yr", "thr"], marker='o')
-    ax.set_xlabel("t (s)")
-    ax.set_ylabel("x,y(m); th(rad)")
-    plt.show()
+        if d > 10 or np.sin(self.x[2]) > 0.15:
+            ret = -2
+        elif d < 0.5 or np.sin(self.x[2]) < -0.15:
+            ret = -1
+        elif reached:
+            ret = 1
+        else:
+            ret = 0
+        return d, ret
