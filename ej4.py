@@ -28,8 +28,8 @@ def main(args):
         # kp =0.3
         # ka = kb = 4.0
         kp = 3.0#0.3
-        ka = 0.15
-        kb = -2.0
+        ka = 0.05
+        kb = -1.0
         K = np.array([
             [kp, 0.0, 0.0],
             [0.0,  ka, kb]
@@ -40,13 +40,12 @@ def main(args):
         plt.axhline(y=yPared, color='b', linestyle='-')
 
         # Robot:
-        rbt = RobotSim(K, x=np.array([0.0,2.0,math.pi/4]), dc = dConsigna)
+        rbt = RobotSim(K, x=np.array([0.0,3.0,math.pi/4]), dc = dConsigna)
 
 
         periodo = 0.05
         t = 0.0
         eps = 0.25
-        rotateSpeed = np.array([0, -0.5])
 
         reached = False
         while not reached:
@@ -54,16 +53,14 @@ def main(args):
             rbt.plot(args) #plot position
             # "sensor":
             d,reached  = rbt.sensorSim(yPared)
-            if reached == None:
-                vc = rotateSpeed
-            elif not reached:
+            if not reached:
                 vc = rbt.vcFromD(d)
                 checkVC(vc)
-            # Actualizar bot:
-            x, xr = simubot(vc,rbt.x,periodo)
-            rbt.setPos(x)
-            rbt.log(vc, t)
-            t+=periodo
+                # Actualizar bot:
+                x, xr = simubot(vc,rbt.x,periodo)
+                rbt.setPos(x)
+                rbt.log(vc, t)
+                t+=periodo
             # TODO: lo de la pared "frontal"
 
 
