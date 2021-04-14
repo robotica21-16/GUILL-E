@@ -10,7 +10,7 @@ class RobotSim:
         self.x = x
         self.K = K
         self.f = open('log.txt', 'w')
-        self.f.write("\t".join(['t', 'v', 'w', 'Δd'])+"\n")
+        self.f.write("\t".join(['t', 'v', 'w', 'deltad'])+"\n")
         self.MAXV = self.MAXW = 3.0
         # ej4:
         self.deltad = 0
@@ -130,8 +130,8 @@ def plotVariables(log):
     ax.set_ylim(-0.5, 0.05)
     ax.set_ylabel("w (rad/s)")
 
-    ax = df.plot(x = 't', y = 'Δd', marker='*')
+    ax = df.plot(x = 't', y = 'deltad', marker='*')
     ax.set_xlabel("t (s)")
-    ax.set_ylabel("Δd(m)")
+    ax.set_ylabel("deltad(m)")
 
     plt.show()
