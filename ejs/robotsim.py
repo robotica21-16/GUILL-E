@@ -77,12 +77,12 @@ class RobotSim:
         v = self.MAXV/2
         k1 = self.K[1,1]
         k2 = self.K[1,2]
-        w = k1*(self.dc-d)+k2*self.deltad
         self.deltad = d-self.lastd
+        w = k1*(self.dc-d)+k2*self.deltad
         self.lastd = d
-        if w>self.MAXW:
+        if w>self.MAXW and w > 0:
             w= self.MAXW
-        elif w<-self.MAXW:
+        elif w<-self.MAXW and w < 0:
             w = -self.MAXW
         return np.array([v,w])
 
@@ -92,5 +92,8 @@ class RobotSim:
         """
         d = (self.x[1]-yPared)/np.cos(self.x[2])
         reached = abs(self.x[2]) < eps and abs(d-self.dc) < epsd
-        # TODO: maximos y minimos de sensores
+        
+        if (d > 10 or d < 1) or (np.sin(self.x[2]) > 0.4):
+            reached = None
+            print("d=", d)
         return d, reached
