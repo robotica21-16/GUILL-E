@@ -97,12 +97,19 @@ class RobotSim:
             # print("dc: ", self.dc, "d: ", d, "w: ", w)
         return np.array([v,w])
 
-    def sensorSim(self, yPared, eps=math.pi/30, epsd=0.05):
+    def sensorSim(self, yPared, eps=math.pi/40, epsd=0.005):
         """
         Devuelve la distancia a la pared en yPared en el eje y del robot
         """
         d = (self.x[1]-yPared)/np.cos(self.x[2])
-        print("Distancia : ", d)
-        reached = abs(self.x[2]) < eps and abs(d-self.dc) < epsd
-        # TODO: maximos y minimos de sensores
-        return d, reached
+        reached = abs(self.deltad) < epsd and abs(d-self.dc) < epsd
+        print("Distancia = ", d, "angulo = ", self.x[2])
+        if d > 10 or np.sin(self.x[2]) > 0.15:
+            ret = -2
+        elif d < 0.5 or np.sin(self.x[2]) < -0.15:
+            ret = -1
+        elif reached:
+            ret = 1
+        else:
+            ret = 0
+        return d, ret
