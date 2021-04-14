@@ -1,6 +1,8 @@
 import numpy as np
 import math
 
+import pandas as pd
+
 from geometry.utilsbot import *
 class RobotSim:
     def __init__(self,K,x=np.array([0.0,0.0,0.0]), dc=1):
@@ -111,3 +113,23 @@ class RobotSim:
         else:
             ret = 0
         return d, ret
+
+
+def plotVariables(log):
+    df  = pd.read_csv(log, sep="\t")
+    print(df)
+    ax = df.plot(x = 't', y = 'v', marker='o')
+    ax.set_xlabel("t (s)")
+    ax.set_ylabel("v (m/s)")
+    ax = df.plot(x = 't', y = 'w', marker='o')
+    ax.set_xlabel("t (s)")
+    ax.set_ylabel("w (rad/s)")
+
+    ax = df.plot(x = 't', y = ["x", "y", "th"], marker='o')
+    ax.set_xlabel("t (s)")
+    ax.set_ylabel("x,y(m); th(rad)")
+
+    ax = df.plot(x = 't', y = ["xr", "yr", "thr"], marker='o')
+    ax.set_xlabel("t (s)")
+    ax.set_ylabel("x,y(m); th(rad)")
+    plt.show()
