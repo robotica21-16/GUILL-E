@@ -21,7 +21,6 @@ def mapA(robot):
     return t, mapa
 
 def mapB(robot):
-
     t = TrayectoriaTrabajoB(baldosa-0.02)
     mapa = Map2D("trabajo/mapaA_CARRERA.txt")
     return t, mapa

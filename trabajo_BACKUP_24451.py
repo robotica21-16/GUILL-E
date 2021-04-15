@@ -21,10 +21,16 @@ def mapA(robot):
     return t, mapa
 
 def mapB(robot):
+<<<<<<< HEAD
+    t = TrayectoriaTrabajoB(baldosa)
+    robot.setTrajectory(t)
+    robot.executeTrajectory()
 
+=======
     t = TrayectoriaTrabajoB(baldosa-0.02)
     mapa = Map2D("trabajo/mapaA_CARRERA.txt")
     return t, mapa
+>>>>>>> f91c70b33301ecd7a322d90db485be6b03e92e4c
 
 def main(args):
     """

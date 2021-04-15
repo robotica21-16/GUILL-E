@@ -17,17 +17,17 @@ import math
 baldosa=0.4
 def mapA(robot):
     t = TrayectoriaTrabajoA(baldosa-0.02)
-    mapa = Map2D("trabajo/mapaA_CARRERA.txt")
-    return t, mapa
+    robot.setTrajectory(t)
+    robot.executeTrajectory()
 
 def mapB(robot):
-
     t = TrayectoriaTrabajoB(baldosa-0.02)
-    mapa = Map2D("trabajo/mapaA_CARRERA.txt")
-    return t, mapa
+    robot.setTrajectory(t)
+    robot.executeTrajectory()
+
 
 def main(args):
-    """
+    """    
     """
     try:
         robot = Robot()
@@ -42,7 +42,7 @@ def main(args):
             while True:
                 if robot.colorSensorBlack():
                     print("Es negro")
-
+                    
         #robot.executePath_neigh()
         robot.stopOdometry()
 
@@ -51,23 +51,9 @@ def main(args):
             robot = Robot()
             robot.startOdometry()
             if robot.colorSensorBlack():
-                t, mapa = mapB(robot)
-                ini = [1,2,-math.pi/2]
-                fin = [3,2]
-
+                mapB(robot)
             else:
-                t, mapa = mapA(robot)
-                robot.setMap(mapa)
-                ini = [5,2,-math.pi/2]
-                fin = [3,2]
-
-            robot.setTrajectory(t)
-            robot.executeTrajectory()
-            robot.setMap(mapa, ini, fin)
-            robot.executePath()
-            # Zona con obstaculos:
-            # map
-
+                mapA(robot)
 
 
     except KeyboardInterrupt:

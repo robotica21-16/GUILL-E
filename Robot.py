@@ -372,10 +372,13 @@ class Robot:
         """
         Sets the odometry to any value [x,y,th] (in m,m,rad)
         """
+
         self.lock_odometry.acquire()
+        self.stopOdometry()
         self.x.value = value[0]
         self.y.value = value[1]
         self.th.value = value[2]
+        self.startOdometry()
         self.lock_odometry.release()
 
     # Stop the odometry thread.
