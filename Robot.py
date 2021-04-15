@@ -659,7 +659,7 @@ class Robot:
             end = not replan # end if there wasnt a replan
 
 
-    def detectR2D2(self):
+    def detectR2D2(self, DEBUG=0, verbose=False):
         """
         takes a picture and checks if R2D2 is there
         """
@@ -667,7 +667,7 @@ class Robot:
             self.cam.capture(stream, format='bgr')
             # At this point the image is available as stream.array
             image = stream.array
-            return match_images(self.templateR2D2, image, DEBUG=1, verbose=True)
+            return match_images(self.templateR2D2, image, DEBUG=DEBUG, verbose=verbose)
 
 
 

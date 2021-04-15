@@ -32,7 +32,7 @@ def main(args):
     try:
         robot = Robot()
         if args.test_r2d2:
-            if robot.detectR2D2():
+            if robot.detectR2D2(verbose=True, DEBUG=1):
                 print("veo a r2d2")
             else:
                 print("No veo a r2d2")
