@@ -14,6 +14,8 @@ from Robot import Robot
 from p4.MapLib import Map2D
 import math
 
+from trayectorias.trayectorias import *
+
 baldosa=0.4
 def mapA(robot):
     t = TrayectoriaTrabajoA(baldosa-0.02)
@@ -38,32 +40,25 @@ def main(args):
                 print("No veo a r2d2")
 
         if args.test_suelo:
-            robot.startOdometry()
             while True:
                 if robot.colorSensorBlack():
                     print("Es negro")
-
-        #robot.executePath_neigh()
-        robot.stopOdometry()
-
-
-        if args.trabajo:
-            robot = Robot()
+            
+        elif args.trabajo:
             robot.startOdometry()
             if robot.colorSensorBlack():
                 t, mapa = mapB(robot)
-                ini = [1,2,-math.pi/2]
+                ini = [5,2,-math.pi/2]
                 fin = [3,2]
 
             else:
                 t, mapa = mapA(robot)
-                robot.setMap(mapa)
-                ini = [5,2,-math.pi/2]
+                ini = [1,2,-math.pi/2]
                 fin = [3,2]
 
             robot.setTrajectory(t)
             robot.executeTrajectory()
-            robot.setMap(mapa, ini, fin)
+            robot.setMap(mapa, ini, fin) # TODO:error aqui :/
             robot.executePath()
             # Zona con obstaculos:
             # map
@@ -86,8 +81,9 @@ if __name__ == "__main__":
     # get and parse arguments passed to main
     # Add as many args as you need ...
     parser = argparse.ArgumentParser()
-    parser.add_argument("-t", "--trabajo", help="execute all map",
-                        default="False")
+    parser.add_argument("-t", "--trabajo", help="execute all map", dest='trabajo', action='store_true')
+
+    parser.set_defaults(trabajo=False)
     parser.add_argument("-g", "--test_go", help="test go function",
                         default="")
     parser.add_argument("-u", "--test_ultrasound", help="test ultrasound sensor",
@@ -99,6 +95,7 @@ if __name__ == "__main__":
 
     # parser.add_argument('-npt', '--no-plottrajectory', dest='plot_trajectory', action='store_false')
     parser.set_defaults(test_suelo=False)
+    parser.set_defaults(test_r2d2=False)
 
     args = parser.parse_args()
     main(args)

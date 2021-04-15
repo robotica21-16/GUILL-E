@@ -160,7 +160,7 @@ class Robot:
         self.templateR2D2 = cv2.imread("trabajo/R2-D2_s.png", cv2.IMREAD_COLOR)
 
 
-        time.sleep(3)
+        time.sleep(5)
 
     ####################################################################################################
     # SPEED FUNCTIONS
@@ -374,10 +374,11 @@ class Robot:
         """
 
         self.lock_odometry.acquire()
-        self.stopOdometry()
+        self.finished.value = True
         self.x.value = value[0]
         self.y.value = value[1]
         self.th.value = value[2]
+        self.finished.value = False
         self.startOdometry()
         self.lock_odometry.release()
 
