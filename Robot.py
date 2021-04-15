@@ -31,6 +31,7 @@ from p4.MapLib import *
 
 
 resolution=[320,240]
+black=2500
 
 class Robot:
     def __init__(self, init_position=[0.0, 0.0, 0.0]):
@@ -119,6 +120,12 @@ class Robot:
         self.portSensorUltrasonic = self.BP.PORT_4
         self.BP.set_sensor_type(self.portSensorUltrasonic, self.BP.SENSOR_TYPE.EV3_ULTRASONIC_CM)
         self.min_cells=1  # cm
+
+        #################
+        self.portSensorLight = self.BP.PORT_1
+        self.BP.set_sensor_type(self.portSensorLight, self.BP.SENSOR_TYPE.NXT_LIGHT_ON)
+
+
 
 
         ####################################################################################################
@@ -688,3 +695,6 @@ class Robot:
             dist = self.BP.get_sensor(self.portSensorUltrasonic)
             print("dist: ", dist)
             time.sleep(period)
+
+    def colorSensorBlack(self):
+        return self.BP.get_sensor(self.portSensorLight)>=black
