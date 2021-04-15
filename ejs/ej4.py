@@ -42,6 +42,7 @@ def main(args):
         ax = fig.add_subplot(111)
         ax.set_xlim(-2,30)
         ax.set_ylim(-5,5)
+        ax.set_yticks(np.arange(-5, 5, 1))
         ax.set_aspect('equal')
         ax.grid(True)
         plt.axhline(y=yPared, color='b', linestyle='-')
