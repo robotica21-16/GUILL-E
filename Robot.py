@@ -29,6 +29,8 @@ from multiprocessing import Process, Value, Array, Lock
 from camera.color_blobs import *
 from p4.MapLib import *
 
+from trabajo.sample_matching import match_images
+
 
 resolution=[320,240]
 black=2500
@@ -158,7 +160,7 @@ class Robot:
         self.templateR2D2 = cv2.imread("trabajo/R2-D2_s.png", cv2.IMREAD_COLOR)
 
 
-        time.sleep(6)
+        time.sleep(3)
 
     ####################################################################################################
     # SPEED FUNCTIONS
@@ -274,6 +276,7 @@ class Robot:
         for i in range(0, len(self.trajectory.targetPositions)):
             # target = [x,y,th]
             # pos = [x,y,th]
+            print("I:", i)
             v = self.trajectory.targetV[i]
             w = self.trajectory.targetW[i]
             self.setSpeed(v, w)
@@ -660,11 +663,11 @@ class Robot:
         """
         takes a picture and checks if R2D2 is there
         """
-        with picamera.array.PiRGBArray(camera) as stream:
+        with picamera.array.PiRGBArray(self.cam) as stream:
             self.cam.capture(stream, format='bgr')
             # At this point the image is available as stream.array
             image = stream.array
-            return match_images(self.templateR2D2, image, DEBUG=2, verbose=True)
+            return match_images(self.templateR2D2, image, DEBUG=1, verbose=True)
 
 
 

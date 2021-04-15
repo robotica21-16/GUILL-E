@@ -49,18 +49,21 @@ def reachedAngle(th, target, w):
     taking into account the sign of w
     """
     if w > 0:
-        if target < 0 and th > 0:
+        print(w, target, th,2*math.pi + target)
+        if target < 0 and th >= 0:
             return th >= (2*math.pi + target)
         elif target==math.pi or target==-math.pi:
             return th<0
         else:
             return th >= target
     elif w < 0:
-        if target > 0 and th < 0:
+        print(w, target, th)
+        if target > 0 and th <= 0:
             return (2*math.pi+th) <= target
         elif target==math.pi or target==-math.pi:
             return th>0
         else:
+                
             return th <= target
 
 def reachedAngle_2(th, target, w):

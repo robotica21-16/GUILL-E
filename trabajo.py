@@ -33,7 +33,7 @@ def main(args):
             while True:
                 if robot.colorSensorBlack():
                     print("Es negro")
-        robot.executePath()
+                    
         #robot.executePath_neigh()
         robot.stopOdometry()
 
