@@ -31,6 +31,7 @@ from p4.MapLib import *
 
 
 resolution=[320,240]
+black=2500
 
 class Robot:
     def __init__(self, init_position=[0.0, 0.0, 0.0]):
@@ -676,5 +677,5 @@ class Robot:
             print("dist: ", dist)
             time.sleep(period)
 
-    def colorSensor(self):
-        return lightValue=self.BP.get_sensor(self.portSensorLight)
+    def colorSensorBlack(self):
+        return self.BP.get_sensor(self.portSensorLight)>=black
