@@ -30,13 +30,13 @@ MIN_MATCH_COUNT=20          # initially
 MIN_MATCH_OBJECTFOUND=15    # after robust check, to consider object-found
 
 
-def drawMatches2(img1, kp1, img2, kp2, matches, color=None, thickness = 2, mask=None): 
+def drawMatches2(img1, kp1, img2, kp2, matches, color=None, thickness = 2, mask=None):
     """
     Similar to drawMatches in newer versions of open CV
     Draws lines between matching keypoints (kp1, kp2) of the two input images
     color and thickness: line plot properties
     matches: n x Match_objects
-    mask: n x bool. List of booleans to indicate which matches should be displayed 
+    mask: n x bool. List of booleans to indicate which matches should be displayed
     """
     # We're drawing them side by side.  Get dimensions accordingly.
     # Handle both color and grayscale images.
@@ -44,31 +44,34 @@ def drawMatches2(img1, kp1, img2, kp2, matches, color=None, thickness = 2, mask=
         new_shape = (max(img1.shape[0], img2.shape[0]), img1.shape[1]+img2.shape[1], img1.shape[2])
     elif len(img1.shape) == 2:
         new_shape = (max(img1.shape[0], img2.shape[0]), img1.shape[1]+img2.shape[1])
-    new_img = np.zeros(new_shape, type(img1.flat[0]))  
+    new_img = np.zeros(new_shape, type(img1.flat[0]))
     # Place images onto the new image.
     new_img[0:img1.shape[0],0:img1.shape[1]] = img1
     new_img[0:img2.shape[0],img1.shape[1]:img1.shape[1]+img2.shape[1]] = img2
-    
+
     # Draw lines between matches.
     if color:
         c = color
     for i, m in enumerate(matches):
-        if mask is None or (mask is not None and mask[i]):            
+        if mask is None or (mask is not None and mask[i]):
             # Generate random color for RGB/BGR and grayscale images as needed.
-            if not color: 
+            if not color:
                 c = np.random.randint(0,256,3) if len(img1.shape) == 3 else np.random.randint(0,256)
             p1 = tuple(np.round(kp1[m.queryIdx].pt).astype(int))
             p2 = tuple(np.round(kp2[m.trainIdx].pt).astype(int) + np.array([img1.shape[1], 0]))
             cv2.line(new_img, p1, p2, c, thickness)
     return new_img
- 
- 
-def match_images(img1_bgr, img2_bgr):
- 
+
+
+def match_images(img1_bgr, img2_bgr, DEBUG=DEBUG, verbose = False):
+    """
+    returns true if the images match
+    """
+
     # Feature extractor uses grayscale images
     img1 = cv2.cvtColor(img1_bgr, cv2.COLOR_BGR2GRAY)
     img2 = cv2.cvtColor(img2_bgr, cv2.COLOR_BGR2GRAY)
-    
+
     # Create a detector with the parameters
     ver = (cv2.__version__).split('.')
     if int(ver[0]) < 3: # CURRENT RASPBERRY opencv version is 2.4.9
@@ -76,25 +79,26 @@ def match_images(img1_bgr, img2_bgr):
         binary_features = True
 
         detector = cv2.ORB()
-    else: 
+    else:
         # Initiate BRISK detector --> you could use any other detector, including NON binary features (SIFT, SURF)
         # but this is the best performing one in this version
         binary_features=True
         detector = cv2.BRISK_create()
-        
 
     # find the keypoints and corresponding descriptors
     kp1, des1 = detector.detectAndCompute(img1,None)
     kp2, des2 = detector.detectAndCompute(img2,None)
 
     if des1 is None or des2 is None:
+
         print("WARNING: empty detection?")
         return False
     if len(des1) < MIN_MATCH_COUNT or len(des2) < MIN_MATCH_COUNT:
+
         print("WARNING: not enough FEATURES (im1: %d, im2: %d)" %(len(des1), len(des2)) )
         return False
-    print(" FEATURES extracted (im1: %d, im2: %d)" %(len(des1), len(des2)) )
-        
+    if verbose:
+        print(" FEATURES extracted (im1: %d, im2: %d)" %(len(des1), len(des2)) )
 
     if binary_features:
         bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
@@ -112,16 +116,17 @@ def match_images(img1_bgr, img2_bgr):
         for m,n in matches:
             if m.distance < 0.7*n.distance:
                 good.append(m)
-
-    print(" Initial matches found: %d" %(len(good)))
+    if verbose:
+        print(" Initial matches found: %d" %(len(good)))
     if DEBUG > 1:
         ver = (cv2.__version__).split('.')
         if int(ver[0]) < 3: # CURRENT RASPBERRY opencv version is 2.4.9
             img_tmp = drawMatches2(img1,kp1,img2,kp2,good)
         else:
-            img_tmp = cv2.drawMatches(img1,kp1,img2,kp2,good,None)    
-        cv2.imshow("All matches", img_tmp)
-        cv2.waitKey(0)
+            img_tmp = cv2.drawMatches(img1,kp1,img2,kp2,good,None)
+        if verbose:
+            cv2.imshow("All matches", img_tmp)
+            cv2.waitKey(0)
 
     if len(good)>MIN_MATCH_COUNT:
         src_pts = np.float32([ kp1[m.queryIdx].pt for m in good ]).reshape(-1,1,2)
@@ -131,13 +136,13 @@ def match_images(img1_bgr, img2_bgr):
         num_robust_matches = np.sum(matchesMask)
         if num_robust_matches < MIN_MATCH_OBJECTFOUND:
             found = False
-            print("NOT enough ROBUST matches found - %d (required %d)" % 
+            print("NOT enough ROBUST matches found - %d (required %d)" %
                 (num_robust_matches, MIN_MATCH_OBJECTFOUND))
             return found
         h,w = img1.shape
         pts = np.float32([ [0,0],[0,h-1],[w-1,h-1],[w-1,0] ]).reshape(-1,1,2)
         dst = cv2.perspectiveTransform(pts,H_21)
-        img2_res = cv2.polylines(img2_bgr, [np.int32(dst)], True, 
+        img2_res = cv2.polylines(img2_bgr, [np.int32(dst)], True,
                                  color=(255,255,255), thickness=3)
         found = True
         print("ROBUST matches found - %d (out of %d) --> OBJECT FOUND" % (np.sum(matchesMask), len(good)))
@@ -160,10 +165,10 @@ def match_images(img1_bgr, img2_bgr):
         #cv2.waitKey(0) # WAIT is run outside
 
     return found
- 
-   
+
+
 def find_template(mirror=False, img=None, refFilename = "R2-D2s.png"):
- 
+
     print("Looking for reference image : ", refFilename)
     imReference = cv2.imread(refFilename, cv2.IMREAD_COLOR)
 
@@ -175,7 +180,7 @@ def find_template(mirror=False, img=None, refFilename = "R2-D2s.png"):
         cam.resolution = (640, 480)
         cam.framerate = 10 # less frame rate, more light BUT needs to go slowly (or stop)
         rawCapture = PiRGBArray(cam)
-        
+
         # allow the camera to warmup
         time.sleep(0.2)
 
@@ -183,24 +188,24 @@ def find_template(mirror=False, img=None, refFilename = "R2-D2s.png"):
             t1 = time.time()
             rectFound = False
             cam.capture(rawCapture, format="bgr")
-            frame = rawCapture.array  
-            
+            frame = rawCapture.array
+
             frame = cv2.flip(frame, -1) # to rotate 180
             if DEBUG > 2:
                 cv2.imshow("Current view", frame)
                 cv2.imshow("Current target", imReference)
                 cv2.waitKey(0)
-            
+
             t2 = time.time()
             found = match_images(imReference, frame)
             t3 = time.time()
             print("time to match %.2f" %(t3-t2))
-            
+
             rawCapture.truncate(0)
-                     
+
             if DEBUG:
                 if found:
-                    cv2.waitKey(0)    
+                    cv2.waitKey(0)
                 k = cv2.waitKey(1) & 0xff
                 if k == letter_s:
                     cv2.imwrite(str(time.time())+"_image.jpg", frame)
@@ -228,8 +233,8 @@ def find_template(mirror=False, img=None, refFilename = "R2-D2s.png"):
                     cv2.imwrite(str(time.time())+"_image.jpg", img)
                 if k == ESC:
                     cam.close()
-                    break # esc to quit    
-    
+                    break # esc to quit
+
     cv2.destroyAllWindows()
 
 def main():
@@ -237,28 +242,28 @@ def main():
     ap.add_argument("-i", "--image", default=None, help="path to the input image")
     ap.add_argument("-r", "--robot", default="R2-D2_s.png", help="target template file")
     args=ap.parse_args()
-    
+
     # default values
     im = None
     mirror = True
-    
+
     if args.image is not None:
         if not os.path.isfile(args.image):
             print("test image %s does not exist" % args.image);
             return
         im = cv2.imread(args.image, cv2.IMREAD_COLOR)
         mirror=False
-        
+
     if not os.path.isfile(args.robot):
             print("target template image %s does not exist" % args.robot);
             return
     else:
         target_robot_file = args.robot
-    
+
     find_template(mirror=mirror, img=im, refFilename=target_robot_file)
 
 if __name__ == '__main__':
-    """ 
+    """
     Match input image or current life video feed with the selected template
     """
     main()

@@ -59,6 +59,13 @@ def main(args):
                     t3 = Trayectoria3Posiciones(d)
                     robot.setTrajectory(t3)
                     robot.executeTrajectory()
+                    
+            elif args.trayectoria== 4:
+                    d = 0.38
+                    t4 = TrayectoriaTrabajo(d)
+                    robot.setTrajectory(t4)
+                    robot.executeTrajectory()
+                
 
             else: # trayectoria 2, 2 radios
                     r1 = 0.2
