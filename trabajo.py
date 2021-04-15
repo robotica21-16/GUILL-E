@@ -18,18 +18,25 @@ import math
 def main(args):
     """
     Example to load "mapa1.txt"
-    
+
     """
     try:
         robot = Robot()
-        robot.startOdometry()
-        while True:
-            if robot.colorSensorBlack():
-                print("Es negro")
+        if args.test_r2d2:
+            if robot.detectR2D2():
+                print("veo a r2d2")
+            else:
+                print("No veo a r2d2")
+
+        if args.test_suelo:
+            robot.startOdometry()
+            while True:
+                if robot.colorSensorBlack():
+                    print("Es negro")
         robot.executePath()
         #robot.executePath_neigh()
         robot.stopOdometry()
-        myMap.drawMap(saveSnapshot=False)
+
 
     except KeyboardInterrupt:
     # except the program gets interrupted by Ctrl+C on the keyboard.
@@ -53,5 +60,13 @@ if __name__ == "__main__":
                         default="")
     parser.add_argument("-u", "--test_ultrasound", help="test ultrasound sensor",
                         default=False)
+
+
+    parser.add_argument('-td','--test_r2d2', help="test image recognition", dest='test_r2d2', action='store_true')
+    parser.add_argument('-ts','--test_suelo', help="test suelo negro recognition", dest='test_suelo', action='store_true')
+
+    # parser.add_argument('-npt', '--no-plottrajectory', dest='plot_trajectory', action='store_false')
+    parser.set_defaults(test_suelo=False)
+
     args = parser.parse_args()
     main(args)
