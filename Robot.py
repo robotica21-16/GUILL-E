@@ -145,6 +145,12 @@ class Robot:
         self.f_log = open("logs/{:d}-{:d}-{:d}-{:02d}_{:02d}".format(now.year, now.month, now.day, now.hour, now.minute)+"-log.txt","a")#append
         fila = ["t", "x", "y", "th", "v", "w", "dTh", "dSi"]
         self.f_log.write("\t".join([str(e) for e in fila]) + "\n")
+
+
+        ### R2D2
+        self.templateR2D2 = cv2.imread("trabajo/R2-D2_s.png", cv2.IMREAD_COLOR)
+
+
         time.sleep(6)
 
     ####################################################################################################
@@ -550,7 +556,7 @@ class Robot:
         Moves the robot to x_goal, y_goal (first it turns, then it advances, for cell navigation)
         returns True if it finds an obstacle
         """
-        
+
         x_goal = x_goal_ini
         y_goal = y_goal_ini
         odo = self.readOdometry()
@@ -582,7 +588,7 @@ class Robot:
                 print("Unable to find a path")
                 self.stopOdometry()
                 exit(0)
-                
+
             return True
 
 
@@ -615,7 +621,7 @@ class Robot:
         Finds the shortest path from ini to end
         """
         self.map = map
-        
+
         if ini is not None and end is not None:
             x, y = self.posFromCell(ini[0], ini[1])
             self.setOdometry([x, y, ini[2]])
@@ -641,6 +647,19 @@ class Robot:
                 if replan:
                     break
             end = not replan # end if there wasnt a replan
+
+
+    def detectR2D2(self):
+        """
+        takes a picture and checks if R2D2 is there
+        """
+        with picamera.array.PiRGBArray(camera) as stream:
+            self.cam.capture(stream, format='bgr')
+            # At this point the image is available as stream.array
+            image = stream.array
+            return match_images(self.templateR2D2, image, DEBUG=2, verbose=True)
+
+
 
 
 
