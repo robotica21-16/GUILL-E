@@ -14,19 +14,20 @@ from Robot import Robot
 from p4.MapLib import Map2D
 import math
 
+baldosa=0.4
 def mapA(robot):
+    t = TrayectoriaTrabajoA(baldosa-0.02)
+    robot.setTrajectory(t)
+    robot.executeTrajectory()
 
 def mapB(robot):
+    t = TrayectoriaTrabajoB(baldosa-0.02)
+    robot.setTrajectory(t)
+    robot.executeTrajectory()
 
 
 def main(args):
-<<<<<<< HEAD
     """    
-=======
-    """
-    Example to load "mapa1.txt"
-
->>>>>>> cef87c60d2b9f09373d43e1140dbb6c84a9dee44
     """
     try:
         robot = Robot()
@@ -50,7 +51,9 @@ def main(args):
             robot = Robot()
             robot.startOdometry()
             if robot.colorSensorBlack():
-
+                mapB(robot)
+            else:
+                mapA(robot)
 
 
     except KeyboardInterrupt:
