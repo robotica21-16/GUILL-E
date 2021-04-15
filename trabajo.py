@@ -14,11 +14,13 @@ from Robot import Robot
 from p4.MapLib import Map2D
 import math
 
+def mapA(robot):
+
+def mapB(robot):
+
 
 def main(args):
-    """
-    Example to load "mapa1.txt"
-    
+    """    
     """
     try:
         robot = Robot()
@@ -30,6 +32,13 @@ def main(args):
         #robot.executePath_neigh()
         robot.stopOdometry()
         myMap.drawMap(saveSnapshot=False)
+
+        if args.trabajo:
+            robot = Robot()
+            robot.startOdometry()
+            if robot.colorSensorBlack():
+
+
 
     except KeyboardInterrupt:
     # except the program gets interrupted by Ctrl+C on the keyboard.
@@ -47,8 +56,8 @@ if __name__ == "__main__":
     # get and parse arguments passed to main
     # Add as many args as you need ...
     parser = argparse.ArgumentParser()
-    parser.add_argument("-m", "--mapfile", help="path to find map file",
-                        default="mapa1.txt")
+    parser.add_argument("-t", "--trabajo", help="execute all map",
+                        default="False")
     parser.add_argument("-g", "--test_go", help="test go function",
                         default="")
     parser.add_argument("-u", "--test_ultrasound", help="test ultrasound sensor",
