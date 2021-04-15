@@ -21,7 +21,7 @@ def mapA(robot):
     robot.executeTrajectory()
 
 def mapB(robot):
-    t = TrayectoriaTrabajoB(baldosa-0.02)
+    t = TrayectoriaTrabajoB(baldosa)
     robot.setTrajectory(t)
     robot.executeTrajectory()
 
