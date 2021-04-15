@@ -120,6 +120,12 @@ class Robot:
         self.BP.set_sensor_type(self.portSensorUltrasonic, self.BP.SENSOR_TYPE.EV3_ULTRASONIC_CM)
         self.min_cells=1  # cm
 
+        #################
+        self.portSensorLight = self.BP.PORT_1
+        self.BP.set_sensor_type(self.portSensorLight, self.BP.SENSOR_TYPE.NXT_LIGHT_ON)
+
+
+
 
         ####################################################################################################
         # odometry shared memory values
@@ -669,3 +675,6 @@ class Robot:
             dist = self.BP.get_sensor(self.portSensorUltrasonic)
             print("dist: ", dist)
             time.sleep(period)
+
+    def colorSensor(self):
+        return lightValue=self.BP.get_sensor(self.portSensorLight)
