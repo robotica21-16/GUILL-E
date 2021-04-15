@@ -21,7 +21,7 @@ def mapB(robot):
 
 def main(args):
 <<<<<<< HEAD
-    """    
+    """
 =======
     """
     Example to load "mapa1.txt"
@@ -41,7 +41,7 @@ def main(args):
             while True:
                 if robot.colorSensorBlack():
                     print("Es negro")
-                    
+
         #robot.executePath_neigh()
         robot.stopOdometry()
 
@@ -50,6 +50,10 @@ def main(args):
             robot = Robot()
             robot.startOdometry()
             if robot.colorSensorBlack():
+
+
+            # Zona con obstaculos:
+            # map
 
 
 
