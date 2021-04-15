@@ -18,11 +18,14 @@ import math
 def main(args):
     """
     Example to load "mapa1.txt"
+    
     """
+    try:
         robot = Robot()
         robot.startOdometry()
         while True:
-            robot.portSensorLight()
+            if robot.colorSensorBlack():
+                print("Es negro")
         robot.executePath()
         #robot.executePath_neigh()
         robot.stopOdometry()
