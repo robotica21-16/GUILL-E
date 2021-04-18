@@ -14,6 +14,8 @@ from Robot import Robot
 from p4.MapLib import Map2D
 import math
 
+from trayectorias.trayectorias import *
+
 baldosa=0.4
 def mapA(robot):
     t = TrayectoriaTrabajoA(baldosa-0.02)
@@ -38,32 +40,25 @@ def main(args):
                 print("No veo a r2d2")
 
         if args.test_suelo:
-            robot.startOdometry()
             while True:
                 if robot.colorSensorBlack():
                     print("Es negro")
-
-        #robot.executePath_neigh()
-        robot.stopOdometry()
-
-
-        if args.trabajo:
-            robot = Robot()
+            
+        elif args.trabajo:
             robot.startOdometry()
             if robot.colorSensorBlack():
                 t, mapa = mapB(robot)
-                ini = [1,2,-math.pi/2]
+                ini = [5,2,-math.pi/2]
                 fin = [3,2]
 
             else:
                 t, mapa = mapA(robot)
-                robot.setMap(mapa)
-                ini = [5,2,-math.pi/2]
+                ini = [1,2,-math.pi/2]
                 fin = [3,2]
 
             robot.setTrajectory(t)
             robot.executeTrajectory()
-            robot.setMap(mapa, ini, fin)
+            robot.setMap(mapa, ini, fin) # TODO:error aqui :/
             robot.executePath()
             # Zona con obstaculos:
             # map
