@@ -435,6 +435,11 @@ class Map2D:
         returns True if the cell already has a value or is in the frontier
         """
         return neighbour_cell in front or self.costMatrix[neighbour_cell[0], neighbour_cell[1]] >= 0
+        
+    def cellExists(self, cell):
+        x=cell[0]
+        y=cell[1]
+        return 0<=x<self.sizeX and 0<=y<self.sizeY
 
     def fillCostMatrix(self):
         """
@@ -460,8 +465,9 @@ class Map2D:
                 for i in range(4): # for each neighbour
                     neighbour = i*2
                     neighbour_cell = self.neighbourCell(cell[0], cell[1],neighbour)
-                    if self.isConnected(cell[0], cell[1], neighbour) and not self.hasValue(neighbour_cell, newFront):
-                        newFront += [neighbour_cell]
+                    if self.isConnected(cell[0], cell[1], neighbour) and self.cellExists(neighbour_cell): 
+                        if not self.hasValue(neighbour_cell, newFront):
+                            newFront += [neighbour_cell]
                 procesadas+=1
                 if procesadas >= self.costMatrix.size:
                     end=True

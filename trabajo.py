@@ -45,20 +45,24 @@ def main(args):
                     print("Es negro")
             
         elif args.trabajo:
-            robot.startOdometry()
             if robot.colorSensorBlack():
                 t, mapa = mapB(robot)
-                ini = [5,2,-math.pi/2]
+                celdaIni = [5,2,-math.pi/2]
                 fin = [3,2]
+                ini=[5,6, -math.pi/2]
 
             else:
                 t, mapa = mapA(robot)
-                ini = [1,2,-math.pi/2]
+                celdaIni = [1,2,-math.pi/2]
                 fin = [3,2]
-
+                ini=[1,6, -math.pi/2]
+            robot.setMapNoPath(mapa)
+            x, y = robot.posFromCell(ini[0], ini[1])
+            robot.setOdometry([x, y, ini[2]])
+            robot.startOdometry()
             robot.setTrajectory(t)
             robot.executeTrajectory()
-            robot.setMap(mapa, ini, fin) # TODO:error aqui :/
+            robot.setPath(celdaIni, fin)
             robot.executePath()
             # Zona con obstaculos:
             # map

@@ -629,21 +629,34 @@ class Robot:
         return False
 
     # ---------------------------------------------- p4:
+    def setMapNoPath(self, map):
+        """
+        sets the map and the initial positions for the odometry (ini, end in cells)
+        Finds the shortest path from ini to end
+        """
+        self.map = map
+        
+
     def setMap(self, map, ini=None, end=None):
         """
         sets the map and the initial positions for the odometry (ini, end in cells)
         Finds the shortest path from ini to end
         """
         self.map = map
-
-        if ini is not None and end is not None:
+        
+        if ini is not None:
             x, y = self.posFromCell(ini[0], ini[1])
             self.setOdometry([x, y, ini[2]])
+
+        if end is not None:
             if not self.map.findPath(ini[0], ini[1],end[0],end[1]):
                 print("ERROR en findPath")
                 self.stopOdometry()
-
-
+                
+    def setPath(self, ini, end):
+        if not self.map.findPath(ini[0], ini[1],end[0],end[1]):
+            print("ERROR en findPath")
+            self.stopOdometry()
 
 
     def executePath(self):
