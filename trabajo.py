@@ -86,8 +86,9 @@ if __name__ == "__main__":
     # get and parse arguments passed to main
     # Add as many args as you need ...
     parser = argparse.ArgumentParser()
-    parser.add_argument("-t", "--trabajo", help="execute all map",
-                        default="False")
+    parser.add_argument("-t", "--trabajo", help="execute all map", dest='trabajo', action='store_true')
+
+    parser.set_defaults(trabajo=False)
     parser.add_argument("-g", "--test_go", help="test go function",
                         default="")
     parser.add_argument("-u", "--test_ultrasound", help="test ultrasound sensor",
@@ -99,6 +100,7 @@ if __name__ == "__main__":
 
     # parser.add_argument('-npt', '--no-plottrajectory', dest='plot_trajectory', action='store_false')
     parser.set_defaults(test_suelo=False)
+    parser.set_defaults(test_r2d2=False)
 
     args = parser.parse_args()
     main(args)
