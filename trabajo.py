@@ -18,13 +18,13 @@ from trayectorias.trayectorias import *
 
 baldosa=0.4
 def mapA(robot):
-    t = TrayectoriaTrabajoA(baldosa-0.02)
+    t = TrayectoriaTrabajoA(baldosa)
     mapa = Map2D("trabajo/mapaA_CARRERA.txt")
     return t, mapa
 
 def mapB(robot):
 
-    t = TrayectoriaTrabajoB(baldosa-0.02)
+    t = TrayectoriaTrabajoB(baldosa)
     mapa = Map2D("trabajo/mapaA_CARRERA.txt")
     return t, mapa
 
@@ -45,25 +45,30 @@ def main(args):
                     print("Es negro")
             
         elif args.trabajo:
-            if robot.colorSensorBlack():
-                t, mapa = mapB(robot)
-                celdaIni = [5,2,-math.pi/2]
-                fin = [3,2]
-                ini=[5,6, -math.pi/2]
-
-            else:
+            if not robot.colorSensorBlack():
+                
+                print("Estoy en el mapa A")
                 t, mapa = mapA(robot)
                 celdaIni = [1,2,-math.pi/2]
                 fin = [3,2]
                 ini=[1,6, -math.pi/2]
+
+            else:
+                t, mapa = mapB(robot)
+                celdaIni = [5,2,-math.pi/2]
+                fin = [3,2]
+                ini=[5,6, -math.pi/2]
             robot.setMapNoPath(mapa)
             x, y = robot.posFromCell(ini[0], ini[1])
             robot.setOdometry([x, y, ini[2]])
             robot.startOdometry()
+            print("Odo inicial:", robot.readOdometry())
             robot.setTrajectory(t)
             robot.executeTrajectory()
             robot.setPath(celdaIni, fin)
             robot.executePath()
+            
+            robot.stopOdometry()
             # Zona con obstaculos:
             # map
 

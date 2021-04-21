@@ -273,10 +273,10 @@ class Robot:
         Executes the saved trajectory (sequence of v,w and t)
         """
         period = 0.05
-        for i in range(0, len(self.trajectory.targetPositions)):
+        for i in range(len(self.trajectory.targetPositions)):
             # target = [x,y,th]
             # pos = [x,y,th]
-            print("I:", i)
+            print("Paso:", i, "----------------------------")
             v = self.trajectory.targetV[i]
             w = self.trajectory.targetW[i]
             self.setSpeed(v, w)
@@ -287,6 +287,9 @@ class Robot:
                 if not end:
                     tFin = time.perf_counter()
                     time.sleep(period-(tFin-tIni))
+                else: 
+                    print(v, w,"target: ", self.trajectory.targetPositions[i], "odo:", self.readOdometry())
+                    
         self.setSpeed(0, 0)
 
     ####################################################################################################
