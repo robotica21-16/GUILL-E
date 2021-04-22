@@ -554,6 +554,7 @@ class Map2D:
         endx,endy=self._pos2cell(x_2*1000.0, y_2*1000.0)
         neighbour = self.neighbourFromCells([x_now, y_now],[endx, endy])
         self.deleteConnection(x_now, y_now, neighbour)
+        return neighbour
 
 
     def replanPath(self, x, y, x_end=-1, y_end=-1):

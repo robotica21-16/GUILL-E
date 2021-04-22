@@ -49,6 +49,7 @@ class Robot:
         self.R_rueda = 0.027
         self.L = 0.140
         self.eje_rueda = self.L/2.0
+        self.len_color_eje = 0.11 # longitud del detector de color al eje
 
         self.offset_right = 1.0#0.9995 # The way the bot is built, the left tire spins slightly slower than right
 
@@ -145,7 +146,7 @@ class Robot:
 
         # if we want to block several instructions to be run together, we may want to use an explicit Lock
         self.lock_odometry = Lock()
-
+        self.detectorLock = Lock()
         # odometry update period
         self.P = 0.05
 
@@ -288,9 +289,9 @@ class Robot:
                 if not end:
                     tFin = time.perf_counter()
                     time.sleep(period-(tFin-tIni))
-                else: 
+                else:
                     print(v, w,"target: ", self.trajectory.targetPositions[i], "odo:", self.readOdometry())
-                    
+
         self.setSpeed(0, 0)
 
     ####################################################################################################
@@ -506,6 +507,50 @@ class Robot:
     ####################################################################################################
     # CLAWS FUNCTIONS
 
+    def waitForWhite(self, coordinate, value):
+        """
+        Updates the coordinate when it finds a white line (0->x, 1->y)
+        """
+        white=True
+        self.lineDetector = Process(target = self.lineDetector, args=(white, coordinate, value))
+        self.lineDetector.start()
+
+
+    def updateCoordValue(self,coordinate, value):
+        if coordinate == 0: # x
+            self.lock_odometry.acquire()
+            self.x.value = value + self.len_color_eje * np.cos(self.readOdometry()[2])
+            self.lock_odometry.release()
+        else: # y
+            self.lock_odometry.acquire()
+            self.y.value = value + self.len_color_eje * np.sin(self.readOdometry()[2])
+            self.lock_odometry.release()
+
+    def lineDetector(self, white,coordinate, value):
+        """
+        """
+        period = 0.1
+        end = False
+        
+        self.detectorLock.acquire()
+        while not self.finished.value and not end:
+            tIni = time.perf_counter()
+            if white:
+                if self.colorSensorWhite():
+                    print("WHITE DETECTED")
+                    self.updateCoordValue(coordinate, value)
+                    end = True
+                # TODO: cosas
+            else:
+                if self.colorSensorBlack():
+                    print("BLACK DETECTED")
+                    self.updateCoordValue(coordinate, value)
+                    end = True
+            tEnd = time.perf_counter()
+            time.sleep(period - (tEnd-tIni))
+        
+        self.detectorLock.release()
+
     def catch(self):
         """
         Starts the process that closes or opens the claws
@@ -568,7 +613,35 @@ class Robot:
         th_goal = norm_pi(math.atan2(dY, dX))
         return x_goal, y_goal, th_goal
 
-    def go(self, x_goal_ini, y_goal_ini, eps = 0.05):
+    def fixOdometryFromObstacle(self, neighbour, x_objective, y_objective):
+        print("actualizando odo:", self.readOdometry())
+        plusone=False
+        if self.dist / 100 >= 0.95 * self.map.sizeCell/1000:
+            plusone=True
+        self.lock_odometry.acquire()
+        if neighbour == 0:
+            if plusone:
+                y_objective+=self.map.sizeCell
+            self.y.value = y_objective - (self.map.sizeCell /1000 / 2 + self.dist / 100)
+        elif neighbour == 4:
+            if plusone:
+                y_objective-=self.map.sizeCell
+            self.y.value = y_objective + (self.map.sizeCell /1000/ 2 + self.dist / 100)
+        elif neighbour == 2:
+            
+            if plusone:
+                x_objective+=self.map.sizeCell
+            self.x.value = x_objective - (self.map.sizeCell /1000/ 2 + self.dist / 100)
+        elif neighbour == 6:
+            
+            if plusone:
+                x_objective-=self.map.sizeCell
+            self.x.value = x_objective + (self.map.sizeCell /1000 / 2 + self.dist / 100)
+        self.lock_odometry.release()
+        
+        print("nuevos valores odo:", self.readOdometry())
+
+    def go(self, x_goal_ini, y_goal_ini, eps = 0.05, checkObstacles=True):
         """
         Moves the robot to x_goal, y_goal (first it turns, then it advances, for cell navigation)
         returns True if it finds an obstacle
@@ -576,7 +649,8 @@ class Robot:
 
         x_goal = x_goal_ini
         y_goal = y_goal_ini
-        odo = self.readOdometry()
+        odo_ini = self.readOdometry()
+        odo = odo_ini
         period = 0.02
         #if sine is negative (if dY is negative) then the rotation must be negative
         w = self.wTarget /2
@@ -599,20 +673,18 @@ class Robot:
                 time.sleep(period - (tEnd - tIni))
 
         self.setSpeed(0,0)
-        if self.detectObstacle(): # obstacle in front of the robot
+        # obstaculos:
+
+        if checkObstacles and self.detectObstacle(): # obstacle in front of the robot
             self.map.obstacleDetected(odo[0], odo[1], x_goal_ini, y_goal_ini)
             if not self.map.replanPath(odo[0], odo[1]):
                 print("Unable to find a path")
                 self.stopOdometry()
                 exit(0)
-
             return True
-
-
         end = False
         v = self.vTarget
         self.setSpeed(v,0)
-        end = False
         initial = np.array(self.readOdometry()[:-1])
         vmin = self.vTarget/4
         vmax = self.vTarget/1.5
@@ -622,6 +694,17 @@ class Robot:
             odo = self.readOdometry()
             end = self.closeEnough([x_goal, y_goal, None], w)
             if not end:
+                if checkObstacles and self.detectObstacle(): # obstacle in front of the robot
+                    neighbour = self.map.obstacleDetected(odo[0], odo[1], x_goal_ini, y_goal_ini)
+                    self.fixOdometryFromObstacle(neighbour, x_goal_ini, y_goal_ini)
+                    # TODO: actualizar odometria pero no replanificar (quitar lo siguiente?)
+                    if not self.map.replanPath(odo[0], odo[1]):
+                        print("Unable to find a path")
+                        self.stopOdometry()
+                        exit(0)
+
+                    return True
+                
                 odo = np.array(self.readOdometry()[:-1])
                 v = vInTrajectory(odo, initial,
                     np.array([x_goal_ini, y_goal_ini]), vmin, vmax) # variable speed
@@ -638,7 +721,7 @@ class Robot:
         Finds the shortest path from ini to end
         """
         self.map = map
-        
+
 
     def setMap(self, map, ini=None, end=None):
         """
@@ -646,7 +729,7 @@ class Robot:
         Finds the shortest path from ini to end
         """
         self.map = map
-        
+
         if ini is not None:
             x, y = self.posFromCell(ini[0], ini[1])
             self.setOdometry([x, y, ini[2]])
@@ -655,7 +738,7 @@ class Robot:
             if not self.map.findPath(ini[0], ini[1],end[0],end[1]):
                 print("ERROR en findPath")
                 self.stopOdometry()
-                
+
     def setPath(self, ini, end):
         if not self.map.findPath(ini[0], ini[1],end[0],end[1]):
             print("ERROR en findPath")
@@ -716,8 +799,8 @@ class Robot:
         False otherwise (or if there is a sensor error)
         """
         try:
-            dist=self.BP.get_sensor(self.portSensorUltrasonic)
-            return dist<=self.map.sizeCell/10.0*self.min_cells
+            self.dist=self.BP.get_sensor(self.portSensorUltrasonic)
+            return self.dist<=self.map.sizeCell/10.0*self.min_cells
         except brickpi3.SensorError as error:
             print(error)
             return False

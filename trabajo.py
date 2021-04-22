@@ -50,10 +50,10 @@ def main(args):
                 else:
                     print("Ni negro ni blanco")
                 time.sleep(1)
-            
+
         elif args.trabajo:
             if not robot.colorSensorBlack():
-                
+
                 print("Estoy en el mapa A")
                 t, mapa = mapA(robot)
                 celdaIni = [1,2,-math.pi/2]
@@ -67,6 +67,7 @@ def main(args):
                 fin = [3,3]
                 
                 ini=[5,6, -math.pi/2]
+
             robot.setMapNoPath(mapa)
             x, y = robot.posFromCell(ini[0], ini[1])
             robot.setOdometry([x, y, ini[2]])
@@ -77,9 +78,14 @@ def main(args):
             robot.setTrajectory(t)
             robot.executeTrajectory()
             robot.setPath(celdaIni, fin)
+            robot.waitForWhite(0, 3 * baldosa)
+
+            x_s, y_s = robot.posFromCell(1, 2)
+            robot.go(x_s, y_s, checkObstacles=False)
             robot.executePath()
 
             while not robot.detectR2D2():
+                robot.setSpeed(0, 0.5)
                 time.sleep(0.01)
             
             robot.trackBall()
@@ -88,6 +94,9 @@ def main(args):
             # Zona con obstaculos:
             # map
 
+            robot.trackBall()
+
+            robot.stopOdometry()
 
 
     except KeyboardInterrupt:
