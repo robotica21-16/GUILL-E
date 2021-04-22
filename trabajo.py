@@ -43,7 +43,7 @@ def main(args):
             while True:
                 if robot.colorSensorBlack():
                     print("Es negro")
-            
+
         elif args.trabajo:
             robot.startOdometry()
             if robot.colorSensorBlack():
@@ -59,6 +59,7 @@ def main(args):
             robot.setTrajectory(t)
             robot.executeTrajectory()
             robot.setMap(mapa, ini, fin) # TODO:error aqui :/
+            robot.waitForWhite(0)
             robot.executePath()
             # Zona con obstaculos:
             # map

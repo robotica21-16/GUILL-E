@@ -379,7 +379,6 @@ class Robot:
         self.y.value = value[1]
         self.th.value = value[2]
         self.finished.value = False
-        self.startOdometry()
         self.lock_odometry.release()
 
     # Stop the odometry thread.
