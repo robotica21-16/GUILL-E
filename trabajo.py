@@ -75,7 +75,7 @@ def main(args):
             robot.setTrajectory(t)
             robot.executeTrajectory()
             robot.setPath(celdaIni, fin)
-            robot.waitForWhite(0)
+            robot.waitForWhite(0, 3 * baldosa)
 
             robot.executePath()
 

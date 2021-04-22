@@ -49,6 +49,7 @@ class Robot:
         self.R_rueda = 0.027
         self.L = 0.140
         self.eje_rueda = self.L/2.0
+        self.len_color_eje = 0.102 # longitud del detector de color al eje
 
         self.offset_right = 1.0#0.9995 # The way the bot is built, the left tire spins slightly slower than right
 
@@ -288,9 +289,9 @@ class Robot:
                 if not end:
                     tFin = time.perf_counter()
                     time.sleep(period-(tFin-tIni))
-                else: 
+                else:
                     print(v, w,"target: ", self.trajectory.targetPositions[i], "odo:", self.readOdometry())
-                    
+
         self.setSpeed(0, 0)
 
     ####################################################################################################
@@ -506,6 +507,45 @@ class Robot:
     ####################################################################################################
     # CLAWS FUNCTIONS
 
+    def waitForWhite(self, coordinate, value):
+        """
+        Updates the coordinate when it finds a white line (0->x, 1->y)
+        """
+        white=True
+        self.lineDetector = Process(target = self.detectWhite, args=(white, coordinate, value))
+        self.lineDetector.start()
+
+
+    def updateCoordValue(self,coordinate, value):
+        if coordinate == 0: # x
+            self.lock_odometry.acquire()
+            self.x.value = value #+ self.len_color_eje
+            self.lock_odometry.release()
+        else: # y
+            self.lock_odometry.acquire()
+            self.y.value = value #+ self.len_color_eje
+            self.lock_odometry.release()
+
+¡   def lineDetector(self, white,coordinate, value):
+        """
+        """
+        period = 0.1
+        end = False
+        while not self.finished.value and not end:
+            tIni = time.perf_counter()
+            if white
+                if self.detectWhite():
+                    print("WHITE DETECTED")
+                    self.updateCoordValue(coordinate, value)
+                # TODO: cosas
+            else:
+                if self.detectBlack():
+                    print("BLACK DETECTED")
+                    self.updateCoordValue(coordinate, value)
+            tEnd = time.perf_counter()
+            time.sleep(period - (tEnd-tIni))
+
+
     def catch(self):
         """
         Starts the process that closes or opens the claws
@@ -638,7 +678,7 @@ class Robot:
         Finds the shortest path from ini to end
         """
         self.map = map
-        
+
 
     def setMap(self, map, ini=None, end=None):
         """
@@ -646,7 +686,7 @@ class Robot:
         Finds the shortest path from ini to end
         """
         self.map = map
-        
+
         if ini is not None:
             x, y = self.posFromCell(ini[0], ini[1])
             self.setOdometry([x, y, ini[2]])
@@ -655,7 +695,7 @@ class Robot:
             if not self.map.findPath(ini[0], ini[1],end[0],end[1]):
                 print("ERROR en findPath")
                 self.stopOdometry()
-                
+
     def setPath(self, ini, end):
         if not self.map.findPath(ini[0], ini[1],end[0],end[1]):
             print("ERROR en findPath")
