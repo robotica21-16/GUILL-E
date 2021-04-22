@@ -57,17 +57,20 @@ def main(args):
                 print("Estoy en el mapa A")
                 t, mapa = mapA(robot)
                 celdaIni = [1,2,-math.pi/2]
-                fin = [3,3]
+                #fin = [3,3]
+                fin = [4,6]
                 ini=[1,6, -math.pi/2]
 
             else:
                 t, mapa = mapB(robot)
                 celdaIni = [5,2,-math.pi/2]
                 fin = [3,3]
+                
                 ini=[5,6, -math.pi/2]
             robot.setMapNoPath(mapa)
             x, y = robot.posFromCell(ini[0], ini[1])
             robot.setOdometry([x, y, ini[2]])
+            robot.startOdometry()
             time.sleep(2)
             #robot.startOdometry()
             print("Odo inicial:", robot.readOdometry())
@@ -75,6 +78,11 @@ def main(args):
             robot.executeTrajectory()
             robot.setPath(celdaIni, fin)
             robot.executePath()
+
+            while not robot.detectR2D2():
+                time.sleep(0.01)
+            
+            robot.trackBall()
             
             robot.stopOdometry()
             # Zona con obstaculos:

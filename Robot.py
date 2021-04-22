@@ -31,7 +31,7 @@ from p4.MapLib import *
 
 from trabajo.sample_matching import match_images
 
-
+DEBUG_MODE=False
 resolution=[320,240]
 black=2500
 white=2040
@@ -159,7 +159,7 @@ class Robot:
 
         ### R2D2
         self.templateR2D2 = cv2.imread("trabajo/R2-D2_s.png", cv2.IMREAD_COLOR)
-
+        self.templateBB8 = cv2.imread("trabajo/BB8_s.png", cv2.IMREAD_COLOR)
 
         time.sleep(5)
 
@@ -383,7 +383,6 @@ class Robot:
         self.y.value = value[1]
         self.th.value = value[2]
         self.finished.value = False
-        self.startOdometry()
         self.lock_odometry.release()
 
     # Stop the odometry thread.
@@ -688,8 +687,17 @@ class Robot:
             self.cam.capture(stream, format='bgr')
             # At this point the image is available as stream.array
             image = stream.array
-            return match_images(self.templateR2D2, image, DEBUG=DEBUG, verbose=verbose)
+            return match_images(self.templateR2D2, image, DEBUG=3, verbose=verbose)
 
+    def detectBB8(self, DEBUG=0, verbose=False):
+        """
+        takes a picture and checks if R2D2 is there
+        """
+        with picamera.array.PiRGBArray(self.cam) as stream:
+            self.cam.capture(stream, format='bgr')
+            # At this point the image is available as stream.array
+            image = stream.array
+            return match_images(self.templateBB8_s, image, DEBUG=3, verbose=verbose)
 
 
 
