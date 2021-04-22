@@ -13,7 +13,7 @@ import matplotlib
 matplotlib.use("TkAgg")
 # sudo apt-get install tcl-dev tk-dev python-tk python3-tk if TkAgg is not available
 
-from p4.MapLib import Map2D
+from MapLib import Map2D
 import math
 
 # NOTES ABOUT TASKS to DO in P4:

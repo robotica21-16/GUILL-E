@@ -17,6 +17,7 @@ import math
 from trayectorias.trayectorias import *
 
 baldosa=0.4
+
 def mapA(robot):
     t = TrayectoriaTrabajoA(baldosa-0.02)
     mapa = Map2D("trabajo/mapaA_CARRERA.txt")
@@ -24,7 +25,7 @@ def mapA(robot):
 
 def mapB(robot):
 
-    t = TrayectoriaTrabajoB(baldosa-0.02)
+    t = TrayectoriaTrabajoB(baldosa)
     mapa = Map2D("trabajo/mapaA_CARRERA.txt")
     return t, mapa
 
@@ -41,29 +42,46 @@ def main(args):
 
         if args.test_suelo:
             while True:
+                print(robot.colorSensorValue())
                 if robot.colorSensorBlack():
                     print("Es negro")
+                elif robot.colorSensorValue()<=2040:
+                    print("Es blanco")
+                else:
+                    print("Ni negro ni blanco")
+                time.sleep(1)
 
         elif args.trabajo:
-            robot.startOdometry()
-            if robot.colorSensorBlack():
-                t, mapa = mapB(robot)
-                ini = [5,2,-math.pi/2]
-                fin = [3,2]
+            if not robot.colorSensorBlack():
+
+                print("Estoy en el mapa A")
+                t, mapa = mapA(robot)
+                celdaIni = [1,2,-math.pi/2]
+                fin = [3,3]
+                ini=[1,6, -math.pi/2]
 
             else:
-                t, mapa = mapA(robot)
-                ini = [1,2,-math.pi/2]
-                fin = [3,2]
+                t, mapa = mapB(robot)
+                celdaIni = [5,2,-math.pi/2]
+                fin = [3,3]
+                ini=[5,6, -math.pi/2]
 
+            robot.setMapNoPath(mapa)
+            x, y = robot.posFromCell(ini[0], ini[1])
+            robot.setOdometry([x, y, ini[2]])
+            time.sleep(2)
+            #robot.startOdometry()
+            print("Odo inicial:", robot.readOdometry())
             robot.setTrajectory(t)
             robot.executeTrajectory()
-            robot.setMap(mapa, ini, fin) # TODO:error aqui :/
+            robot.setPath(celdaIni, fin)
             robot.waitForWhite(0)
-            robot.executePath()
-            # Zona con obstaculos:
-            # map
 
+            robot.executePath()
+
+            robot.trackBall()
+
+            robot.stopOdometry()
 
 
     except KeyboardInterrupt:

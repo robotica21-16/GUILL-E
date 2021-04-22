@@ -259,19 +259,21 @@ def Trayectoria3(d, fps=30):
 
 
 def TrayectoriaTrabajoA(d):
-    v = [0, math.pi/4*0.2,  math.pi/4*0.2, 0]
+    v = [0, math.pi/4*0.2,  math.pi/4*0.2,math.pi/4*0.2,math.pi/4*0.2, 0]
     vR=math.pi/4*0.2/d
-    w = [-math.pi/4, +vR, -vR,+math.pi/4]
+    w = [-math.pi/4, +vR, +vR,-vR,-vR,+math.pi/4]
     t4 = Trajectory()
     # 1) girar 90º grados dcha (-90) sobre si mismo
-    pos1 = np.array([None, None, -math.pi / 2])
+    pos1 = np.array([None, None, +math.pi])
+    pos12 = np.array([None, None, -math.pi/2])
     # 2) primera semicircunferencia
-    pos2 = np.array([None, None, +math.pi / 2])
-    pos23 = np.array([None, None, -math.pi / 2])
+    pos2 = np.array([None, None, 0])
+    pos22 = np.array([None, None, -math.pi/2])
+    pos23 = np.array([None, None, +math.pi])
     # 3) circunferencia
-    pos3 = np.array([None, None, 0])
+    pos3 = np.array([None, None, -math.pi/2])
     # 4) segunda semicircunferencia
-    t4.setTargetPositionsAndSpeeds([pos1, pos2, pos23, pos3], v, w)
+    t4.setTargetPositionsAndSpeeds([pos1, pos12, pos2, pos22,pos23, pos3], v, w)
 
     return t4
 
@@ -281,12 +283,12 @@ def TrayectoriaTrabajoB(d):
     w = [+math.pi/4, -vR, +vR,-math.pi/4]
     t5 = Trajectory()
     # 1) girar 90º grados dcha (-90) sobre si mismo
-    pos1 = np.array([None, None, +math.pi / 2])
+    pos1 = np.array([None, None, 0])
     # 2) primera semicircunferencia
-    pos2 = np.array([None, None, -math.pi / 2])
-    pos23 = np.array([None, None, +math.pi / 2])
+    pos2 = np.array([None, None, +math.pi])
+    pos23 = np.array([None, None, 0])
     # 3) circunferencia
-    pos3 = np.array([None, None, 0])
+    pos3 = np.array([None, None, -math.pi/2])
     # 4) segunda semicircunferencia
     t5.setTargetPositionsAndSpeeds([pos1, pos2, pos23, pos3], v, w)
 

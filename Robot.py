@@ -34,6 +34,7 @@ from trabajo.sample_matching import match_images
 
 resolution=[320,240]
 black=2500
+white=2040
 
 class Robot:
     def __init__(self, init_position=[0.0, 0.0, 0.0]):
@@ -273,10 +274,10 @@ class Robot:
         Executes the saved trajectory (sequence of v,w and t)
         """
         period = 0.05
-        for i in range(0, len(self.trajectory.targetPositions)):
+        for i in range(len(self.trajectory.targetPositions)):
             # target = [x,y,th]
             # pos = [x,y,th]
-            print("I:", i)
+            print("Paso:", i, "----------------------------")
             v = self.trajectory.targetV[i]
             w = self.trajectory.targetW[i]
             self.setSpeed(v, w)
@@ -287,6 +288,9 @@ class Robot:
                 if not end:
                     tFin = time.perf_counter()
                     time.sleep(period-(tFin-tIni))
+                else: 
+                    print(v, w,"target: ", self.trajectory.targetPositions[i], "odo:", self.readOdometry())
+                    
         self.setSpeed(0, 0)
 
     ####################################################################################################
@@ -628,21 +632,34 @@ class Robot:
         return False
 
     # ---------------------------------------------- p4:
+    def setMapNoPath(self, map):
+        """
+        sets the map and the initial positions for the odometry (ini, end in cells)
+        Finds the shortest path from ini to end
+        """
+        self.map = map
+        
+
     def setMap(self, map, ini=None, end=None):
         """
         sets the map and the initial positions for the odometry (ini, end in cells)
         Finds the shortest path from ini to end
         """
         self.map = map
-
-        if ini is not None and end is not None:
+        
+        if ini is not None:
             x, y = self.posFromCell(ini[0], ini[1])
             self.setOdometry([x, y, ini[2]])
+
+        if end is not None:
             if not self.map.findPath(ini[0], ini[1],end[0],end[1]):
                 print("ERROR en findPath")
                 self.stopOdometry()
-
-
+                
+    def setPath(self, ini, end):
+        if not self.map.findPath(ini[0], ini[1],end[0],end[1]):
+            print("ERROR en findPath")
+            self.stopOdometry()
 
 
     def executePath(self):
@@ -702,5 +719,9 @@ class Robot:
             print("dist: ", dist)
             time.sleep(period)
 
+    def colorSensorValue(self):
+        return self.BP.get_sensor(self.portSensorLight)
     def colorSensorBlack(self):
-        return self.BP.get_sensor(self.portSensorLight)>=black
+        return self.colorSensorValue()>=black
+    def colorSensorWhite(self):
+        return self.colorSensorValue()<=white
