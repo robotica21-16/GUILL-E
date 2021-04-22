@@ -34,6 +34,7 @@ from trabajo.sample_matching import match_images
 
 resolution=[320,240]
 black=2500
+white=2040
 
 class Robot:
     def __init__(self, init_position=[0.0, 0.0, 0.0]):
@@ -719,5 +720,9 @@ class Robot:
             print("dist: ", dist)
             time.sleep(period)
 
+    def colorSensorValue(self):
+        return self.BP.get_sensor(self.portSensorLight)
     def colorSensorBlack(self):
-        return self.BP.get_sensor(self.portSensorLight)>=black
+        return self.colorSensorValue()>=black
+    def colorSensorWhite(self):
+        return self.colorSensorValue()<=white
