@@ -45,7 +45,7 @@ class Robot:
         """
         ##################################################
         # Robot construction parameters
-        
+
         self.R_rueda = 0.027
         self.L = 0.140
         self.eje_rueda = self.L/2.0
@@ -78,7 +78,7 @@ class Robot:
 
         self.rotIzqDeg = 0
         self.rotDchaDeg = 0
-        
+
         self.useGyro = True
 
         ##################################################
@@ -272,7 +272,7 @@ class Robot:
             #if abs((target[0] - odo[0])) < eps[0] and abs((target[1] - odo[1])) < eps[1]:
                 close = True
         return close
-        
+
     def setTurnedGyro(self):
         self.turnedGyro = self.angleGyro()
 
@@ -539,7 +539,7 @@ class Robot:
         """
         period = 0.1
         end = False
-        
+
         self.detectorLock.acquire()
         while not self.finished.value and not end:
             tIni = time.perf_counter()
@@ -556,7 +556,7 @@ class Robot:
                     end = True
             tEnd = time.perf_counter()
             time.sleep(period - (tEnd-tIni))
-        
+
         self.detectorLock.release()
 
     def catch(self):
@@ -636,26 +636,26 @@ class Robot:
                 y_objective-=self.mapa.sizeCell/1000
             self.y.value = y_objective + (self.mapa.sizeCell /1000/ 2 + self.dist / 100)
         elif neighbour == 2:
-            
+
             if plusone:
                 x_objective+=self.mapa.sizeCell/1000
             self.x.value = x_objective - (self.mapa.sizeCell /1000/ 2 + self.dist / 100)
         elif neighbour == 6:
-            
+
             if plusone:
                 x_objective-=self.mapa.sizeCell/1000
             self.x.value = x_objective + (self.mapa.sizeCell /1000 / 2 + self.dist / 100)
         self.lock_odometry.release()
-        
+
         print("nuevos valores odo:", self.readOdometry())
 
     def rel_angle(self, dX, dY, th):
         th_abs = math.atan2(dY, dX) # -pi a pi
         #neighbour = self.mapa.neighbou
         return norm_pi(th_abs - th)
-        
+
     #def addObstacleFromPos(self):
-    #    neighbour = 
+    #    neighbour =
 
     def go(self, x_goal_ini, y_goal_ini, eps = 0.05, checkObstacles=True, checkObstaclesMoving=False):
         """
@@ -672,7 +672,7 @@ class Robot:
         w = self.wTarget /2
         dX = x_goal - odo[0]
         dY = y_goal - odo[1]
-        
+
         #th_goal_abs = norm_pi(math.atan2(dY, dX))
         th_goal = self.rel_angle(dX, dY, odo[2])
         if (norm_pi(th_goal - odo[2]) < 0):
@@ -723,7 +723,7 @@ class Robot:
                         exit(0)
 
                     return True
-                
+
                 odo = np.array(self.readOdometry()[:-1])
                 v = vInTrajectory(odo, initial,
                     np.array([x_goal_ini, y_goal_ini]), vmin, vmax) # variable speed
