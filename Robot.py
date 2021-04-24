@@ -715,6 +715,8 @@ class Robot:
                     neighbour = self.mapa.obstacleDetected(odo[0], odo[1], x_goal_ini, y_goal_ini)
                     self.fixOdometryFromObstacle(neighbour, x_goal_ini, y_goal_ini)
                     # TODO: actualizar odometria pero no replanificar (quitar lo siguiente?)
+                    # Otra opcion: solo usarlo para parar y no chocarse (especificando como distancia justo la de las garras)
+                    # gestionar bien el siguiente movimiento etc.
                     if not self.mapa.replanPath(odo[0], odo[1]):
                         print("Unable to find a path")
                         self.stopOdometry()
