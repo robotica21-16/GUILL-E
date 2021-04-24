@@ -295,10 +295,10 @@ class Robot:
                 end = self.closeEnough(self.trajectory.targetPositions[i], w)
                 if not end:
                     tFin = time.perf_counter()
-                    print("abs: ", np.radians(self.angleGyro()), "rel: ", np.radians(self.angleGyro()-self.turnedGyro))
+                    #print("abs: ", np.radians(self.angleGyro()), "rel: ", np.radians(self.angleGyro()-self.turnedGyro))
                     time.sleep(period-(tFin-tIni))
-                else:
-                    print(v, w,"target: ", self.trajectory.targetPositions[i], "odo:", self.readOdometry(), "gyro: ", np.radians(self.angleGyro()))
+                #else:
+                    #print(v, w,"target: ", self.trajectory.targetPositions[i], "odo:", self.readOdometry(), "gyro: ", np.radians(self.angleGyro()))
 
         self.setSpeed(0, 0)
 
@@ -653,8 +653,11 @@ class Robot:
         th_abs = math.atan2(dY, dX) # -pi a pi
         #neighbour = self.mapa.neighbou
         return norm_pi(th_abs - th)
+        
+    #def addObstacleFromPos(self):
+    #    neighbour = 
 
-    def go(self, x_goal_ini, y_goal_ini, eps = 0.05, checkObstacles=True):
+    def go(self, x_goal_ini, y_goal_ini, eps = 0.05, checkObstacles=True, checkObstaclesMoving=False):
         """
         Moves the robot to x_goal, y_goal (first it turns, then it advances, for cell navigation)
         returns True if it finds an obstacle
@@ -690,7 +693,7 @@ class Robot:
         # obstaculos:
 
         if checkObstacles and self.detectObstacle(): # obstacle in front of the robot
-            self.mapa.obstacleDetected(odo[0], odo[1], x_goal_ini, y_goal_ini)
+            self.mapa.obstacleDetected(odo[0], odo[1], x_goal, y_goal)
             if not self.mapa.replanPath(odo[0], odo[1]):
                 print("Unable to find a path")
                 self.stopOdometry()
@@ -708,8 +711,8 @@ class Robot:
             odo = self.readOdometry()
             end = self.closeEnough([x_goal, y_goal, None], w)
             if not end:
-                if checkObstacles and self.detectObstacle(): # obstacle in front of the robot
-                    neighbour = self.mapa.obstacleDetected(odo_ini[0], odo_ini[1], x_goal_ini, y_goal_ini)
+                if checkObstaclesMoving and self.detectObstacle(cell_proportion=0.8): # obstacle in front of the robot
+                    neighbour = self.mapa.obstacleDetected(odo[0], odo[1], x_goal_ini, y_goal_ini)
                     self.fixOdometryFromObstacle(neighbour, x_goal_ini, y_goal_ini)
                     # TODO: actualizar odometria pero no replanificar (quitar lo siguiente?)
                     if not self.mapa.replanPath(odo[0], odo[1]):
@@ -807,14 +810,14 @@ class Robot:
         return (x+0.5)*self.mapa.sizeCell/1000.0, (y+0.5)*self.mapa.sizeCell/1000.0
 
 
-    def detectObstacle(self):
+    def detectObstacle(self, cell_proportion=1.0):
         """
         Returns true if the ultrasonic sensor returns a distance less than the size of a cell
         False otherwise (or if there is a sensor error)
         """
         try:
             self.dist=self.BP.get_sensor(self.portSensorUltrasonic)
-            return self.dist<=self.mapa.sizeCell/10.0*self.min_cells
+            return self.dist<=self.mapa.sizeCell/10.0*self.min_cells*cell_proportion
         except brickpi3.SensorError as error:
             print(error)
             return False

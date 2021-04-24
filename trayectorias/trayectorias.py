@@ -293,6 +293,25 @@ def TrayectoriaTrabajoARelativa(d):
 
     return t4
 
+
+
+def TrayectoriaTrabajoBRelativa(d):
+    v = [0, math.pi/4*0.2,  math.pi/4*0.2, 0]
+    vR=math.pi/4*0.2/d
+    w = [math.pi/4, -vR,+vR,+math.pi/4]
+    t4 = Trajectory()
+    # 1) girar 90º grados dcha (-90) sobre si mismo
+    pos1 = np.array([None, None, +math.pi/2])
+    pos12 = np.array([None, None, -math.pi])
+    # 2) primera semicircunferencia
+    pos2 = np.array([None, None, +math.pi])
+    pos22 = np.array([None, None, -math.pi/2])
+    # 4) segunda semicircunferencia
+    t4.setTargetPositionsAndSpeeds([pos1, pos12, pos2, pos22], v, w)
+
+    return t4
+
+
 def TrayectoriaTrabajoB(d):
     v = [0, math.pi/4*0.2,  math.pi/4*0.2,math.pi/4*0.2,math.pi/4*0.2, 0]
     vR=math.pi/4*0.2/d

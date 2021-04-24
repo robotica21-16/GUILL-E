@@ -33,13 +33,12 @@ def main(args):
 
     # 1. load map and compute costs and path
     myMap = Map2D(map_file)
-    myMap.deleteConnection(0,0,2)
-
-    myMap.deleteConnection(0,1,2)
-
-    myMap.deleteConnection(2,1,4)
-    myMap.deleteConnection(2,1,6)
-    myMap.findPath(0,0,2,0)
+    print("ACUERDATE DE CAMBIAR LAS CONEXIONES, EL INI Y EL FIN")
+    #myMap.deleteConnection(0,0,2)
+    #myMap.deleteConnection(0,1,2)
+    #myMap.deleteConnection(2,1,4)
+    #myMap.deleteConnection(2,1,6)
+    myMap.findPath(0,0,3,5)
     # myMap.drawMap(saveSnapshot=False)
 
     df  = pd.read_csv(args.log, sep="\t")
