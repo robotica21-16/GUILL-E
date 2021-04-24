@@ -21,7 +21,7 @@ baldosa_nestor = 0.2
 
 def mapA(robot):
     #t = TrayectoriaTrabajoA(baldosa-0.02)
-    t = TrayectoriaTrabajoA(baldosa_nestor)
+    t = TrayectoriaTrabajoARelativa(baldosa-0.02)
     mapa = Map2D("trabajo/mapaA_CARRERA.txt")
     return t, mapa
 
@@ -48,7 +48,7 @@ def main(args):
                 print(robot.colorSensorValue())
                 if robot.colorSensorBlack():
                     print("Es negro")
-                elif robot.colorSensorValue()<=2040:
+                elif robot.colorSensorWhite():
                     print("Es blanco")
                 else:
                     print("Ni negro ni blanco")

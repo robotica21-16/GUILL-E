@@ -78,6 +78,8 @@ class Robot:
 
         self.rotIzqDeg = 0
         self.rotDchaDeg = 0
+        
+        self.useGyro = True
 
         ##################################################
         # Ball parameters
@@ -128,6 +130,10 @@ class Robot:
         #################
         self.portSensorLight = self.BP.PORT_1
         self.BP.set_sensor_type(self.portSensorLight, self.BP.SENSOR_TYPE.NXT_LIGHT_ON)
+
+        #################
+        self.portGyro= self.BP.PORT_2
+        self.BP.set_sensor_type(self.portGyro, self.BP.SENSOR_TYPE.EV3_GYRO_ABS)
 
 
 
@@ -247,14 +253,10 @@ class Robot:
         if target[0] == None and target[1] == None and target[2] == None:
             close = True
         elif target[0] == None and target[1] == None:
-            #print(target[2], " ---- ", odo[2])
-            #if abs(norm_pi(target[2]-norm_pi(odo[2]))) < eps[2]:
-            if reachedAngle(odo[2], target[2], w):
-                return True
-            #if w>0:
-            #    close = odo[2] >= (target[2])
-            #else:
-            #    close = odo[2] <= (target[2])
+            if self.useGyro:
+                return reachedAngleGyro(np.radians(self.angleGyro() - self.turnedGyro), target[2], w)
+            else:
+                return reachedAngle(odo[2], target[2], w)
         else:
             sinth = np.sin(odo[2])
             costh = np.cos(odo[2])
@@ -269,6 +271,9 @@ class Robot:
             #if abs((target[0] - odo[0])) < eps[0] and abs((target[1] - odo[1])) < eps[1]:
                 close = True
         return close
+        
+    def setTurnedGyro(self):
+        self.turnedGyro = self.angleGyro()
 
     def executeTrajectory(self):
         """
@@ -279,6 +284,7 @@ class Robot:
             # target = [x,y,th]
             # pos = [x,y,th]
             print("Paso:", i, "----------------------------")
+            self.setTurnedGyro()
             v = self.trajectory.targetV[i]
             w = self.trajectory.targetW[i]
             self.setSpeed(v, w)
@@ -288,9 +294,10 @@ class Robot:
                 end = self.closeEnough(self.trajectory.targetPositions[i], w)
                 if not end:
                     tFin = time.perf_counter()
+                    print("abs: ", np.radians(self.angleGyro()), "rel: ", np.radians(self.angleGyro()-self.turnedGyro))
                     time.sleep(period-(tFin-tIni))
                 else:
-                    print(v, w,"target: ", self.trajectory.targetPositions[i], "odo:", self.readOdometry())
+                    print(v, w,"target: ", self.trajectory.targetPositions[i], "odo:", self.readOdometry(), "gyro: ", np.radians(self.angleGyro()))
 
         self.setSpeed(0, 0)
 
@@ -616,30 +623,35 @@ class Robot:
     def fixOdometryFromObstacle(self, neighbour, x_objective, y_objective):
         print("actualizando odo:", self.readOdometry())
         plusone=False
-        if self.dist / 100 >= 0.95 * self.map.sizeCell/1000:
+        if self.dist / 100 >= 0.95 * self.mapa.sizeCell/1000:
             plusone=True
         self.lock_odometry.acquire()
         if neighbour == 0:
             if plusone:
-                y_objective+=self.map.sizeCell
-            self.y.value = y_objective - (self.map.sizeCell /1000 / 2 + self.dist / 100)
+                y_objective+=self.mapa.sizeCell
+            self.y.value = y_objective - (self.mapa.sizeCell /1000 / 2 + self.dist / 100)
         elif neighbour == 4:
             if plusone:
-                y_objective-=self.map.sizeCell
-            self.y.value = y_objective + (self.map.sizeCell /1000/ 2 + self.dist / 100)
+                y_objective-=self.mapa.sizeCell
+            self.y.value = y_objective + (self.mapa.sizeCell /1000/ 2 + self.dist / 100)
         elif neighbour == 2:
             
             if plusone:
-                x_objective+=self.map.sizeCell
-            self.x.value = x_objective - (self.map.sizeCell /1000/ 2 + self.dist / 100)
+                x_objective+=self.mapa.sizeCell
+            self.x.value = x_objective - (self.mapa.sizeCell /1000/ 2 + self.dist / 100)
         elif neighbour == 6:
             
             if plusone:
-                x_objective-=self.map.sizeCell
-            self.x.value = x_objective + (self.map.sizeCell /1000 / 2 + self.dist / 100)
+                x_objective-=self.mapa.sizeCell
+            self.x.value = x_objective + (self.mapa.sizeCell /1000 / 2 + self.dist / 100)
         self.lock_odometry.release()
         
         print("nuevos valores odo:", self.readOdometry())
+
+    def rel_angle(self, dX, dY, th):
+        th_abs = math.atan2(dY, dX) # -pi a pi
+        #neighbour = self.mapa.neighbou
+        return norm_pi(th_abs - th)
 
     def go(self, x_goal_ini, y_goal_ini, eps = 0.05, checkObstacles=True):
         """
@@ -656,13 +668,14 @@ class Robot:
         w = self.wTarget /2
         dX = x_goal - odo[0]
         dY = y_goal - odo[1]
-        th_goal = norm_pi(math.atan2(dY, dX))
-
+        
+        #th_goal_abs = norm_pi(math.atan2(dY, dX))
+        th_goal = self.rel_angle(dX, dY, odo[2])
         if (norm_pi(th_goal - odo[2]) < 0):
             w = -w
 
         end = False
-
+        self.setTurnedGyro()
         while not end:
             tIni = time.perf_counter()
             odo = self.readOdometry()
@@ -676,8 +689,8 @@ class Robot:
         # obstaculos:
 
         if checkObstacles and self.detectObstacle(): # obstacle in front of the robot
-            self.map.obstacleDetected(odo[0], odo[1], x_goal_ini, y_goal_ini)
-            if not self.map.replanPath(odo[0], odo[1]):
+            self.mapa.obstacleDetected(odo[0], odo[1], x_goal_ini, y_goal_ini)
+            if not self.mapa.replanPath(odo[0], odo[1]):
                 print("Unable to find a path")
                 self.stopOdometry()
                 exit(0)
@@ -695,10 +708,10 @@ class Robot:
             end = self.closeEnough([x_goal, y_goal, None], w)
             if not end:
                 if checkObstacles and self.detectObstacle(): # obstacle in front of the robot
-                    neighbour = self.map.obstacleDetected(odo[0], odo[1], x_goal_ini, y_goal_ini)
+                    neighbour = self.mapa.obstacleDetected(odo[0], odo[1], x_goal_ini, y_goal_ini)
                     self.fixOdometryFromObstacle(neighbour, x_goal_ini, y_goal_ini)
                     # TODO: actualizar odometria pero no replanificar (quitar lo siguiente?)
-                    if not self.map.replanPath(odo[0], odo[1]):
+                    if not self.mapa.replanPath(odo[0], odo[1]):
                         print("Unable to find a path")
                         self.stopOdometry()
                         exit(0)
@@ -720,7 +733,7 @@ class Robot:
         sets the map and the initial positions for the odometry (ini, end in cells)
         Finds the shortest path from ini to end
         """
-        self.map = map
+        self.mapa = map
 
 
     def setMap(self, map, ini=None, end=None):
@@ -728,19 +741,19 @@ class Robot:
         sets the map and the initial positions for the odometry (ini, end in cells)
         Finds the shortest path from ini to end
         """
-        self.map = map
+        self.mapa = map
 
         if ini is not None:
             x, y = self.posFromCell(ini[0], ini[1])
             self.setOdometry([x, y, ini[2]])
 
         if end is not None:
-            if not self.map.findPath(ini[0], ini[1],end[0],end[1]):
+            if not self.mapa.findPath(ini[0], ini[1],end[0],end[1]):
                 print("ERROR en findPath")
                 self.stopOdometry()
 
     def setPath(self, ini, end):
-        if not self.map.findPath(ini[0], ini[1],end[0],end[1]):
+        if not self.mapa.findPath(ini[0], ini[1],end[0],end[1]):
             print("ERROR en findPath")
             self.stopOdometry()
 
@@ -752,8 +765,8 @@ class Robot:
         end = False
         while not end:
             replan = False
-            print(self.map.currentPath)
-            for step in self.map.currentPath:
+            print(self.mapa.currentPath)
+            for step in self.mapa.currentPath:
                 # Go to next cell
                 x, y = self.posFromCell(step[0], step[1])
                 replan = self.go(x, y)
@@ -790,7 +803,7 @@ class Robot:
         Returns the real position (in m) from the given cell coordinates
         (center of the cell)
         """
-        return (x+0.5)*self.map.sizeCell/1000.0, (y+0.5)*self.map.sizeCell/1000.0
+        return (x+0.5)*self.mapa.sizeCell/1000.0, (y+0.5)*self.mapa.sizeCell/1000.0
 
 
     def detectObstacle(self):
@@ -800,7 +813,7 @@ class Robot:
         """
         try:
             self.dist=self.BP.get_sensor(self.portSensorUltrasonic)
-            return self.dist<=self.map.sizeCell/10.0*self.min_cells
+            return self.dist<=self.mapa.sizeCell/10.0*self.min_cells
         except brickpi3.SensorError as error:
             print(error)
             return False
@@ -817,3 +830,11 @@ class Robot:
         return self.colorSensorValue()>=black
     def colorSensorWhite(self):
         return self.colorSensorValue()<=white
+
+
+    def angleGyro(self):
+        """
+        absolute angle turned In degrees
+        They use the opposite angles...
+        """
+        return -self.BP.get_sensor(self.portGyro)
