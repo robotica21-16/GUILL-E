@@ -129,6 +129,10 @@ class Robot:
         self.portSensorLight = self.BP.PORT_1
         self.BP.set_sensor_type(self.portSensorLight, self.BP.SENSOR_TYPE.NXT_LIGHT_ON)
 
+        #################
+        self.portGiro= self.BP.PORT_2
+        self.BP.set_sensor_type(self.portGiro, self.BP.TYPE_SENSOR_EV3_GYRO_M0)
+
 
 
 
@@ -817,3 +821,7 @@ class Robot:
         return self.colorSensorValue()>=black
     def colorSensorWhite(self):
         return self.colorSensorValue()<=white
+
+
+    def angleGiro(self):
+        return self.BP.get_sensor(self.portGiro)
