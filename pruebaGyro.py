@@ -32,10 +32,12 @@ def mapB(robot):
 def main(args):
     """
     """
+    robot = Robot()
     try:
-        robot = Robot()
         while(True):
-            print(robot.angleGiro())
+            print(robot.angleGyro())
+            
+            time.sleep(1)
 
 
     except KeyboardInterrupt:

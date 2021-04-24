@@ -19,7 +19,8 @@ from trayectorias.trayectorias import *
 baldosa=0.4
 
 def mapA(robot):
-    t = TrayectoriaTrabajoA(baldosa-0.02)
+    #t = TrayectoriaTrabajoA(baldosa-0.02)
+    t = TrayectoriaTrabajoARelativa(baldosa-0.02)
     mapa = Map2D("trabajo/mapaA_CARRERA.txt")
     return t, mapa
 

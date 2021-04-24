@@ -79,3 +79,5 @@ class Trajectory:
             wxr,_ = simubot(move.vc, wxr, move.t)
             print(wxr)
         return wxr
+        
+    
