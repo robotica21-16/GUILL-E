@@ -27,8 +27,7 @@ def mapA(robot):
 
 def mapB(robot):
 
-    # t = TrayectoriaTrabajoB(baldosa)
-    t = TrayectoriaTrabajoB(baldosa_nestor)
+    t = TrayectoriaTrabajoBRelativa(baldosa)
     mapa = Map2D("trabajo/mapaA_CARRERA.txt")
     return t, mapa
 
@@ -54,8 +53,9 @@ def main(args):
                     print("Ni negro ni blanco")
                 time.sleep(1)
 
-        elif args.trabajo:
+        elif args.trabajo or args.test_map:
             if not robot.colorSensorBlack():
+
                 print("Estoy en el mapa A")
                 t, mapa = mapA(robot)
                 celdaIni = [1,2,-math.pi/2]
@@ -69,22 +69,25 @@ def main(args):
                 celdaIni = [5,2,-math.pi/2]
                 fin = [3,3]
                 ini=[5,6, -math.pi/2]
+            if args.trabajo:
+                robot.setMapNoPath(mapa)
+                x, y = robot.posFromCell(ini[0], ini[1])
+                robot.setOdometry([x, y, ini[2]])
+                robot.startOdometry()
+                print("Odo inicial:", robot.readOdometry())
+                robot.setTrajectory(t)
+                robot.executeTrajectory()
+                robot.setPath(celdaIni, fin)
+                #robot.waitForWhite(0, 3 * baldosa)
 
-            robot.setMapNoPath(mapa)
-            x, y = robot.posFromCell(ini[0], ini[1])
-            robot.setOdometry([x, y, ini[2]])
-            robot.startOdometry()
-            time.sleep(2)
-            #robot.startOdometry()
-            print("Odo inicial:", robot.readOdometry())
-            robot.setTrajectory(t)
-            robot.executeTrajectory()
-            robot.setPath(celdaIni, fin)
-            robot.waitForWhite(0, 3 * baldosa)
+                x_s, y_s = robot.posFromCell(1, 2)
+                robot.go(x_s, y_s, checkObstacles=False)
+                robot.executePath()
+            else: #only map
+                robot.setMap(mapa,celdaIni, fin)
+                robot.startOdometry()
+                robot.executePath()
 
-            x_s, y_s = robot.posFromCell(1, 2)
-            robot.go(x_s, y_s, checkObstacles=False)
-            robot.executePath()
 
             while not robot.detectR2D2():
                 robot.setSpeed(0, 0.5)
@@ -93,12 +96,8 @@ def main(args):
             robot.trackBall()
 
             robot.stopOdometry()
-            # Zona con obstaculos:
-            # map
-
-            robot.trackBall()
-
-            robot.stopOdometry()
+                # Zona con obstaculos:
+                # map
 
 
     except KeyboardInterrupt:
@@ -128,10 +127,11 @@ if __name__ == "__main__":
 
     parser.add_argument('-td','--test_r2d2', help="test image recognition", dest='test_r2d2', action='store_true')
     parser.add_argument('-ts','--test_suelo', help="test suelo negro recognition", dest='test_suelo', action='store_true')
-
+    parser.add_argument('-m', '--test_map', help='test only the map portion', dest='test_map', action='store_true')
     # parser.add_argument('-npt', '--no-plottrajectory', dest='plot_trajectory', action='store_false')
     parser.set_defaults(test_suelo=False)
     parser.set_defaults(test_r2d2=False)
+    parser.set_defaults(test_map=False)
 
     args = parser.parse_args()
     main(args)

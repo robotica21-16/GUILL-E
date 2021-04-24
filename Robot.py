@@ -162,7 +162,8 @@ class Robot:
         self.f_log = open("logs/{:d}-{:d}-{:d}-{:02d}_{:02d}".format(now.year, now.month, now.day, now.hour, now.minute)+"-log.txt","a")#append
         fila = ["t", "x", "y", "th", "v", "w", "dTh", "dSi"]
         self.f_log.write("\t".join([str(e) for e in fila]) + "\n")
-        # sed '$d' <file>
+        self.f_log.flush()
+
 
         ### R2D2
         self.templateR2D2 = cv2.imread("trabajo/R2-D2_s.png", cv2.IMREAD_COLOR)
@@ -294,10 +295,10 @@ class Robot:
                 end = self.closeEnough(self.trajectory.targetPositions[i], w)
                 if not end:
                     tFin = time.perf_counter()
-                    print("abs: ", np.radians(self.angleGyro()), "rel: ", np.radians(self.angleGyro()-self.turnedGyro))
+                    #print("abs: ", np.radians(self.angleGyro()), "rel: ", np.radians(self.angleGyro()-self.turnedGyro))
                     time.sleep(period-(tFin-tIni))
-                else:
-                    print(v, w,"target: ", self.trajectory.targetPositions[i], "odo:", self.readOdometry(), "gyro: ", np.radians(self.angleGyro()))
+                #else:
+                    #print(v, w,"target: ", self.trajectory.targetPositions[i], "odo:", self.readOdometry(), "gyro: ", np.radians(self.angleGyro()))
 
         self.setSpeed(0, 0)
 
@@ -628,21 +629,21 @@ class Robot:
         self.lock_odometry.acquire()
         if neighbour == 0:
             if plusone:
-                y_objective+=self.mapa.sizeCell
+                y_objective+=self.mapa.sizeCell/1000
             self.y.value = y_objective - (self.mapa.sizeCell /1000 / 2 + self.dist / 100)
         elif neighbour == 4:
             if plusone:
-                y_objective-=self.mapa.sizeCell
+                y_objective-=self.mapa.sizeCell/1000
             self.y.value = y_objective + (self.mapa.sizeCell /1000/ 2 + self.dist / 100)
         elif neighbour == 2:
 
             if plusone:
-                x_objective+=self.mapa.sizeCell
+                x_objective+=self.mapa.sizeCell/1000
             self.x.value = x_objective - (self.mapa.sizeCell /1000/ 2 + self.dist / 100)
         elif neighbour == 6:
 
             if plusone:
-                x_objective-=self.mapa.sizeCell
+                x_objective-=self.mapa.sizeCell/1000
             self.x.value = x_objective + (self.mapa.sizeCell /1000 / 2 + self.dist / 100)
         self.lock_odometry.release()
 
@@ -653,7 +654,10 @@ class Robot:
         #neighbour = self.mapa.neighbou
         return norm_pi(th_abs - th)
 
-    def go(self, x_goal_ini, y_goal_ini, eps = 0.05, checkObstacles=True):
+    #def addObstacleFromPos(self):
+    #    neighbour =
+
+    def go(self, x_goal_ini, y_goal_ini, eps = 0.05, checkObstacles=True, checkObstaclesMoving=False):
         """
         Moves the robot to x_goal, y_goal (first it turns, then it advances, for cell navigation)
         returns True if it finds an obstacle
@@ -689,7 +693,7 @@ class Robot:
         # obstaculos:
 
         if checkObstacles and self.detectObstacle(): # obstacle in front of the robot
-            self.mapa.obstacleDetected(odo[0], odo[1], x_goal_ini, y_goal_ini)
+            self.mapa.obstacleDetected(odo[0], odo[1], x_goal, y_goal)
             if not self.mapa.replanPath(odo[0], odo[1]):
                 print("Unable to find a path")
                 self.stopOdometry()
@@ -707,7 +711,7 @@ class Robot:
             odo = self.readOdometry()
             end = self.closeEnough([x_goal, y_goal, None], w)
             if not end:
-                if checkObstacles and self.detectObstacle(): # obstacle in front of the robot
+                if checkObstaclesMoving and self.detectObstacle(cell_proportion=0.8): # obstacle in front of the robot
                     neighbour = self.mapa.obstacleDetected(odo[0], odo[1], x_goal_ini, y_goal_ini)
                     self.fixOdometryFromObstacle(neighbour, x_goal_ini, y_goal_ini)
                     # TODO: actualizar odometria pero no replanificar (quitar lo siguiente?)
@@ -806,14 +810,14 @@ class Robot:
         return (x+0.5)*self.mapa.sizeCell/1000.0, (y+0.5)*self.mapa.sizeCell/1000.0
 
 
-    def detectObstacle(self):
+    def detectObstacle(self, cell_proportion=1.0):
         """
         Returns true if the ultrasonic sensor returns a distance less than the size of a cell
         False otherwise (or if there is a sensor error)
         """
         try:
             self.dist=self.BP.get_sensor(self.portSensorUltrasonic)
-            return self.dist<=self.mapa.sizeCell/10.0*self.min_cells
+            return self.dist<=self.mapa.sizeCell/10.0*self.min_cells*cell_proportion
         except brickpi3.SensorError as error:
             print(error)
             return False
