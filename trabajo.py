@@ -79,7 +79,7 @@ def main(args):
             robot.setTrajectory(t)
             robot.executeTrajectory()
             robot.setPath(celdaIni, fin)
-            robot.waitForWhite(0, 3 * baldosa)
+            #robot.waitForWhite(0, 3 * baldosa)
 
             x_s, y_s = robot.posFromCell(1, 2)
             robot.go(x_s, y_s, checkObstacles=False)
@@ -94,10 +94,6 @@ def main(args):
             robot.stopOdometry()
             # Zona con obstaculos:
             # map
-
-            robot.trackBall()
-
-            robot.stopOdometry()
 
 
     except KeyboardInterrupt:

@@ -45,7 +45,7 @@ class Robot:
         """
         ##################################################
         # Robot construction parameters
-
+        
         self.R_rueda = 0.027
         self.L = 0.140
         self.eje_rueda = self.L/2.0
@@ -162,6 +162,7 @@ class Robot:
         self.f_log = open("logs/{:d}-{:d}-{:d}-{:02d}_{:02d}".format(now.year, now.month, now.day, now.hour, now.minute)+"-log.txt","a")#append
         fila = ["t", "x", "y", "th", "v", "w", "dTh", "dSi"]
         self.f_log.write("\t".join([str(e) for e in fila]) + "\n")
+        self.f_log.flush()
 
 
         ### R2D2
@@ -628,21 +629,21 @@ class Robot:
         self.lock_odometry.acquire()
         if neighbour == 0:
             if plusone:
-                y_objective+=self.mapa.sizeCell
+                y_objective+=self.mapa.sizeCell/1000
             self.y.value = y_objective - (self.mapa.sizeCell /1000 / 2 + self.dist / 100)
         elif neighbour == 4:
             if plusone:
-                y_objective-=self.mapa.sizeCell
+                y_objective-=self.mapa.sizeCell/1000
             self.y.value = y_objective + (self.mapa.sizeCell /1000/ 2 + self.dist / 100)
         elif neighbour == 2:
             
             if plusone:
-                x_objective+=self.mapa.sizeCell
+                x_objective+=self.mapa.sizeCell/1000
             self.x.value = x_objective - (self.mapa.sizeCell /1000/ 2 + self.dist / 100)
         elif neighbour == 6:
             
             if plusone:
-                x_objective-=self.mapa.sizeCell
+                x_objective-=self.mapa.sizeCell/1000
             self.x.value = x_objective + (self.mapa.sizeCell /1000 / 2 + self.dist / 100)
         self.lock_odometry.release()
         
@@ -708,7 +709,7 @@ class Robot:
             end = self.closeEnough([x_goal, y_goal, None], w)
             if not end:
                 if checkObstacles and self.detectObstacle(): # obstacle in front of the robot
-                    neighbour = self.mapa.obstacleDetected(odo[0], odo[1], x_goal_ini, y_goal_ini)
+                    neighbour = self.mapa.obstacleDetected(odo_ini[0], odo_ini[1], x_goal_ini, y_goal_ini)
                     self.fixOdometryFromObstacle(neighbour, x_goal_ini, y_goal_ini)
                     # TODO: actualizar odometria pero no replanificar (quitar lo siguiente?)
                     if not self.mapa.replanPath(odo[0], odo[1]):
