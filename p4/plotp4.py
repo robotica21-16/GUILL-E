@@ -51,7 +51,7 @@ def main(args):
         robotLocations[i][1] *= 1000.0
 
 
-    print(robotLocations)
+    #print(robotLocations)
     robotLocations = robotLocations[::10]
     myMap.drawMapWithRobotLocations( robotLocations, saveSnapshot=False )
 
