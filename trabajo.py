@@ -45,7 +45,7 @@ def main(args):
                 print(robot.colorSensorValue())
                 if robot.colorSensorBlack():
                     print("Es negro")
-                elif robot.colorSensorValue()<=2040:
+                elif robot.colorSensorWhite():
                     print("Es blanco")
                 else:
                     print("Ni negro ni blanco")
