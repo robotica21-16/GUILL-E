@@ -1,4 +1,0 @@
-t	x	y	th	v	w	dTh	dSi
-t	x	y	th	v	w	dTh	dSi
-t	x	y	th	v	w	dTh	dSi
-t	x	y	th	v	w	dTh	dSi
