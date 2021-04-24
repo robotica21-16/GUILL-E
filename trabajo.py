@@ -17,15 +17,18 @@ import math
 from trayectorias.trayectorias import *
 
 baldosa=0.4
+baldosa_nestor = 0.2
 
 def mapA(robot):
-    t = TrayectoriaTrabajoA(baldosa-0.02)
+    #t = TrayectoriaTrabajoA(baldosa-0.02)
+    t = TrayectoriaTrabajoA(baldosa_nestor)
     mapa = Map2D("trabajo/mapaA_CARRERA.txt")
     return t, mapa
 
 def mapB(robot):
 
-    t = TrayectoriaTrabajoB(baldosa)
+    # t = TrayectoriaTrabajoB(baldosa)
+    t = TrayectoriaTrabajoB(baldosa_nestor)
     mapa = Map2D("trabajo/mapaA_CARRERA.txt")
     return t, mapa
 
@@ -53,7 +56,6 @@ def main(args):
 
         elif args.trabajo:
             if not robot.colorSensorBlack():
-
                 print("Estoy en el mapa A")
                 t, mapa = mapA(robot)
                 celdaIni = [1,2,-math.pi/2]
@@ -62,10 +64,10 @@ def main(args):
                 ini=[1,6, -math.pi/2]
 
             else:
+                print("Estoy en el mapa B")
                 t, mapa = mapB(robot)
                 celdaIni = [5,2,-math.pi/2]
                 fin = [3,3]
-                
                 ini=[5,6, -math.pi/2]
 
             robot.setMapNoPath(mapa)
@@ -87,9 +89,9 @@ def main(args):
             while not robot.detectR2D2():
                 robot.setSpeed(0, 0.5)
                 time.sleep(0.01)
-            
+
             robot.trackBall()
-            
+
             robot.stopOdometry()
             # Zona con obstaculos:
             # map
