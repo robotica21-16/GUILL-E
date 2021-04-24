@@ -78,7 +78,7 @@ class Robot:
 
         self.rotIzqDeg = 0
         self.rotDchaDeg = 0
-        
+
         self.useGyro = True
 
         ##################################################
@@ -162,7 +162,7 @@ class Robot:
         self.f_log = open("logs/{:d}-{:d}-{:d}-{:02d}_{:02d}".format(now.year, now.month, now.day, now.hour, now.minute)+"-log.txt","a")#append
         fila = ["t", "x", "y", "th", "v", "w", "dTh", "dSi"]
         self.f_log.write("\t".join([str(e) for e in fila]) + "\n")
-
+        # sed '$d' <file>
 
         ### R2D2
         self.templateR2D2 = cv2.imread("trabajo/R2-D2_s.png", cv2.IMREAD_COLOR)
@@ -271,7 +271,7 @@ class Robot:
             #if abs((target[0] - odo[0])) < eps[0] and abs((target[1] - odo[1])) < eps[1]:
                 close = True
         return close
-        
+
     def setTurnedGyro(self):
         self.turnedGyro = self.angleGyro()
 
@@ -538,7 +538,7 @@ class Robot:
         """
         period = 0.1
         end = False
-        
+
         self.detectorLock.acquire()
         while not self.finished.value and not end:
             tIni = time.perf_counter()
@@ -555,7 +555,7 @@ class Robot:
                     end = True
             tEnd = time.perf_counter()
             time.sleep(period - (tEnd-tIni))
-        
+
         self.detectorLock.release()
 
     def catch(self):
@@ -635,17 +635,17 @@ class Robot:
                 y_objective-=self.mapa.sizeCell
             self.y.value = y_objective + (self.mapa.sizeCell /1000/ 2 + self.dist / 100)
         elif neighbour == 2:
-            
+
             if plusone:
                 x_objective+=self.mapa.sizeCell
             self.x.value = x_objective - (self.mapa.sizeCell /1000/ 2 + self.dist / 100)
         elif neighbour == 6:
-            
+
             if plusone:
                 x_objective-=self.mapa.sizeCell
             self.x.value = x_objective + (self.mapa.sizeCell /1000 / 2 + self.dist / 100)
         self.lock_odometry.release()
-        
+
         print("nuevos valores odo:", self.readOdometry())
 
     def rel_angle(self, dX, dY, th):
@@ -668,7 +668,7 @@ class Robot:
         w = self.wTarget /2
         dX = x_goal - odo[0]
         dY = y_goal - odo[1]
-        
+
         #th_goal_abs = norm_pi(math.atan2(dY, dX))
         th_goal = self.rel_angle(dX, dY, odo[2])
         if (norm_pi(th_goal - odo[2]) < 0):
@@ -717,7 +717,7 @@ class Robot:
                         exit(0)
 
                     return True
-                
+
                 odo = np.array(self.readOdometry()[:-1])
                 v = vInTrajectory(odo, initial,
                     np.array([x_goal_ini, y_goal_ini]), vmin, vmax) # variable speed
