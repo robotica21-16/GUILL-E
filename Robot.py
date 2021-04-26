@@ -167,6 +167,7 @@ class Robot:
 
         ### R2D2
         self.templateR2D2 = cv2.imread("trabajo/R2-D2_s.png", cv2.IMREAD_COLOR)
+        #self.templateR2D2 = cv2.imread("trabajo/libronestor_s.png", cv2.IMREAD_COLOR)
         self.templateBB8 = cv2.imread("trabajo/BB8_s.png", cv2.IMREAD_COLOR)
 
         time.sleep(5)
@@ -675,9 +676,12 @@ class Robot:
 
         #th_goal_abs = norm_pi(math.atan2(dY, dX))
         th_goal = self.rel_angle(dX, dY, odo[2])
-        if (norm_pi(th_goal - odo[2]) < 0):
-            w = -w
-
+        if not self.useGyro:
+            if (norm_pi(th_goal - odo[2]) < 0):
+                w = -w
+        else:
+            if (norm_pi(th_goal) < 0):
+                w = -w
         end = False
         self.setTurnedGyro()
         while not end:
@@ -688,6 +692,8 @@ class Robot:
                 self.setSpeed(0,w)
                 tEnd = time.perf_counter()
                 time.sleep(period - (tEnd - tIni))
+            #else:
+                #print("goal: ", th_goal, "gyro: ", np.radians(self.angleGyro() - self.turnedGyro))
 
         self.setSpeed(0,0)
         # obstaculos:
@@ -764,7 +770,7 @@ class Robot:
             self.stopOdometry()
 
 
-    def executePath(self):
+    def executePath(self, debug=True):
         """
         Executes the path in the current map, moving from cell to cell
         """
@@ -777,6 +783,8 @@ class Robot:
                 x, y = self.posFromCell(step[0], step[1])
                 replan = self.go(x, y)
                 if replan:
+                    if debug:
+                        self.mapa.drawMap(saveSnapshot=False)
                     break
             end = not replan # end if there wasnt a replan
 

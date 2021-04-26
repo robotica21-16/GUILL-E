@@ -28,7 +28,7 @@ def mapA(robot):
 def mapB(robot):
 
     t = TrayectoriaTrabajoBRelativa(baldosa)
-    mapa = Map2D("trabajo/mapaA_CARRERA.txt")
+    mapa = Map2D("trabajo/mapaB_CARRERA.txt")
     return t, mapa
 
 def main(args):
@@ -37,10 +37,12 @@ def main(args):
     try:
         robot = Robot()
         if args.test_r2d2:
-            if robot.detectR2D2(verbose=True, DEBUG=1):
-                print("veo a r2d2")
-            else:
-                print("No veo a r2d2")
+            while True:
+                if robot.detectR2D2(verbose=True, DEBUG=1):
+                    print("veo a r2d2")
+                else:
+                    print("No veo a r2d2")
+                time.sleep(3)
 
         if args.test_suelo:
             while True:
@@ -54,7 +56,7 @@ def main(args):
                 time.sleep(1)
 
         elif args.trabajo or args.test_map:
-            if not robot.colorSensorBlack():
+            if not not robot.colorSensorBlack():
 
                 print("Estoy en el mapa A")
                 t, mapa = mapA(robot)
@@ -67,7 +69,7 @@ def main(args):
                 print("Estoy en el mapa B")
                 t, mapa = mapB(robot)
                 celdaIni = [5,2,-math.pi/2]
-                fin = [3,3]
+                fin = [1,6]
                 ini=[5,6, -math.pi/2]
             if args.trabajo:
                 robot.setMapNoPath(mapa)
@@ -85,6 +87,7 @@ def main(args):
                 robot.executePath()
             else: #only map
                 robot.setMap(mapa,celdaIni, fin)
+                #robot.mapa.drawMap(saveSnapshot=False)
                 robot.startOdometry()
                 robot.executePath()
 

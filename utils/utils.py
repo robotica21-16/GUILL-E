@@ -72,6 +72,7 @@ def reachedAngleGyro(th, target, w):
     Returns true if th has reached the target angle (both in rad),
     taking into account the sign of w
     """
+    #print("reachedAngleGyro: ", th, target, "w:", w)
     return th >= target if w>0 else th <= target
 
 def reachedAngle_2(th, target, w):
