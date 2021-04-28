@@ -79,13 +79,14 @@ class Robot:
         self.rotIzqDeg = 0
         self.rotDchaDeg = 0
 
-        self.useGyro = True
+        self.useGyro = False
 
         ##################################################
         # Ball parameters
-        self.ballArea = 110
+        self.ballArea = 90
         self.ballClawsArea = 60
         self.ballX = resolution[0]/2.0
+        self.ballDistance = 0.29
 
 
 
@@ -443,6 +444,7 @@ class Robot:
                 print("No se donde esta la bola")
 
             if targetPositionReached:
+                print("reaching objetivo", objetivo, "odo:", self.readOdometry())
                 if self.closeEnough(objetivo, 0):
                     self.setSpeed(0, 0)
                     if mustCatch:
@@ -460,16 +462,20 @@ class Robot:
             else: # we see the target and the target position hasnt been reached
                 d = horizontalDistance(kp, [targetX,0])
                 A = kp.size
+                
                 w = getMappedW(self.wTarget, d, targetX - resolution[0], targetX)
                 v = getMappedV(self.vTarget, A, targetSize)
                 self.setSpeed(v,w)
-
+                if DEBUG_MODE:
+                    print("A:",A, "d:",d)
                 if targetSize-eps < A and not targetPositionReached:
                     # close enough to target, we set the objective from current position+some distance
                     targetPositionReached  = True
-                    objetivo=self.advanceDistance(0.21)
+                    objetivo=self.advanceDistance(self.ballDistance)
                     objetivo=[objetivo[0], objetivo[1], None]
                     self.setSpeed(vFin/2,0)
+                    if DEBUG_MODE:
+                        print("target pos reached, advancing to ", objetivo)
 
             tEnd = time.perf_counter()
             #time.sleep(period-(tEnd-tIni))
@@ -673,13 +679,14 @@ class Robot:
         w = self.wTarget /2
         dX = x_goal - odo[0]
         dY = y_goal - odo[1]
-
-        #th_goal_abs = norm_pi(math.atan2(dY, dX))
-        th_goal = self.rel_angle(dX, dY, odo[2])
+    
+        #
         if not self.useGyro:
+            th_goal = norm_pi(math.atan2(dY, dX))
             if (norm_pi(th_goal - odo[2]) < 0):
                 w = -w
         else:
+            th_goal = self.rel_angle(dX, dY, odo[2])
             if (norm_pi(th_goal) < 0):
                 w = -w
         end = False
@@ -691,7 +698,7 @@ class Robot:
             if not end:
                 self.setSpeed(0,w)
                 tEnd = time.perf_counter()
-                time.sleep(period - (tEnd - tIni))
+                time.sleep(max(period - (tEnd - tIni),0))
             #else:
                 #print("goal: ", th_goal, "gyro: ", np.radians(self.angleGyro() - self.turnedGyro))
 
@@ -740,20 +747,20 @@ class Robot:
         return False
 
     # ---------------------------------------------- p4:
-    def setMapNoPath(self, map):
+    def setMapNoPath(self, mapa):
         """
         sets the map and the initial positions for the odometry (ini, end in cells)
         Finds the shortest path from ini to end
         """
-        self.mapa = map
+        self.mapa = mapa
 
 
-    def setMap(self, map, ini=None, end=None):
+    def setMap(self, mapa, ini=None, end=None):
         """
         sets the map and the initial positions for the odometry (ini, end in cells)
         Finds the shortest path from ini to end
         """
-        self.mapa = map
+        self.mapa = mapa
 
         if ini is not None:
             x, y = self.posFromCell(ini[0], ini[1])
@@ -768,7 +775,13 @@ class Robot:
         if not self.mapa.findPath(ini[0], ini[1],end[0],end[1]):
             print("ERROR en findPath")
             self.stopOdometry()
-
+    
+        
+    def setPathFromCurrentPosition(self, end):
+        odo = self.readOdometry()
+        if not self.mapa.findPathFromPos(odo[0], odo[1],end[0],end[1]):
+            print("ERROR en findPath")
+            self.stopOdometry()
 
     def executePath(self, debug=True):
         """
@@ -787,7 +800,23 @@ class Robot:
                         self.mapa.drawMap(saveSnapshot=False)
                     break
             end = not replan # end if there wasnt a replan
-
+    def detectHomography(self, DEBUG=0, verbose=False):
+        """
+        takes a picture and  returns an int based on the detection:
+        0 -> nothing
+        1 -> r2
+        2 -> el otro
+        """
+        with picamera.array.PiRGBArray(self.cam) as stream:
+            self.cam.capture(stream, format='bgr')
+            # At this point the image is available as stream.array
+            image = stream.array
+            if match_images(self.templateR2D2, image, DEBUG=DEBUG, verbose=verbose):
+                return 1
+            elif match_images(self.templateBB8, image, DEBUG=DEBUG, verbose=verbose):
+                return 2
+            else:
+                return 0
 
     def detectR2D2(self, DEBUG=0, verbose=False):
         """

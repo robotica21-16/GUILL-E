@@ -478,6 +478,11 @@ class Map2D:
 
 
 
+    def findPathFromPos(self, x_ini,  y_ini, x_end, y_end):
+        x_milli = max(x_ini*1000.0, 0)
+        y_milli = max(y_ini*1000.0, 0)
+        x,y = self._pos2cell(x_milli, y_milli)
+        return self.findPath(x,y, x_end, y_end)
 
     def findPath(self, x_ini,  y_ini, x_end, y_end):
         """

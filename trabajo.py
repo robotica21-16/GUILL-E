@@ -55,7 +55,7 @@ def main(args):
                     print("Ni negro ni blanco")
                 time.sleep(1)
 
-        elif args.trabajo or args.test_map:
+        elif args.trabajo or args.test_map or args.pelota or args.test_r2_section:
             if not not robot.colorSensorBlack():
 
                 print("Estoy en el mapa A")
@@ -64,13 +64,14 @@ def main(args):
                 #fin = [3,3]
                 fin = [4,6]
                 ini=[1,6, -math.pi/2]
-
+                executingMapA = True
             else:
                 print("Estoy en el mapa B")
                 t, mapa = mapB(robot)
                 celdaIni = [5,2,-math.pi/2]
-                fin = [1,6]
+                fin = [2,6]
                 ini=[5,6, -math.pi/2]
+                executingMapA = False
             if args.trabajo:
                 robot.setMapNoPath(mapa)
                 x, y = robot.posFromCell(ini[0], ini[1])
@@ -85,20 +86,57 @@ def main(args):
                 x_s, y_s = robot.posFromCell(1, 2)
                 robot.go(x_s, y_s, checkObstacles=False)
                 robot.executePath()
-            else: #only map
+            elif args.test_map or args.test_r2_section: #only map
+                if args.test_r2_section:
+                    celdaIni = [3, 2, math.pi/2]
                 robot.setMap(mapa,celdaIni, fin)
                 #robot.mapa.drawMap(saveSnapshot=False)
                 robot.startOdometry()
                 robot.executePath()
-
-
-            while not robot.detectR2D2():
-                robot.setSpeed(0, 0.5)
-                time.sleep(0.01)
-
+            if args.pelota:
+                robot.startOdometry()
+            if args.trabajo or args.test_r2_section:
+                res = 0
+                
+                x,y = robot.posFromCell(fin[0], fin[1]-0.5)
+                robot.go(x,y)
+                #if executingMapA:
+                odo = robot.readOdometry()
+                robot.go(odo[0], odo[1]+0.05)
+                while res == 0:
+                    
+                    res = robot.detectHomography()
+                    
+                    robot.setSpeed(0, 0.1)
+                    time.sleep(0.01)
+                if res == 1: # r2
+                    print("detected r2")
+                    if executingMapA:
+                        fin[0] -= 1
+                    else:
+                        fin[0]-=2
+                        
+                else: # el otro
+                    print("detected el otro")
+                    if executingMapA:
+                        fin[0] += 2
+                    else:
+                        fin[0]+=1
+                print("going to", fin)
+            #track and catch ball:
             robot.trackBall()
+            
+            # new path
+            robot.setPathFromCurrentPosition(fin)
+            robot.executePath()
+            # salir del mapa:
+            x,y = robot.posFromCell(fin[0], fin[1]+1)
+            robot.go(x,y)
+
+            
 
             robot.stopOdometry()
+            
                 # Zona con obstaculos:
                 # map
 
@@ -131,10 +169,15 @@ if __name__ == "__main__":
     parser.add_argument('-td','--test_r2d2', help="test image recognition", dest='test_r2d2', action='store_true')
     parser.add_argument('-ts','--test_suelo', help="test suelo negro recognition", dest='test_suelo', action='store_true')
     parser.add_argument('-m', '--test_map', help='test only the map portion', dest='test_map', action='store_true')
+    parser.add_argument('-r2', '--test_r2_section', help='test only the r2 portion', dest='test_r2_section', action='store_true')
+    
+    parser.add_argument('-p', '--pelota', help='test only the pelota', dest='pelota', action='store_true')
     # parser.add_argument('-npt', '--no-plottrajectory', dest='plot_trajectory', action='store_false')
     parser.set_defaults(test_suelo=False)
     parser.set_defaults(test_r2d2=False)
+    parser.set_defaults(test_r2_section=False)
     parser.set_defaults(test_map=False)
+    parser.set_defaults(pelota=False)
 
     args = parser.parse_args()
     main(args)
