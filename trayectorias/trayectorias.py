@@ -293,6 +293,21 @@ def TrayectoriaTrabajoARelativa(d):
 
     return t4
 
+def TrayectoriaGiros(nGiros, angulo):
+    v = [0] * nGiros
+    w = [math.pi/4] * nGiros
+    pos = [np.array([None, None, angulo])] * nGiros
+    t = Trajectory()
+    t.setTargetPositionsAndSpeeds(pos, v, w)
+    return t
+
+def TrayectoriaGirosAbs(nGiros, angulo):
+    v = [0] * nGiros
+    w = [math.pi/4] * nGiros
+    pos = [np.array([None, None, norm_pi((i+1)*angulo)]) for i in range(nGiros)] 
+    t = Trajectory()
+    t.setTargetPositionsAndSpeeds(pos, v, w)
+    return t
 
 
 def TrayectoriaTrabajoBRelativa(d):

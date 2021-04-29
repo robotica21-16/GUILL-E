@@ -79,7 +79,7 @@ class Robot:
         self.rotIzqDeg = 0
         self.rotDchaDeg = 0
 
-        self.useGyro = False
+        self.useGyro = True
 
         ##################################################
         # Ball parameters
@@ -377,7 +377,7 @@ class Robot:
             writeLog(self.f_log, [self.tLast-self.tInitialization, self.x.value, self.y.value, self.th.value, v, w, deltaTh, deltaSi])
 
             tEnd = time.perf_counter()
-            time.sleep(self.P - (tEnd-tIni))
+            time.sleep(max(self.P - (tEnd-tIni),0))
 
         #print("Stopping odometry ... X= %d" %(self.x.value))
         sys.stdout.write("Stopping odometry ... X=  %.2f, \
@@ -526,9 +526,11 @@ class Robot:
         """
         Updates the coordinate when it finds a white line (0->x, 1->y)
         """
-        white=True
-        self.lineDetector = Process(target = self.lineDetector, args=(white, coordinate, value))
-        self.lineDetector.start()
+        white=[True]*len(coordinate)
+        print("coord ", coordinate, value)
+        self.lineDetectorProcess = Process(target = self.lineDetector, args=(white, coordinate, value))
+        self.lineDetectorProcess.start()
+        
 
 
     def updateCoordValue(self,coordinate, value):
@@ -541,30 +543,35 @@ class Robot:
             self.y.value = value + self.len_color_eje * np.sin(self.readOdometry()[2])
             self.lock_odometry.release()
 
-    def lineDetector(self, white,coordinate, value):
+    def lineDetector(self, whites,coordinates, values):
         """
         """
         period = 0.1
-        end = False
 
-        self.detectorLock.acquire()
-        while not self.finished.value and not end:
-            tIni = time.perf_counter()
-            if white:
-                if self.colorSensorWhite():
-                    print("WHITE DETECTED")
-                    self.updateCoordValue(coordinate, value)
-                    end = True
-                # TODO: cosas
-            else:
-                if self.colorSensorBlack():
-                    print("BLACK DETECTED")
-                    self.updateCoordValue(coordinate, value)
-                    end = True
-            tEnd = time.perf_counter()
-            time.sleep(period - (tEnd-tIni))
-
-        self.detectorLock.release()
+        for i in range(len(whites)):
+            white = whites[i]
+            coordinate = coordinates[i]
+            value=values[i]
+            print(coordinate, "coord, value", value, white)
+            end = False
+            while not self.finished.value and not end:
+                
+                tIni = time.perf_counter()
+                if white:
+                    if self.colorSensorWhite():
+                        print("WHITE DETECTED")
+                        self.updateCoordValue(coordinate, value)
+                        end = True
+                    # TODO: cosas
+                else:
+                    if self.colorSensorBlack():
+                        print("BLACK DETECTED")
+                        self.updateCoordValue(coordinate, value)
+                        end = True
+                tEnd = time.perf_counter()
+                time.sleep(period - (tEnd-tIni))
+            time.sleep(0.5)
+            
 
     def catch(self):
         """
@@ -676,7 +683,7 @@ class Robot:
         odo = odo_ini
         period = 0.02
         #if sine is negative (if dY is negative) then the rotation must be negative
-        w = self.wTarget /2
+        w = self.wTarget * 0.4
         dX = x_goal - odo[0]
         dY = y_goal - odo[1]
     
@@ -687,6 +694,8 @@ class Robot:
                 w = -w
         else:
             th_goal = self.rel_angle(dX, dY, odo[2])
+            if (-math.pi/16 < th_goal < math.pi/16):
+                th_goal = 0
             if (norm_pi(th_goal) < 0):
                 w = -w
         end = False
@@ -783,7 +792,7 @@ class Robot:
             print("ERROR en findPath")
             self.stopOdometry()
 
-    def executePath(self, debug=True):
+    def executePath(self, debug=False):
         """
         Executes the path in the current map, moving from cell to cell
         """

@@ -21,7 +21,7 @@ baldosa_nestor = 0.2
 
 def mapA(robot):
     #t = TrayectoriaTrabajoA(baldosa-0.02)
-    t = TrayectoriaTrabajoARelativa(baldosa-0.02)
+    t = TrayectoriaTrabajoARelativa(baldosa)
     mapa = Map2D("trabajo/mapaA_CARRERA.txt")
     return t, mapa
 
@@ -36,6 +36,16 @@ def main(args):
     """
     try:
         robot = Robot()
+        if args.giros != -1:
+            robot.useGyro=True
+            t = TrayectoriaGiros(args.giros, args.rad*math.pi)
+            #t = TrayectoriaGirosAbs(args.giros, args.rad*math.pi)
+            robot.startOdometry()
+            robot.setTrajectory(t)
+            robot.executeTrajectory()
+            robot.stopOdometry()
+            exit(0)
+            
         if args.test_r2d2:
             while True:
                 if robot.detectR2D2(verbose=True, DEBUG=1):
@@ -56,7 +66,7 @@ def main(args):
                 time.sleep(1)
 
         elif args.trabajo or args.test_map or args.pelota or args.test_r2_section:
-            if not not robot.colorSensorBlack():
+            if not robot.colorSensorBlack():
 
                 print("Estoy en el mapa A")
                 t, mapa = mapA(robot)
@@ -81,21 +91,27 @@ def main(args):
                 robot.setTrajectory(t)
                 robot.executeTrajectory()
                 robot.setPath(celdaIni, fin)
-                #robot.waitForWhite(0, 3 * baldosa)
-
-                x_s, y_s = robot.posFromCell(1, 2)
-                robot.go(x_s, y_s, checkObstacles=False)
+                nBaldosas = 3.05 if executingMapA else 4.0
+                robot.waitForWhite([0,1], [nBaldosas * baldosa, 3 * baldosa])
+                    
+                #x_s, y_s = 1,2
+                
+                #x_s, y_s = robot.posFromCell(celdaIni[0],celdaIni[1])
+                #robot.go(x_s, y_s, checkObstacles=False)
                 robot.executePath()
             elif args.test_map or args.test_r2_section: #only map
                 if args.test_r2_section:
                     celdaIni = [3, 2, math.pi/2]
+                
+                nBaldosas = 3 if executingMapA else 4
+                robot.waitForWhite([0,1], [nBaldosas * baldosa, 3 * baldosa])
                 robot.setMap(mapa,celdaIni, fin)
                 #robot.mapa.drawMap(saveSnapshot=False)
                 robot.startOdometry()
                 robot.executePath()
             if args.pelota:
                 robot.startOdometry()
-            if args.trabajo or args.test_r2_section:
+            if args.trabajo or args.test_r2_section or args.test_map:
                 res = 0
                 
                 x,y = robot.posFromCell(fin[0], fin[1]-0.5)
@@ -172,6 +188,9 @@ if __name__ == "__main__":
     parser.add_argument('-r2', '--test_r2_section', help='test only the r2 portion', dest='test_r2_section', action='store_true')
     
     parser.add_argument('-p', '--pelota', help='test only the pelota', dest='pelota', action='store_true')
+    parser.add_argument('-tg', '--giros', help='test giros', 
+                                            type=int, default=-1)
+    parser.add_argument('-rad', '--rad', help='radians ', type=float, default=2)                                       
     # parser.add_argument('-npt', '--no-plottrajectory', dest='plot_trajectory', action='store_false')
     parser.set_defaults(test_suelo=False)
     parser.set_defaults(test_r2d2=False)
