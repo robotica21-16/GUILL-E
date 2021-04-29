@@ -74,7 +74,7 @@ class Robot:
         self.wmax = math.pi/3
         self.vmax = 1.0/4.0
         self.vTarget = self.vmax
-        self.wTarget = self.wmax  #/2
+        self.wTarget = self.wmax * 0.4 #/2
 
         self.rotIzqDeg = 0
         self.rotDchaDeg = 0
@@ -83,10 +83,10 @@ class Robot:
 
         ##################################################
         # Ball parameters
-        self.ballArea = 90
+        self.ballArea = 72
         self.ballClawsArea = 60
         self.ballX = resolution[0]/2.0
-        self.ballDistance = 0.29
+        self.ballDistance = 0.32
 
 
 
@@ -464,7 +464,7 @@ class Robot:
                 A = kp.size
                 
                 w = getMappedW(self.wTarget, d, targetX - resolution[0], targetX)
-                v = getMappedV(self.vTarget, A, targetSize)
+                v = getMappedV(self.vTarget/2.0, A, targetSize)
                 self.setSpeed(v,w)
                 if DEBUG_MODE:
                     print("A:",A, "d:",d)
@@ -683,7 +683,7 @@ class Robot:
         odo = odo_ini
         period = 0.02
         #if sine is negative (if dY is negative) then the rotation must be negative
-        w = self.wTarget * 0.4
+        w = self.wTarget
         dX = x_goal - odo[0]
         dY = y_goal - odo[1]
     

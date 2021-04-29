@@ -91,7 +91,7 @@ def main(args):
                 robot.setTrajectory(t)
                 robot.executeTrajectory()
                 robot.setPath(celdaIni, fin)
-                nBaldosas = 3.05 if executingMapA else 4.0
+                nBaldosas = 2.9 if executingMapA else 4.1
                 robot.waitForWhite([0,1], [nBaldosas * baldosa, 3 * baldosa])
                     
                 #x_s, y_s = 1,2
