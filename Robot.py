@@ -887,7 +887,7 @@ class Robot:
         """
         return -self.BP.get_sensor(self.portGyro)
         
-    def relocateWithSonar(self, angle, relocationPosition, distance1 = 35, distance2 = 25, eps = 5):
+    def relocateWithSonar(self, angle, relocationPosition, distance1 = 35, distance2 = 25, eps = 0.2):
         w = self.wTarget
         sleepTime = 0.4
         minVal = math.inf
@@ -916,38 +916,42 @@ class Robot:
             time.sleep(period-(tFin-tIni))
             print(self.dist)
             
-        prevDist = self.dist
-        self.setSpeed(0,w)
-        time.sleep(0.4)
-        while True:
-            tIni = time.perf_counter()
+        self.setSpeed(0,0)
+        time.sleep(1)
+            
+        while prevDist == self.dist or prevDist == math.inf:
+            prevDist = self.dist
             self.setSpeed(0,w)
+            time.sleep(0.5)
             detected = self.detectObstacle()
-            if not detected:
-                print("guarrianda")
-                diff = []
-                prevDist = math.inf
+            if self.dist > prevDist:
                 w = -w
-                time.sleep(sleepTime)
-                sleepTime += 0.2
-            elif self.dist != prevDist:
-                if(prevDist < math.inf):
-                    diff.append(self.dist - prevDist)
-                prevDist = self.dist
-                if len(diff) == 1:
-                    if diff[-1] > 0:
-                        print("asdfasdfa")
-                        w = -w
-                        time.sleep(0.4)
-                        
-                elif len(diff) > 2:
+                self.setSpeed(0,w)
+                time.sleep(0.5)
+            
+        prevDist = math.inf
+        while True:
+            detected = self.detectObstacle()
+            minVal = prevDist if prevDist < minVal else minVal
+            if prevDist != self.dist:
+                print(self.dist, prevDist)
+                if (not detected) or self.dist > distance1:
+                    print("guarrianda")
+                    diff = []
+                    prevDist = math.inf
+                    time.sleep(0.5)
+                    #sleepTime += 0.2
+                elif self.dist != prevDist:
                     print("sadghfjskgdyluf")
-                    end = diff[-1] > 0 and diff[-2] > 0 and diff[-3] < 0
+                    if w < 0:
+                        end = self.dist > minVal + eps 
+                    else:
+                        end = self.dist > minVal - eps 
                     if end and detected:
                         break
-                tFin = time.perf_counter()
-                time.sleep(period-(tFin-tIni))
-        
+                    prevDist = self.dist
+            
+        print(self.dist, prevDist)
        
         detected = False
         end = False
