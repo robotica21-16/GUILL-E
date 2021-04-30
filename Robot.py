@@ -89,10 +89,6 @@ class Robot:
         self.ballDistance = 0.32
 
 
-
-        # Configure sensors, for example a touch sensor.
-        #self.BP.set_sensor_type(self.BP.PORT_1, self.BP.SENSOR_TYPE.TOUCH)
-
         ##################################################
         # Sensors and motors
         # reset encoder B and C (or all the motors you are using)
@@ -890,3 +886,92 @@ class Robot:
         They use the opposite angles...
         """
         return -self.BP.get_sensor(self.portGyro)
+        
+    def relocateWithSonar(self, angle, relocationPosition, distance1 = 35, distance2 = 25, eps = 5):
+        w = self.wTarget
+        sleepTime = 0.4
+        minVal = math.inf
+        diff = []
+        prevDist = math.inf
+        period = 0.05
+        if angle < self.readOdometry()[2]:
+            w = -w
+        end = False
+        self.setSpeed(0,w)
+        while not end:
+            tIni = time.perf_counter()
+            end = self.closeEnough([None, None, angle], w)
+            if not end:
+                tFin = time.perf_counter()
+                time.sleep(period-(tFin-tIni))
+        self.setSpeed(0,0)
+                
+        #self.detectObstacle()
+        
+        while not self.detectObstacle() or self.dist > distance1:
+            tIni = time.perf_counter()
+            self.setSpeed(self.vTarget / 2, 0)
+            
+            tFin = time.perf_counter()
+            time.sleep(period-(tFin-tIni))
+            print(self.dist)
+            
+        prevDist = self.dist
+        self.setSpeed(0,w)
+        time.sleep(0.4)
+        while True:
+            tIni = time.perf_counter()
+            self.setSpeed(0,w)
+            detected = self.detectObstacle()
+            if not detected:
+                print("guarrianda")
+                diff = []
+                prevDist = math.inf
+                w = -w
+                time.sleep(sleepTime)
+                sleepTime += 0.2
+            elif self.dist != prevDist:
+                if(prevDist < math.inf):
+                    diff.append(self.dist - prevDist)
+                prevDist = self.dist
+                if len(diff) == 1:
+                    if diff[-1] > 0:
+                        print("asdfasdfa")
+                        w = -w
+                        time.sleep(0.4)
+                        
+                elif len(diff) > 2:
+                    print("sadghfjskgdyluf")
+                    end = diff[-1] > 0 and diff[-2] > 0 and diff[-3] < 0
+                    if end and detected:
+                        break
+                tFin = time.perf_counter()
+                time.sleep(period-(tFin-tIni))
+        
+       
+        detected = False
+        end = False
+        print("Voila")
+        
+        #Go back a little, to prevDist (the best value)
+        #w = -w
+        #self.setSpeed(0,w)
+        #while(self.dist > prevDist):
+        #    detected = self.detectObstacle()
+            
+        #self.setSpeed(0,0)
+        
+        while not self.detectObstacle() or self.dist > distance2:
+            tIni = time.perf_counter()
+            self.setSpeed(self.vTarget / 2, 0)
+            
+            tFin = time.perf_counter()
+            time.sleep(period-(tFin-tIni))
+        
+            
+        odo = self.readOdometry()
+        for i, p in enumerate(relocationPosition):
+            if p == None:
+                relocationPosition[i] = odo[i]
+        print(relocationPosition)
+        self.setOdometry(relocationPosition)

@@ -90,6 +90,7 @@ def main(args):
                 print("Odo inicial:", robot.readOdometry())
                 robot.setTrajectory(t)
                 robot.executeTrajectory()
+                robot.angleGyro = False
                 robot.setPath(celdaIni, fin)
                 nBaldosas = 2.9 if executingMapA else 4.1
                 robot.waitForWhite([0,1], [nBaldosas * baldosa, 3 * baldosa])
@@ -143,13 +144,13 @@ def main(args):
             robot.trackBall()
             
             # new path
-            robot.setPathFromCurrentPosition(fin)
-            robot.executePath()
+            #robot.setPathFromCurrentPosition(fin)
+            #robot.executePath()
             # salir del mapa:
-            x,y = robot.posFromCell(fin[0], fin[1]+1)
-            robot.go(x,y)
+            #x,y = robot.posFromCell(fin[0], fin[1]+1)
+            #robot.go(x,y)
 
-            
+            robot.relocateWithSonar(math.pi, [3.5, None, math.pi])
 
             robot.stopOdometry()
             
