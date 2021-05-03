@@ -90,9 +90,9 @@ def main(args):
                 print("Odo inicial:", robot.readOdometry())
                 robot.setTrajectory(t)
                 robot.executeTrajectory()
-                robot.angleGyro = False
+                robot.useGyro = False
                 robot.setPath(celdaIni, fin)
-                nBaldosas = 2.9 if executingMapA else 4.1
+                nBaldosas = 2.6 if executingMapA else 3.9
                 robot.waitForWhite([0,1], [nBaldosas * baldosa, 3 * baldosa])
                     
                 #x_s, y_s = 1,2
@@ -110,7 +110,7 @@ def main(args):
                 #robot.mapa.drawMap(saveSnapshot=False)
                 robot.startOdometry()
                 robot.executePath()
-            if args.pelota:
+            if args.pelota or args.sonar:
                 robot.startOdometry()
             if args.trabajo or args.test_r2_section or args.test_map:
                 res = 0
@@ -118,13 +118,18 @@ def main(args):
                 x,y = robot.posFromCell(fin[0], fin[1]-0.5)
                 robot.go(x,y)
                 #if executingMapA:
+                dX, dY = -0.05, 0.05
+                wHomography = -0.1
+                if not executingMapA: # map b to the other side
+                    dX = -dX
+                    wHomography = -wHomography
                 odo = robot.readOdometry()
-                robot.go(odo[0], odo[1]+0.05)
+                robot.go(odo[0]+dX, odo[1]+dY)
                 while res == 0:
                     
                     res = robot.detectHomography()
                     
-                    robot.setSpeed(0, 0.1)
+                    robot.setSpeed(0, wHomography)
                     time.sleep(0.01)
                 if res == 1: # r2
                     print("detected r2")
@@ -141,7 +146,8 @@ def main(args):
                         fin[0]+=1
                 print("going to", fin)
             #track and catch ball:
-            robot.trackBall()
+            if not args.sonar:
+                robot.trackBall()
             
             # new path
             #robot.setPathFromCurrentPosition(fin)
@@ -149,9 +155,36 @@ def main(args):
             # salir del mapa:
             #x,y = robot.posFromCell(fin[0], fin[1]+1)
             #robot.go(x,y)
-
-            robot.relocateWithSonar(math.pi, [3.5, None, math.pi])
-
+            
+            
+            
+            #sonar:
+            #if fin[0] ==
+            
+            
+            if fin[0] == 3: #pared izq:
+                thObj = math.pi
+                xObj = (3.5*baldosa)
+                if not executingMapA:
+                    thObj = 0
+            else:#dcha
+                thObj = 0
+                xObj = (6.5*baldosa)
+                if not executingMapA:
+                    thObj = math.pi
+                    xObj = 0.5*baldosa
+                
+            # sonar
+            print("going to", xObj, "th:",thObj)
+            distObj = baldosa/2
+            robot.relocateWithSonar(thObj, [xObj, None, thObj], distance2=distObj*100.0, eps=0.1)
+                
+            fin[0], fin[1]= robot.posFromCell(fin[0],fin[1]+1)
+            robot.go(fin[0], fin[1], checkObstacles=False)
+            
+            
+            #odo = robot.readOdometry()
+            #robot.go(odo[0], odo[1]+0.1)
             robot.stopOdometry()
             
                 # Zona con obstaculos:
@@ -191,10 +224,13 @@ if __name__ == "__main__":
     parser.add_argument('-p', '--pelota', help='test only the pelota', dest='pelota', action='store_true')
     parser.add_argument('-tg', '--giros', help='test giros', 
                                             type=int, default=-1)
+    parser.add_argument('-s', '--sonar', help='test sonar', dest='sonar',action='store_true')
     parser.add_argument('-rad', '--rad', help='radians ', type=float, default=2)                                       
     # parser.add_argument('-npt', '--no-plottrajectory', dest='plot_trajectory', action='store_false')
     parser.set_defaults(test_suelo=False)
     parser.set_defaults(test_r2d2=False)
+    parser.set_defaults(sonar=False)
+
     parser.set_defaults(test_r2_section=False)
     parser.set_defaults(test_map=False)
     parser.set_defaults(pelota=False)

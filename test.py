@@ -28,9 +28,23 @@ if __name__ == "__main__":
 		robot = Robot()
 		robot.useGyro = False
 		robot.setMapNoPath(mapA(robot))
-		robot.setOdometry([0,0,math.pi/2])
+		x = [4.5, 4]
+		baldosa = robot.mapa.sizeCell / 1000.0
+		print(baldosa)
+		robot.setOdometry([x[0] * baldosa,x[1]*baldosa, math.pi])
+		
 		robot.startOdometry()
-		robot.relocateWithSonar(math.pi, [15, None, math.pi])
+		
+		
+		#
+		distObj = baldosa/2
+		robot.relocateWithSonar(math.pi, [(3.5*baldosa), None, math.pi], distance2=distObj*100.0, eps=0.1)
+		#
+		
+		#robot.relocateWithSonar(math.pi, [15, None, math.pi])
+		
+		odo = robot.readOdometry()
+		robot.go(odo[0], odo[1]+baldosa*3.0)
 		robot.stopOdometry()
 	except KeyboardInterrupt:
 		# except the program gets interrupted by Ctrl+C on the keyboard.
