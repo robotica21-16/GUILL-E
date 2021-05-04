@@ -6,7 +6,7 @@ import cv2
 import numpy as np
 from picamera.array import PiRGBArray
 
-red_hsv_range1 = [(0, 200, 50), (5, 255, 200)]
+red_hsv_range1 = [(10, 10, 10), (0, 0, 0)]
 red_hsv_range2 = [(170, 200, 50), (180, 255, 200)]
 	
 def init_detector():

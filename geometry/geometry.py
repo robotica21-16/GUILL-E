@@ -5,7 +5,8 @@ Vectors are np.array[x,y,th]
 import numpy as np
 import math
 
-
+def distance(p1, p2):
+    return np.linalg.norm(p2-p1)
 
 def mapf(val, mind, maxd, minr, maxr):
     """

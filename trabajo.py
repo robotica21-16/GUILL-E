@@ -31,6 +31,27 @@ def mapB(robot):
     mapa = Map2D("trabajo/mapaB_CARRERA.txt")
     return t, mapa
 
+
+def relocateRobot(robot, fin, executingMapA, baldosa):
+    if fin[0] == 3: #pared izq:
+        thObj = math.pi
+        xObj = (3.5*baldosa)
+        if not executingMapA:
+            thObj = 0
+    else:#dcha
+        print("fin0 es ", fin[0])
+        thObj = 0
+        xObj = (6.5*baldosa)
+        if not executingMapA:
+            thObj = math.pi
+            xObj = 0.5*baldosa
+        
+    # sonar
+    print("going to", xObj, "th:",thObj)
+    distObj = baldosa/2
+    robot.relocateWithSonar(thObj, [xObj, None, thObj], distance2=distObj*100.0, eps=0.1)
+   
+
 def main(args):
     """
     """
@@ -82,6 +103,10 @@ def main(args):
                 fin = [2,6]
                 ini=[5,6, -math.pi/2]
                 executingMapA = False
+            
+            #intermedio = np.array(fin)
+            #intermedio[0] += 1 if not executingMapA else -1
+            #intermedio[1] = 3
             if args.trabajo:
                 robot.setMapNoPath(mapa)
                 x, y = robot.posFromCell(ini[0], ini[1])
@@ -92,11 +117,11 @@ def main(args):
                 robot.executeTrajectory()
                 robot.useGyro = False
                 robot.setPath(celdaIni, fin)
-                nBaldosas = 2.6 if executingMapA else 3.9
+                nBaldosas = 2.9 if executingMapA else 3.9
                 robot.waitForWhite([0,1], [nBaldosas * baldosa, 3 * baldosa])
-                    
-                #x_s, y_s = 1,2
-                
+                #xRelocate = fin[0]-1 if executingMapA else fin[0]+1
+                #relocateRobot(robot, intermedio, executingMapA, baldosa)
+
                 #x_s, y_s = robot.posFromCell(celdaIni[0],celdaIni[1])
                 #robot.go(x_s, y_s, checkObstacles=False)
                 robot.executePath()
@@ -149,42 +174,21 @@ def main(args):
             if not args.sonar:
                 robot.trackBall()
             
-            # new path
-            #robot.setPathFromCurrentPosition(fin)
-            #robot.executePath()
-            # salir del mapa:
-            #x,y = robot.posFromCell(fin[0], fin[1]+1)
-            #robot.go(x,y)
-            
-            
             
             #sonar:
             #if fin[0] ==
             
-            
-            if fin[0] == 3: #pared izq:
-                thObj = math.pi
-                xObj = (3.5*baldosa)
-                if not executingMapA:
-                    thObj = 0
-            else:#dcha
-                thObj = 0
-                xObj = (6.5*baldosa)
-                if not executingMapA:
-                    thObj = math.pi
-                    xObj = 0.5*baldosa
-                
-            # sonar
-            print("going to", xObj, "th:",thObj)
-            distObj = baldosa/2
-            robot.relocateWithSonar(thObj, [xObj, None, thObj], distance2=distObj*100.0, eps=0.1)
-                
-            fin[0], fin[1]= robot.posFromCell(fin[0],fin[1]+1)
-            robot.go(fin[0], fin[1], checkObstacles=False)
+            relocateRobot(robot, fin, executingMapA, baldosa)
             
             
-            #odo = robot.readOdometry()
-            #robot.go(odo[0], odo[1]+0.1)
+            # new path
+            robot.setPathFromCurrentPosition(fin)
+            robot.executePath(checkObstacles=False)
+            # salir del mapa:
+            x,y = robot.posFromCell(fin[0], fin[1]+1)
+            robot.go(x,y, checkObstacles=False)
+            
+        
             robot.stopOdometry()
             
                 # Zona con obstaculos:

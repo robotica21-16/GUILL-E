@@ -83,7 +83,7 @@ class Robot:
 
         ##################################################
         # Ball parameters
-        self.ballArea = 70
+        self.ballArea = 65
         self.ballClawsArea = 60
         self.ballX = resolution[0]/2.0
         self.ballDistance = 0.36
@@ -141,6 +141,7 @@ class Robot:
         self.x = Value('d',0.0)
         self.y = Value('d',0.0)
         self.th = Value('d',0.0)
+        self.th_abs = Value('d',0.0) # absoluto, solo se debe usar para restar dos valores
         self.finished = Value('b',1) # boolean to show if odometry updates are finished
         self.changeClaws = Value('b',1)
 
@@ -361,12 +362,14 @@ class Robot:
             #print("deltaSi: ", deltaSi)
             deltax = self.deltaX(deltaSi,deltaTh)
             deltay = self.deltaY(deltaSi,deltaTh)
+            th_abs = self.th_abs.value+deltaTh
             th = norm_pi(self.th.value+deltaTh)
             self.lock_odometry.acquire()
                 # reducir SC (deltaX, etc)
             self.x.value += deltax
             self.y.value += deltay
             self.th.value = th
+            self.th_abs.value = th_abs
             self.lock_odometry.release()
 
 
@@ -788,7 +791,7 @@ class Robot:
             print("ERROR en findPath")
             self.stopOdometry()
 
-    def executePath(self, debug=False):
+    def executePath(self, debug=False, checkObstacles=True):
         """
         Executes the path in the current map, moving from cell to cell
         """
@@ -799,7 +802,7 @@ class Robot:
             for step in self.mapa.currentPath:
                 # Go to next cell
                 x, y = self.posFromCell(step[0], step[1])
-                replan = self.go(x, y)
+                replan = self.go(x, y, checkObstacles=checkObstacles)
                 if replan:
                     if debug:
                         self.mapa.drawMap(saveSnapshot=False)
@@ -887,128 +890,9 @@ class Robot:
         """
         return -self.BP.get_sensor(self.portGyro)
         
-    def relocateWithSonar2(self, angle, relocationPosition, distance1 = 35, distance2 = 25, eps = 0.2):
-        w = self.wTarget*0.3
-        sleepTime = 0.4
-        minVal = math.inf
-        diff = []
-        prevDist = math.inf
-        period = 0.05
-        if angle < self.readOdometry()[2]:
-            w = -w
-        end = False
-        self.setSpeed(0,w)
-        while not end:
-            tIni = time.perf_counter()
-            end = self.closeEnough([None, None, angle], w)
-            if not end:
-                tFin = time.perf_counter()
-                time.sleep(period-(tFin-tIni))
-        self.setSpeed(0,0)
-                
-        #self.detectObstacle()
-        print("orientado a ", angle)
-        while not self.detectObstacle() or self.dist > distance1:
-            tIni = time.perf_counter()
-            self.setSpeed(self.vTarget / 2, 0)
-            
-            tFin = time.perf_counter()
-            time.sleep(period-(tFin-tIni))
-            print(self.dist)
-        print("Fin mov lineal")
-        self.setSpeed(0,0)
-        time.sleep(1)
-        nVals=20
-        vals=[]
-        self.setSpeed(0,w)
-        period = 0.5
-        for i in range(nVals):
-            
-            tIni = time.perf_counter()
-            self.detectObstacle()
-            vals += [self.dist]
-            tFin = time.perf_counter()
-            time.sleep(period-(tFin-tIni))
-        print(vals)
-        self.setSpeed(0,0)
-        self.stopOdometry()
-        exit(0)
-        
-        while prevDist == self.dist or prevDist == math.inf:
-            print("self.dist", self.dist)
-            tIni = time.perf_counter()
-            prevDist = self.dist
-            self.setSpeed(0,w)
-            tFin = time.perf_counter()
-            time.sleep(period-(tFin-tIni))
-            detected = self.detectObstacle()
-            if self.dist > prevDist:
-                print("end", self.dist, prevDist)
-                w = -w
-                time.sleep(0.5)
-            else:
-                print("not end", self.dist, prevDist)
-        self.setSpeed(0,0)
-        print("girando a", w)
-        time.sleep(1)
-        prevDist = math.inf
-        self.setSpeed(0,w)
-        while True:
-            detected = self.detectObstacle()
-            minVal = prevDist if prevDist < minVal else minVal
-            if prevDist != self.dist:
-                print(self.dist, prevDist)
-                if (not detected) or self.dist > distance1:
-                    print("guarrianda :(")
-                    diff = []
-                    prevDist = math.inf
-                    time.sleep(0.5)
-                    #sleepTime += 0.2
-                elif self.dist != prevDist:
-                    print("sadghfjskgdyluf :)")
-                    if w < 0:
-                        end = self.dist > minVal + eps 
-                    else:
-                        end = self.dist > minVal - eps 
-                    if end and detected:
-                        break
-                    prevDist = self.dist
-            
-        print(self.dist, prevDist)
-       
-        detected = False
-        end = False
-        print("Voila")
-        ##################################3
-        self.stopOdometry()
-        exit(0)
-        ######################################
-        #Go back a little, to prevDist (the best value)
-        #w = -w
-        #self.setSpeed(0,w)
-        #while(self.dist > prevDist):
-        #    detected = self.detectObstacle()
-            
-        #self.setSpeed(0,0)
-        
-        while not self.detectObstacle() or self.dist > distance2:
-            tIni = time.perf_counter()
-            self.setSpeed(self.vTarget / 2, 0)
-            
-            tFin = time.perf_counter()
-            time.sleep(period-(tFin-tIni))
-        
-            
-        odo = self.readOdometry()
-        for i, p in enumerate(relocationPosition):
-            if p == None:
-                relocationPosition[i] = odo[i]
-        print(relocationPosition)
-        self.setOdometry(relocationPosition)
-
-    
         
     def relocateWithSonar(self, angle, relocationPosition, distance1 = 35, distance2 = 25, eps = 0.2):
+        
         w = self.wTarget
         sleepTime = 0.4
         minVal = math.inf
@@ -1018,6 +902,9 @@ class Robot:
         if (norm_pi(angle - self.readOdometry()[2]) < 0):
             w = -w
         end = False
+        # mov lineal:
+        odo_ini = self.readOdometry()
+        
         self.setSpeed(0,w)
         while not end:
             tIni = time.perf_counter()
@@ -1058,7 +945,12 @@ class Robot:
                     break
             prevDist = self.dist
         self.setSpeed(0,0)
-        print("girando a", w)
+        print("girando a", w, "voy a buscar el minimo...")
+        # recalibrar y:
+        odo = self.readOdometry()
+        r = distance(np.array(odo_ini[:1]), np.array(odo[:1]))
+        th_before = self.th_abs.value
+        
         time.sleep(1)
         prevDist = math.inf
         w /= 2
@@ -1067,7 +959,7 @@ class Robot:
             detected = self.detectObstacle()
             if prevDist< minVal:
                 minVal = prevDist
-                thMin = self.readOdometry()[2]
+                thMin = self.th_abs.value
             #minVal = prevDist if prevDist < minVal else minVal
             if prevDist != self.dist:
                 print(self.dist, prevDist)
@@ -1093,9 +985,16 @@ class Robot:
         detected = False
         end = False
         print("Voila")
+        
+        # corregir y:
+        th_abs_now = self.th_abs.value
+        dTh = th_abs_now - th_before
+        dY = np.sin(dTh) * r
+        # corregir th:
         odo = self.readOdometry()
-        dTh = odo[2]-thMin
-        self.setOdometry([odo[0], odo[1], odo[2]+dTh])
+        dTh = th_abs_now-thMin
+        
+        self.setOdometry([odo[0], odo[1] + dY, odo[2]+dTh])
         
         ##################################3
         
@@ -1117,8 +1016,11 @@ class Robot:
         
             
         odo = self.readOdometry()
+        #relocationPosition = [
         for i, p in enumerate(relocationPosition):
             if p == None:
                 relocationPosition[i] = odo[i]
+            ##elif i==2:
+                
         print(relocationPosition)
         self.setOdometry(relocationPosition)
