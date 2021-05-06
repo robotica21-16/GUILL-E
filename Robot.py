@@ -34,7 +34,7 @@ from trabajo.sample_matching import match_images
 DEBUG_MODE=False
 resolution=[320,240]
 black=2500
-white=2040
+white=1970
 
 class Robot:
     def __init__(self, init_position=[0.0, 0.0, 0.0]):
@@ -553,17 +553,26 @@ class Robot:
             value=values[i]
             print(coordinate, "coord, value", value, white)
             end = False
+            nDetected = 0
             while not self.finished.value and not end:
                 
                 tIni = time.perf_counter()
                 if white:
                     if self.colorSensorWhite():
+                        nDetected+=1
+                    else:
+                        nDetected=0
+                    if nDetected>1:
                         print("WHITE DETECTED")
                         self.updateCoordValue(coordinate, value)
                         end = True
                     # TODO: cosas
                 else:
                     if self.colorSensorBlack():
+                        nDetected+=1
+                    else:
+                        nDetected=0
+                    if nDetected>1:
                         print("BLACK DETECTED")
                         self.updateCoordValue(coordinate, value)
                         end = True

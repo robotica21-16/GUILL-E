@@ -38,7 +38,8 @@ def main(args):
     #myMap.deleteConnection(0,1,2)
     #myMap.deleteConnection(2,1,4)
     #myMap.deleteConnection(2,1,6)
-    myMap.findPath(0,0,3,5)
+    myMap.deleteConnection(2,2,2)
+    myMap.findPath(0,0,6,6)
     # myMap.drawMap(saveSnapshot=False)
 
     df  = pd.read_csv(args.log, sep="\t")
