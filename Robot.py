@@ -5,10 +5,6 @@ from __future__ import division       #                           ''
 
 
 import brickpi3 # import the BrickPi3 drivers
-# except BaseException as e:
-#     print(e)
-
-
 
 import time     # import the time library for the sleep function
 import sys
@@ -31,17 +27,19 @@ from p4.MapLib import *
 
 from trabajo.sample_matching import match_images
 
-DEBUG_MODE=False
-resolution=[320,240]
-black=2500
-white=1970
+DEBUG_MODE=False # show less prints
+resolution=[320,240] # camera resolution
+black=2500 # floor sensor black threshold
+white=1970 # floor sensor white threshold
 
 class Robot:
+    """
+    All units are in the international system unless specified (and angles in rad)
+    """
     def __init__(self, init_position=[0.0, 0.0, 0.0]):
         """
-        Initialize basic robot params. \
-
-        Initialize Motors and Sensors according to the set up in your robot
+        Initialize basic robot params.
+        Initialize Motors and Sensors according to the set up in GUILLE
         """
         ##################################################
         # Robot construction parameters
@@ -57,16 +55,13 @@ class Robot:
         # Camera initialization
         self.cam = picamera.PiCamera()
 
-        #self.cam.resolution = (320, 240)
         self.cam.resolution = tuple(resolution)
-        self.cam.framerate = 60 # TODO: mirar maximo real
-        #self.rawCapture = PiRGBArray(self.cam, size=(320, 240))
+        self.cam.framerate = 60
         self.rawCapture = PiRGBArray(self.cam, size=tuple(resolution))
 
         self.cam.rotation=180
 
         ##################################################
-        # Create an instance of the BrickPi3 class. BP will be the BrickPi3 object.
         self.BP = brickpi3.BrickPi3()
 
         ##################################################
@@ -91,7 +86,6 @@ class Robot:
 
         ##################################################
         # Sensors and motors
-        # reset encoder B and C (or all the motors you are using)
         self.lock_garras = Lock()
         self.closing = Value('b',0)
         self.ruedaIzq = self.BP.PORT_D
@@ -102,8 +96,8 @@ class Robot:
             self.BP.get_motor_encoder(self.ruedaIzq))
         self.BP.offset_motor_encoder(self.ruedaDcha,
             self.BP.get_motor_encoder(self.ruedaDcha))
-        #self.BP.offset_motor_encoder(self.motorGarras,
-        #    self.BP.get_motor_encoder(self.motorGarras))
+
+        #################################################
         ##Adjust Claws to be closed
         posClawsIni = self.BP.get_motor_encoder(self.motorGarras)
         if(posClawsIni < -5 or posClawsIni > 0):
@@ -111,29 +105,27 @@ class Robot:
             while(posClawsIni < -5):
                 self.BP.set_motor_dps(self.motorGarras, 20)
                 posClawsIni = self.BP.get_motor_encoder(self.motorGarras)
-                #print(posClawsIni)
             while(posClawsIni > 0):
                 self.BP.set_motor_dps(self.motorGarras, -20)
                 posClawsIni = self.BP.get_motor_encoder(self.motorGarras)
-                #print(posClawsIni)
         self.BP.set_motor_dps(self.motorGarras, 0)
 
 
         #################################################
+        # ultrasonic
         self.portSensorUltrasonic = self.BP.PORT_4
         self.BP.set_sensor_type(self.portSensorUltrasonic, self.BP.SENSOR_TYPE.EV3_ULTRASONIC_CM)
         self.min_cells=1  # cm
 
         #################
+        # light sensor
         self.portSensorLight = self.BP.PORT_1
         self.BP.set_sensor_type(self.portSensorLight, self.BP.SENSOR_TYPE.NXT_LIGHT_ON)
 
         #################
+        # gyro:
         self.portGyro= self.BP.PORT_2
         self.BP.set_sensor_type(self.portGyro, self.BP.SENSOR_TYPE.EV3_GYRO_ABS)
-
-
-
 
         ####################################################################################################
         # odometry shared memory values
@@ -162,10 +154,9 @@ class Robot:
         self.f_log.write("\t".join([str(e) for e in fila]) + "\n")
         self.f_log.flush()
 
-
-        ### R2D2
+        ####################################################################################################
+        ### Homographies:
         self.templateR2D2 = cv2.imread("trabajo/R2-D2_s.png", cv2.IMREAD_COLOR)
-        #self.templateR2D2 = cv2.imread("trabajo/libronestor_s.png", cv2.IMREAD_COLOR)
         self.templateBB8 = cv2.imread("trabajo/BB8_s.png", cv2.IMREAD_COLOR)
 
         time.sleep(5)
@@ -177,8 +168,6 @@ class Robot:
         Sets the speed as degrees PS to each motor according to
         v (linear ms) and w (angular rad s)
         """
-        # wID = [wI, wD]:
-
         wDI = izqDchaFromVW(self.R_rueda, self.L, v, w)
         wD = wDI[0]
         wI = wDI[1]
@@ -192,27 +181,18 @@ class Robot:
         """
         Returns vL, vD as DPS of the wheels (left, right)
         """
-        #izq = self.BP.get_motor_encoder(self.BP.PORT_B)
-        #dcha = self.BP.get_motor_encoder(self.BP.PORT_C)
-        #return izq, dcha
         try:
-            # Each of the following BP.get_motor_encoder functions returns the encoder value
-            # (what we want to store).
-            #sys.stdout.write("Reading encoder values .... \n")
             izq = self.BP.get_motor_encoder(self.ruedaIzq)
             dcha = self.BP.get_motor_encoder(self.ruedaDcha)
             izq_bk = izq
             dcha_bk = dcha
             izq = izq-self.rotIzqDeg
             dcha = dcha-self.rotDchaDeg
-            #print("ideg, ddeg: ", self.rotIzqDeg, self.rotDchaDeg)
 
             self.rotIzqDeg = izq_bk
             self.rotDchaDeg = dcha_bk
-            #print("i, d (sin dT): ", izq, dcha, dT)
             return izq/dT, dcha/dT
         except IOError as error:
-            #print(error)
             sys.stdout.write(error)
 
     def readSpeed(self, dT):
@@ -220,19 +200,16 @@ class Robot:
         In: dT = delta of time
         Returns v,w (in m/s and rad/s) according to the motor encoders
         """
-
         izq, dcha = self.readSpeedIzqDcha(dT)
 
         wI = np.radians(izq)
         wD = np.radians(dcha)
 
         v,w = vWiFromIzqDcha(self.R_rueda, self.L, wI, wD)
-        #print("v, w: ", v, w)
         return v, w
 
     ####################################################################################################
     # Trajectories functions
-
     def setTrajectory(self,trajectory):
         """
         Sets the trajectory to perform (class geometry.Trajectory)
@@ -248,16 +225,22 @@ class Robot:
             time.sleep(move.t)
 
     def closeEnough(self, target, w):
+        """
+        In: target [x, y, th] (any value can be None),
+            w (angular speed)
+        Out: True if the target has been reached according to the odometry.
+        Only non-None values are checked
+        """
         odo = self.readOdometry()
         close = False
         if target[0] == None and target[1] == None and target[2] == None:
             close = True
-        elif target[0] == None and target[1] == None:
-            if self.useGyro:
+        elif target[0] == None and target[1] == None: # only angle
+            if self.useGyro: # test according to gyro
                 return reachedAngleGyro(np.radians(self.angleGyro() - self.turnedGyro), target[2], w)
-            else:
+            else: # test with odo
                 return reachedAngle(odo[2], target[2], w)
-        else:
+        else: # check positions
             sinth = np.sin(odo[2])
             costh = np.cos(odo[2])
             cond1 = True
@@ -266,23 +249,23 @@ class Robot:
                 cond1 = reached(odo[0],target[0], costh>=0)
             if target[1] != None:
                 cond2 = reached(odo[1],target[1],sinth>=0)
-            #print(target[0], " --x-- ", odo[0], "\n", target[1], "-------y------", odo[1])
             if cond1 and cond2:
-            #if abs((target[0] - odo[0])) < eps[0] and abs((target[1] - odo[1])) < eps[1]:
                 close = True
         return close
 
     def setTurnedGyro(self):
+        """
+        Save current gyro angle for future comparisons
+        """
         self.turnedGyro = self.angleGyro()
 
     def executeTrajectory(self):
         """
         Executes the saved trajectory (sequence of v,w and t)
+        Time-based version
         """
         period = 0.05
         for i in range(len(self.trajectory.targetPositions)):
-            # target = [x,y,th]
-            # pos = [x,y,th]
             print("Paso:", i, "----------------------------")
             self.setTurnedGyro()
             v = self.trajectory.targetV[i]
@@ -294,11 +277,7 @@ class Robot:
                 end = self.closeEnough(self.trajectory.targetPositions[i], w)
                 if not end:
                     tFin = time.perf_counter()
-                    #print("abs: ", np.radians(self.angleGyro()), "rel: ", np.radians(self.angleGyro()-self.turnedGyro))
                     time.sleep(period-(tFin-tIni))
-                #else:
-                    #print(v, w,"target: ", self.trajectory.targetPositions[i], "odo:", self.readOdometry(), "gyro: ", np.radians(self.angleGyro()))
-
         self.setSpeed(0, 0)
 
     ####################################################################################################
@@ -348,13 +327,9 @@ class Robot:
             dT = tIni-self.tLast
             self.tLast = tIni
 
-            # compute updates
-            # deltaTh += self.deltaTH()
-
             v, w = self.readSpeed(dT) # usar distancias de encoders directamente
             deltaTh = norm_pi(w*dT)
             eps = 0.01
-            #print("----------\n", deltaTh)
             if -eps < deltaTh < eps:
                 deltaSi = v*dT
             else:
@@ -369,16 +344,14 @@ class Robot:
             self.x.value += deltax
             self.y.value += deltay
             self.th.value = th
-            self.th_abs.value = th_abs
+            self.th_abs.value = th_abs # only used for some comparisons
             self.lock_odometry.release()
-
-
+            # write a row to the log:
             writeLog(self.f_log, [self.tLast-self.tInitialization, self.x.value, self.y.value, self.th.value, v, w, deltaTh, deltaSi])
 
             tEnd = time.perf_counter()
             time.sleep(max(self.P - (tEnd-tIni),0))
 
-        #print("Stopping odometry ... X= %d" %(self.x.value))
         sys.stdout.write("Stopping odometry ... X=  %.2f, \
                 Y=  %.2f, th=  %.2f \n" % (self.x.value, self.y.value, self.th.value))
 
@@ -386,7 +359,6 @@ class Robot:
         """
         Sets the odometry to any value [x,y,th] (in m,m,rad)
         """
-
         self.lock_odometry.acquire()
         self.finished.value = True
         self.x.value = value[0]
@@ -461,7 +433,7 @@ class Robot:
             else: # we see the target and the target position hasnt been reached
                 d = horizontalDistance(kp, [targetX,0])
                 A = kp.size
-                
+
                 w = getMappedW(self.wTarget, d, targetX - resolution[0], targetX)
                 v = getMappedV(self.vTarget/2.0, A, targetSize)
                 self.setSpeed(v,w)
@@ -481,58 +453,54 @@ class Robot:
 
     ####################################################################################################
     # CAMERA DEBUG FUNCTIONS
-
     def takePicture(self):
-        #rawCapture = PiRGBArray(self.cam, size=(320, 240))
-
+        """
+        Take a picture and save it in photos directory (name based on current time)
+        """
         now = datetime.datetime.now()
         self.cam.capture("photos/{:d}-{:d}-{:d}-{:02d}_{:02d}_{:02d}".format(now.year, now.month, now.day, now.hour, now.minute, now.second)+".png", format="png", use_video_port=True)
-        #data = np.fromstring(stream.getvalue(), dtype=np.uint8)
-
-        #cv2.imwrite("photos/{:d}-{:d}-{:d}-{:02d}_{:02d}".format(now.year, now.month, now.day, now.hour, now.minute)+".png", img.array)
 
     def detect_continuous(self):
         """
-        Debug function to test camera and detector
+        Debug function to test camera and cv2 detector
         """
         period = 0.25 # 1 sec
-        #rawCapture = PiRGBArray(self.cam, size=(320, 240))
         detector = init_detector()
-        #cv2.namedWindow('frame', cv2.WINDOW_AUTOSIZE)
         time.sleep(1)
         self.cam.framerate=(1)
         for img in self.cam.capture_continuous(self.rawCapture, format="bgr", use_video_port=True):
-
             tIni = time.perf_counter()
             frame = img.array
-
             cv2.imshow('frame', frame)
-            #print(":(")
-
             noseque = search_blobs_detector(self.cam, frame, detector, verbose = True)
             self.rawCapture.truncate(0)
-
-
             tEnd = time.perf_counter()
             cv2.waitKey(int(1000*period - (tEnd-tIni)))
-
         cv2.destroyAllWindows()
 
+
+
     ####################################################################################################
-    # CLAWS FUNCTIONS
+    # Floor light detector functions
 
     def waitForWhite(self, coordinate, value):
         """
         Updates the coordinate when it finds a white line (0->x, 1->y)
+        Both parameters are lists (must be of the same length),
+        and the process will be queued for each value
         """
         white=[True]*len(coordinate)
         print("coord ", coordinate, value)
         self.lineDetectorProcess = Process(target = self.lineDetector, args=(white, coordinate, value))
         self.lineDetectorProcess.start()
-        
+
 
 
     def updateCoordValue(self,coordinate, value):
+        """
+        update the coordinate (0->x, 1->y) with the given value, taking into account
+        the current theta from the odometry
+        """
         if coordinate == 0: # x
             self.lock_odometry.acquire()
             self.x.value = value + self.len_color_eje * np.cos(self.readOdometry()[2])
@@ -544,43 +512,45 @@ class Robot:
 
     def lineDetector(self, whites,coordinates, values):
         """
+        For each white, coordinate, and value in the three parameters (lists),
+        updates the given coordinate with the given value when a line of the
+        given color (white->white, not white->black) is detected.
+        It has to detect the same color twice in a row for consistency.
         """
         period = 0.1
-
         for i in range(len(whites)):
             white = whites[i]
             coordinate = coordinates[i]
             value=values[i]
-            print(coordinate, "coord, value", value, white)
             end = False
             nDetected = 0
             while not self.finished.value and not end:
-                
                 tIni = time.perf_counter()
-                if white:
+                if white: # looking for a white stripe
                     if self.colorSensorWhite():
-                        nDetected+=1
+                        nDetected+=1 # count the detection
                     else:
-                        nDetected=0
-                    if nDetected>1:
+                        nDetected=0 # reset
+                    if nDetected>1: # we detected two in a row
                         print("WHITE DETECTED")
-                        self.updateCoordValue(coordinate, value)
+                        self.updateCoordValue(coordinate, value) # update
                         end = True
-                    # TODO: cosas
-                else:
+                else: # looking for a black stripe
                     if self.colorSensorBlack():
-                        nDetected+=1
+                        nDetected+=1 # count the detection
                     else:
-                        nDetected=0
-                    if nDetected>1:
+                        nDetected=0 # reset
+                    if nDetected>1: # we detected two in a row
                         print("BLACK DETECTED")
-                        self.updateCoordValue(coordinate, value)
+                        self.updateCoordValue(coordinate, value) # update
                         end = True
                 tEnd = time.perf_counter()
                 time.sleep(period - (tEnd-tIni))
-            time.sleep(1)
-            
+            time.sleep(1) # sleep one second to prevent the second line being detected too soon
 
+
+    ####################################################################################################
+    # CLAWS FUNCTIONS
     def catch(self):
         """
         Starts the process that closes or opens the claws
@@ -588,16 +558,12 @@ class Robot:
         self.catcher = Process(target=self.moveClaws, args=()) #additional_params?))
         self.catcher.start()
 
-        # decide the strategy to catch the ball once you have reached the target position
-        pass
-
     def moveClaws(self):
         """
         Rutina paralela para cerrar las garras
         """
         self.lock_garras.acquire()
-
-        DPS = 40 # 40� por segundo
+        DPS = 40 # 40º por segundo
         end = False
         period = 0.1
 
@@ -630,7 +596,6 @@ class Robot:
 
     ####################################################################################################
     # MAP & MOVING FUNCTIONS
-
     def recalculateGoal(self, odo, dX, dY, x_goal, y_goal, eps):
         if x_goal != None:
             dX = x_goal - odo[0]
@@ -644,6 +609,9 @@ class Robot:
         return x_goal, y_goal, th_goal
 
     def fixOdometryFromObstacle(self, neighbour, x_objective, y_objective):
+        """
+        Unused function, for updating odometry based on obstacles
+        """
         print("actualizando odo:", self.readOdometry())
         plusone=False
         if self.dist / 100 >= 0.95 * self.mapa.sizeCell/1000:
@@ -672,17 +640,19 @@ class Robot:
         print("nuevos valores odo:", self.readOdometry())
 
     def rel_angle(self, dX, dY, th):
+        """
+        Returns the relative angle between th and the (dX, dY) vector
+        """
         th_abs = math.atan2(dY, dX) # -pi a pi
         #neighbour = self.mapa.neighbou
         return norm_pi(th_abs - th)
 
-    #def addObstacleFromPos(self):
-    #    neighbour =
 
     def go(self, x_goal_ini, y_goal_ini, eps = 0.05, checkObstacles=True, checkObstaclesMoving=False):
         """
         Moves the robot to x_goal, y_goal (first it turns, then it advances, for cell navigation)
         returns True if it finds an obstacle
+        if checkObstaclesMoving, it detects the obstacles while advancing (disabled: does not work very well)
         """
 
         x_goal = x_goal_ini
@@ -694,13 +664,11 @@ class Robot:
         w = self.wTarget
         dX = x_goal - odo[0]
         dY = y_goal - odo[1]
-    
-        #
-        if not self.useGyro:
+        if not self.useGyro: # odometry based turn
             th_goal = norm_pi(math.atan2(dY, dX))
             if (norm_pi(th_goal - odo[2]) < 0):
                 w = -w
-        else:
+        else: # gyro based turn
             th_goal = self.rel_angle(dX, dY, odo[2])
             if (-math.pi/16 < th_goal < math.pi/16):
                 th_goal = 0
@@ -708,7 +676,7 @@ class Robot:
                 w = -w
         end = False
         self.setTurnedGyro()
-        while not end:
+        while not end: # turn
             tIni = time.perf_counter()
             odo = self.readOdometry()
             end = self.closeEnough([None, None, th_goal], w)
@@ -716,12 +684,9 @@ class Robot:
                 self.setSpeed(0,w)
                 tEnd = time.perf_counter()
                 time.sleep(max(period - (tEnd - tIni),0))
-            #else:
-                #print("goal: ", th_goal, "gyro: ", np.radians(self.angleGyro() - self.turnedGyro))
 
         self.setSpeed(0,0)
         # obstaculos:
-
         if checkObstacles and self.detectObstacle(): # obstacle in front of the robot
             self.mapa.obstacleDetected(odo[0], odo[1], x_goal, y_goal)
             if not self.mapa.replanPath(odo[0], odo[1]):
@@ -741,25 +706,23 @@ class Robot:
             odo = self.readOdometry()
             end = self.closeEnough([x_goal, y_goal, None], w)
             if not end:
+                # only if checkObstaclesMoving:
                 if checkObstaclesMoving and self.detectObstacle(cell_proportion=0.8): # obstacle in front of the robot
                     neighbour = self.mapa.obstacleDetected(odo[0], odo[1], x_goal_ini, y_goal_ini)
                     self.fixOdometryFromObstacle(neighbour, x_goal_ini, y_goal_ini)
-                    # TODO: actualizar odometria pero no replanificar (quitar lo siguiente?)
-                    # Otra opcion: solo usarlo para parar y no chocarse (especificando como distancia justo la de las garras)
-                    # gestionar bien el siguiente movimiento etc.
                     if not self.mapa.replanPath(odo[0], odo[1]):
                         print("Unable to find a path")
                         self.stopOdometry()
                         exit(0)
-
                     return True
-
+                # slow down based on distance to goal:
                 odo = np.array(self.readOdometry()[:-1])
                 v = vInTrajectory(odo, initial,
                     np.array([x_goal_ini, y_goal_ini]), vmin, vmax) # variable speed
                 self.setSpeed(v,0)
                 tEnd = time.perf_counter()
                 time.sleep(max(period - (tEnd - tIni),0))
+        # in the end, stop:
         self.setSpeed(0, 0)
         return False
 
@@ -789,12 +752,20 @@ class Robot:
                 self.stopOdometry()
 
     def setPath(self, ini, end):
+        """
+        Pre: a map has to have been set
+        Set a path from ini to end (both in m, [x,y])
+        """
         if not self.mapa.findPath(ini[0], ini[1],end[0],end[1]):
             print("ERROR en findPath")
             self.stopOdometry()
-    
-        
+
+
     def setPathFromCurrentPosition(self, end):
+        """
+        Pre: a map has to have been set
+        Set a path to end (in m) from the current odometry position
+        """
         odo = self.readOdometry()
         if not self.mapa.findPathFromPos(odo[0], odo[1],end[0],end[1]):
             print("ERROR en findPath")
@@ -817,6 +788,7 @@ class Robot:
                         self.mapa.drawMap(saveSnapshot=False)
                     break
             end = not replan # end if there wasnt a replan
+
     def detectHomography(self, DEBUG=0, verbose=False):
         """
         takes a picture and  returns an int based on the detection:
@@ -841,22 +813,17 @@ class Robot:
         """
         with picamera.array.PiRGBArray(self.cam) as stream:
             self.cam.capture(stream, format='bgr')
-            # At this point the image is available as stream.array
             image = stream.array
-            return match_images(self.templateR2D2, image, DEBUG=3, verbose=verbose)
+            return match_images(self.templateR2D2, image, DEBUG=DEBUG, verbose=verbose)
 
     def detectBB8(self, DEBUG=0, verbose=False):
         """
-        takes a picture and checks if R2D2 is there
+        takes a picture and checks if BB8 is there
         """
         with picamera.array.PiRGBArray(self.cam) as stream:
             self.cam.capture(stream, format='bgr')
-            # At this point the image is available as stream.array
             image = stream.array
-            return match_images(self.templateBB8_s, image, DEBUG=3, verbose=verbose)
-
-
-
+            return match_images(self.templateBB8_s, image, DEBUG=DEBUG, verbose=verbose)
 
     def posFromCell(self, x,y):
         """
@@ -879,16 +846,30 @@ class Robot:
             return False
 
     def testDistance(self, period=0.5):
+        """
+        Test ultrasonic sensor. Prints the measured distance
+        """
         while True:
             dist = self.BP.get_sensor(self.portSensorUltrasonic)
             print("dist: ", dist)
             time.sleep(period)
 
     def colorSensorValue(self):
+        """
+        Returns the light sensor value
+        """
         return self.BP.get_sensor(self.portSensorLight)
+
     def colorSensorBlack(self):
+        """
+        Returns true if black is detected according to the threshold
+        """
         return self.colorSensorValue()>=black
+
     def colorSensorWhite(self):
+        """
+        Returns true if white is detected according to the threshold
+        """
         return self.colorSensorValue()<=white
 
 
@@ -898,10 +879,18 @@ class Robot:
         They use the opposite angles...
         """
         return -self.BP.get_sensor(self.portGyro)
-        
-        
+
+
     def relocateWithSonar(self, angle, relocationPosition, distance1 = 35, distance2 = 25, eps = 0.2):
-        
+        """
+        Updates the odometry using a wall.
+        - angle is the angle in which it will look for the wall and put itself perpendicular to.
+        - relocationPosition [x,y,th] is the position it will be updated to (any can be None)
+        - distance1 (cm) is the distance from the wall the robot will get to before fixing the odometry
+        - distance2 (cm) is the final distance to the wall after the odometry fix
+        - eps (cm) is used for the minimum distance detection
+        After the odometry fix, it also sets the Y coordinate based on the detected angle error
+        """
         w = self.wTarget
         sleepTime = 0.4
         minVal = math.inf
@@ -911,9 +900,8 @@ class Robot:
         if (norm_pi(angle - self.readOdometry()[2]) < 0):
             w = -w
         end = False
-        # mov lineal:
         odo_ini = self.readOdometry()
-        
+        # face <angle> before moving forward
         self.setSpeed(0,w)
         while not end:
             tIni = time.perf_counter()
@@ -923,19 +911,17 @@ class Robot:
                 time.sleep(period-(tFin-tIni))
         self.setSpeed(0,0)
         w = self.wTarget*0.4
-        #self.detectObstacle()
-        print("orientado a ", angle)
+        # oriented to <angle>, move forward until distance1:
         while not self.detectObstacle() or self.dist > distance1:
             tIni = time.perf_counter()
             self.setSpeed(self.vTarget / 2, 0)
-            
             tFin = time.perf_counter()
             time.sleep(period-(tFin-tIni))
             print(self.dist)
-        print("Fin mov lineal")
+        ## End of lineal movement
         self.setSpeed(0,0)
         time.sleep(1)
-            
+        # detect which way it has to turn (detect the gradient):
         while prevDist == self.dist or prevDist == math.inf:
             print("self.dist", self.dist)
             self.setSpeed(0,w)
@@ -944,92 +930,67 @@ class Robot:
             if prevDist != math.inf:
                 if self.dist > prevDist:
                     print("end", self.dist, prevDist)
-                    w = -w
+                    w = -w # turn the other way
                     time.sleep(0.5)
-                elif self.dist < prevDist:
-                    print("end neg", self.dist, prevDist)
-                else:
-                    print("not end", self.dist, prevDist)
                 if prevDist != self.dist:
-                    break
+                    break # keep turning the same way
             prevDist = self.dist
         self.setSpeed(0,0)
-        print("girando a", w, "voy a buscar el minimo...")
-        # recalibrar y:
+
+        # save current th and traveled distance to fix y later:
         odo = self.readOdometry()
         r = distance(np.array(odo_ini[:1]), np.array(odo[:1]))
         th_before = self.th_abs.value
-        
+
         time.sleep(1)
         prevDist = math.inf
         w /= 2
         self.setSpeed(0,w)
+        # now we turn expecting to see the distance decrease. When it gets greater,
+        # we know we have reached the minimum, which is the angle perpendicular to the wall
         while True:
             detected = self.detectObstacle()
             if prevDist< minVal:
                 minVal = prevDist
-                thMin = self.th_abs.value
-            #minVal = prevDist if prevDist < minVal else minVal
+                thMin = self.th_abs.value # save for Y
             if prevDist != self.dist:
-                print(self.dist, prevDist)
                 if (not detected) or self.dist > distance1:
-                    print("guarrianda :(")
                     diff = []
                     prevDist = math.inf
-                    #sleepTime += 0.2
                 elif self.dist != prevDist:
-                    print("sadghfjskgdyluf :)")
                     if w < 0:
-                        end = self.dist >= minVal + eps 
+                        end = self.dist >= minVal + eps
                     else:
-                        end = self.dist >= minVal + eps 
+                        end = self.dist >= minVal + eps
                     if end and detected:
                         break
                     prevDist = self.dist
-            
                 time.sleep(0.5)
-            
-        print(self.dist, prevDist)
-       
+
         detected = False
         end = False
-        print("Voila")
-        
-        # corregir y:
+
+        # correct y according to the measured theta error:
         th_abs_now = self.th_abs.value
         dTh = th_abs_now - th_before
         dY = np.sin(dTh) * r
-        # corregir th:
+        # correct th:
         odo = self.readOdometry()
         dTh = th_abs_now-thMin
-        
+
         self.setOdometry([odo[0], odo[1] + dY, odo[2]+dTh])
-        
-        ##################################3
-        
-        ######################################
-        #Go back a little, to prevDist (the best value)
-        #w = -w
-        #self.setSpeed(0,w)
-        #while(self.dist > prevDist):
-        #    detected = self.detectObstacle()
-            
-        #self.setSpeed(0,0)
-        
+
+        # we are perpendicular, get to distance2 of the wall:
         while not self.detectObstacle() or self.dist > distance2:
             tIni = time.perf_counter()
             self.setSpeed(self.vTarget / 2, 0)
-            
             tFin = time.perf_counter()
             time.sleep(period-(tFin-tIni))
-        
-            
+
         odo = self.readOdometry()
-        #relocationPosition = [
+        # update coordinate based on <relocationPosition>:
         for i, p in enumerate(relocationPosition):
             if p == None:
                 relocationPosition[i] = odo[i]
-            ##elif i==2:
-                
-        print(relocationPosition)
+
         self.setOdometry(relocationPosition)

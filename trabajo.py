@@ -45,15 +45,16 @@ def relocateRobot(robot, fin, executingMapA, baldosa):
         if not executingMapA:
             thObj = math.pi
             xObj = 0.5*baldosa
-        
+
     # sonar
     print("going to", xObj, "th:",thObj)
     distObj = baldosa/2
     robot.relocateWithSonar(thObj, [xObj, None, thObj], distance2=distObj*100.0, eps=0.1)
-   
+
 
 def main(args):
     """
+    Presentation main program, and some debugging options
     """
     try:
         robot = Robot()
@@ -66,7 +67,7 @@ def main(args):
             robot.executeTrajectory()
             robot.stopOdometry()
             exit(0)
-            
+
         if args.test_r2d2:
             while True:
                 if robot.detectR2D2(verbose=True, DEBUG=1):
@@ -87,8 +88,8 @@ def main(args):
                 time.sleep(1)
 
         elif args.trabajo or args.test_map or args.pelota or args.test_r2_section:
+            # Choose map (A or B) based on color sensor:
             if not robot.colorSensorBlack():
-
                 print("Estoy en el mapa A")
                 t, mapa = mapA(robot)
                 celdaIni = [1,2,-math.pi/2]
@@ -103,32 +104,25 @@ def main(args):
                 fin = [2,6]
                 ini=[5,6, -math.pi/2]
                 executingMapA = False
-            
-            #intermedio = np.array(fin)
-            #intermedio[0] += 1 if not executingMapA else -1
-            #intermedio[1] = 3
-            if args.trabajo:
-                robot.setMapNoPath(mapa)
-                x, y = robot.posFromCell(ini[0], ini[1])
-                robot.setOdometry([x, y, ini[2]])
-                robot.startOdometry()
-                print("Odo inicial:", robot.readOdometry())
-                robot.setTrajectory(t)
-                robot.executeTrajectory()
-                robot.useGyro = False
-                robot.setPath(celdaIni, fin)
-                nBaldosas = 2.9 if executingMapA else 3.9
-                robot.waitForWhite([0,1], [nBaldosas * baldosa, 3 * baldosa])
-                #xRelocate = fin[0]-1 if executingMapA else fin[0]+1
-                #relocateRobot(robot, intermedio, executingMapA, baldosa)
 
-                #x_s, y_s = robot.posFromCell(celdaIni[0],celdaIni[1])
-                #robot.go(x_s, y_s, checkObstacles=False)
+            if args.trabajo: # full demo
+                robot.setMapNoPath(mapa) # set map
+                x, y = robot.posFromCell(ini[0], ini[1])
+                robot.setOdometry([x, y, ini[2]]) # set initial pos
+                robot.startOdometry()
+                robot.setTrajectory(t) # set S trajectory
+                robot.executeTrajectory() # execute it
+                robot.useGyro = False # stop using Gyro (has more error than odo later)
+                robot.setPath(celdaIni, fin) # calculate the path in the map
+                nBaldosas = 2.9 if executingMapA else 3.9 # x value of vertical line
+                # wait for the two lines and update odo accordingly:
+                robot.waitForWhite([0,1], [nBaldosas * baldosa, 3 * baldosa])
+                # execute the planned path:
                 robot.executePath()
-            elif args.test_map or args.test_r2_section: #only map
+            ### debugging options ###
+            elif args.test_map or args.test_r2_section: # only map
                 if args.test_r2_section:
                     celdaIni = [3, 2, math.pi/2]
-                
                 nBaldosas = 3 if executingMapA else 4
                 robot.waitForWhite([0,1], [nBaldosas * baldosa, 3 * baldosa])
                 robot.setMap(mapa,celdaIni, fin)
@@ -137,34 +131,37 @@ def main(args):
                 robot.executePath()
             if args.pelota or args.sonar:
                 robot.startOdometry()
+            ### end debugging options ###
             if args.trabajo or args.test_r2_section or args.test_map:
-                res = 0
-                
+                # relocate a bit further down to see the homography better:
                 x,y = robot.posFromCell(fin[0], fin[1]-0.5)
                 robot.go(x,y)
-                #if executingMapA:
+                # orient GUILLE to our side 45 degrees (map A:left, B:right)
                 dX, dY = -0.05, 0.05
-                wHomography = -0.1
+                wHomography = -0.1 # rotate right if a, left if b
                 if not executingMapA: # map b to the other side
                     dX = -dX
                     wHomography = -wHomography
                 odo = robot.readOdometry()
-                robot.go(odo[0]+dX, odo[1]+dY)
+                robot.go(odo[0]+dX, odo[1]+dY) # face the pictures
+                res = 0 # result of homography
                 while res == 0:
-                    
-                    res = robot.detectHomography()
-                    
-                    robot.setSpeed(0, wHomography)
-                    time.sleep(0.01)
+                    res = robot.detectHomography() # take picture, compare, etc.
+                    robot.setSpeed(0, wHomography) # turn
+                    time.sleep(0.01) # wait a bit
+                # res = 0 -> no detection
+                # res = 1 -> r2
+                # res = 2 -> the other one
                 if res == 1: # r2
                     print("detected r2")
+                    # choose the exit path according to the map being executed:
                     if executingMapA:
                         fin[0] -= 1
                     else:
                         fin[0]-=2
-                        
                 else: # el otro
                     print("detected el otro")
+                    # choose the exit path according to the map being executed:
                     if executingMapA:
                         fin[0] += 2
                     else:
@@ -173,43 +170,28 @@ def main(args):
             #track and catch ball:
             if not args.sonar:
                 robot.trackBall()
-            
-            
-            #sonar:
-            #if fin[0] ==
-            
+
+            #sonar, update th and y odometry values based on the wall:
             relocateRobot(robot, fin, executingMapA, baldosa)
-            
-            
-            # new path
+
+            # go to last cell:
             robot.setPathFromCurrentPosition(fin)
             robot.executePath(checkObstacles=False)
-            # salir del mapa:
+            # exit the map:
             x,y = robot.posFromCell(fin[0], fin[1]+1)
             robot.go(x,y, checkObstacles=False)
-            
-        
-            robot.stopOdometry()
-            
-                # Zona con obstaculos:
-                # map
 
+            robot.stopOdometry()
 
     except KeyboardInterrupt:
-    # except the program gets interrupted by Ctrl+C on the keyboard.
-    # THIS IS IMPORTANT if we want that motors STOP when we Ctrl+C ...
         robot.stopOdometry()
     except BaseException as e:
         print(e)
         traceback.print_exc()
         robot.stopOdometry()
 
-
-
 if __name__ == "__main__":
-
     # get and parse arguments passed to main
-    # Add as many args as you need ...
     parser = argparse.ArgumentParser()
     parser.add_argument("-t", "--trabajo", help="execute all map", dest='trabajo', action='store_true')
 
@@ -224,13 +206,12 @@ if __name__ == "__main__":
     parser.add_argument('-ts','--test_suelo', help="test suelo negro recognition", dest='test_suelo', action='store_true')
     parser.add_argument('-m', '--test_map', help='test only the map portion', dest='test_map', action='store_true')
     parser.add_argument('-r2', '--test_r2_section', help='test only the r2 portion', dest='test_r2_section', action='store_true')
-    
+
     parser.add_argument('-p', '--pelota', help='test only the pelota', dest='pelota', action='store_true')
-    parser.add_argument('-tg', '--giros', help='test giros', 
+    parser.add_argument('-tg', '--giros', help='test giros',
                                             type=int, default=-1)
     parser.add_argument('-s', '--sonar', help='test sonar', dest='sonar',action='store_true')
-    parser.add_argument('-rad', '--rad', help='radians ', type=float, default=2)                                       
-    # parser.add_argument('-npt', '--no-plottrajectory', dest='plot_trajectory', action='store_false')
+    parser.add_argument('-rad', '--rad', help='radians ', type=float, default=2)
     parser.set_defaults(test_suelo=False)
     parser.set_defaults(test_r2d2=False)
     parser.set_defaults(sonar=False)
